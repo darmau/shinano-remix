@@ -1,13 +1,10 @@
-import {Form, useActionData, useOutletContext} from "@remix-run/react";
-import getLanguageLabel from "~/utils/getLanguageLabel";
+import {useOutletContext} from "@remix-run/react";
 import HomepageText from "~/locales/homepage";
-import {action} from "~/routes/$lang._index";
+import getLanguageLabel from "~/utils/getLanguageLabel";
 
 export default function CTA() {
   const {lang} = useOutletContext<{ lang: string }>();
   const label = getLanguageLabel(HomepageText, lang);
-
-  const actionResponse = useActionData<typeof action>();
 
   return (
       <div className = "bg-white py-16 sm:py-24">

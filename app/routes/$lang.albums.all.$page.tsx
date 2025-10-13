@@ -3,7 +3,7 @@ import {json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {Link, useLoaderData, useLocation, useOutletContext} from "@remix-run/react";
 import {FeaturedPhoto, generatePhotoAlbum} from "~/utils/generatePhotoAlbum";
-import {UnstableServerPhotoAlbum as ServerPhotoAlbum} from "react-photo-album/server";
+import * as PhotoAlbumServer from "react-photo-album/server";
 import GalleryImage from "~/components/GalleryImage";
 import "react-photo-album/columns.css";
 import Pagination from "~/components/Pagination";
@@ -11,10 +11,27 @@ import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
 
+type PhotoAlbumServerModule = typeof PhotoAlbumServer;
+type ServerPhotoAlbumComponent = PhotoAlbumServerModule extends {ServerPhotoAlbum: infer Stable}
+  ? Stable
+  : PhotoAlbumServerModule extends {UnstableServerPhotoAlbum: infer Unstable}
+    ? Unstable
+    : never;
+
+const serverPhotoAlbumExport = (PhotoAlbumServer as Partial<Record<'ServerPhotoAlbum' | 'UnstableServerPhotoAlbum', ServerPhotoAlbumComponent>>).ServerPhotoAlbum
+  ?? (PhotoAlbumServer as Partial<Record<'UnstableServerPhotoAlbum', ServerPhotoAlbumComponent>>).UnstableServerPhotoAlbum;
+
+if (!serverPhotoAlbumExport) {
+  throw new Error("react-photo-album/server does not provide a compatible ServerPhotoAlbum export.");
+}
+
+const ServerPhotoAlbum = serverPhotoAlbumExport as ServerPhotoAlbumComponent;
+
 export default function AllAlbums () {
   const {prefix, lang} = useOutletContext<{prefix: string, lang: string}>();
   const {albums, count, page} = useLoaderData<typeof loader>();
   const location = useLocation();
+
   // 将pathname末尾的page去掉
   const path = location.pathname.replace(/\/\d+$/, '');
 
