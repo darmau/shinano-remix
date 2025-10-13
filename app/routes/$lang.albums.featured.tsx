@@ -2,7 +2,7 @@ import Subnav from "~/components/Subnav";
 import {json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {Link, useLoaderData, useOutletContext} from "@remix-run/react";
-import {UnstableServerPhotoAlbum as ServerPhotoAlbum} from "react-photo-album/server";
+import {ServerPhotoAlbum} from "~/components/ServerPhotoAlbum";
 import "react-photo-album/masonry.css";
 import {FeaturedPhoto, generatePhotoAlbum} from "~/utils/generatePhotoAlbum";
 import GalleryImage from "~/components/GalleryImage";
