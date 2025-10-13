@@ -3,7 +3,7 @@ import {json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {Link, useLoaderData, useLocation, useOutletContext} from "@remix-run/react";
 import {FeaturedPhoto, generatePhotoAlbum} from "~/utils/generatePhotoAlbum";
-import {UnstableServerPhotoAlbum as ServerPhotoAlbum} from "react-photo-album/server";
+import {ServerPhotoAlbum} from "~/components/ServerPhotoAlbum";
 import GalleryImage from "~/components/GalleryImage";
 import "react-photo-album/columns.css";
 import Pagination from "~/components/Pagination";
@@ -15,6 +15,7 @@ export default function AllAlbums () {
   const {prefix, lang} = useOutletContext<{prefix: string, lang: string}>();
   const {albums, count, page} = useLoaderData<typeof loader>();
   const location = useLocation();
+
   // 将pathname末尾的page去掉
   const path = location.pathname.replace(/\/\d+$/, '');
 
