@@ -12,6 +12,4 @@ interface Env {
 	TURNSTILE_SECRET_KEY: string;
 	TURNSTILE_SITE_KEY: string;
 	BARK_SERVER: string;
-	MEILI_URL: string;
-	MEILI_KEY: string;
 }
