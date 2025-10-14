@@ -116,9 +116,7 @@ export default function App() {
         <meta charSet = "utf-8"/>
         <meta name = "viewport" content = "width=device-width, initial-scale=1"/>
         <link rel = "icon" href = "/favicon.ico" type = "image/x-icon"/>
-        <script
-            defer src = "https://umami.darmau.dev/script.js" data-website-id = "7d41f3c9-9169-4795-85e2-c7327dbc7d88"
-        ></script>
+        <script defer src="https://cloud.umami.is/script.js" data-website-id="95e278fe-8fe4-4526-b975-99ebfe91a184"></script>
         <Meta/>
         <Links/>
       </head>
