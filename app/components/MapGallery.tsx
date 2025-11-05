@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import MapboxLanguage from "@mapbox/mapbox-gl-language";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import AlbumText from "~/locales/album";
@@ -35,6 +36,13 @@ export interface MapImageCollection {
 
 type MapAlbum = MapImageFeature["properties"]["albums"][number];
 
+// Mapbox 语言代码映射
+const mapboxLangMap: Record<string, string> = {
+  'zh': 'zh-Hans', // 简体中文
+  'en': 'en', // 英语
+  'jp': 'ja', // 日语
+};
+
 interface MapGalleryProps {
   mapboxToken: string;
   imageCollection: MapImageCollection;
@@ -55,6 +63,9 @@ export default function MapGallery({
   const hasFitToBounds = useRef(false);
   const imageCollectionRef = useRef(imageCollection);
   const label = getLanguageLabel(AlbumText, lang);
+  
+  // 获取 Mapbox 语言代码，默认为英语
+  const mapboxLang = mapboxLangMap[lang] || 'en';
 
   useEffect(() => {
     if (!mapboxToken || !mapContainer.current || map.current) return;
@@ -70,6 +81,12 @@ export default function MapGallery({
     });
 
     map.current = mapInstance;
+
+    // 添加语言控制插件
+    const language = new MapboxLanguage({
+      defaultLanguage: mapboxLang, // 根据网站语言设置默认语言
+    });
+    mapInstance.addControl(language);
 
     mapInstance.on("load", () => {
       // 添加数据源
