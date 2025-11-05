@@ -9,13 +9,17 @@ export type Content = {
   content?: ContentItem[];
   attrs?: {
     level?: number;
-    id?: string;
+    id?: string | number;
     language?: string;
     start?: number;
     href?: string;
     target?: string;
     rel?: string;
     class?: string | null;
+    alt?: string | null;
+    storage_key?: string;
+    prefix?: string;
+    caption?: string | null;
   };
   text?: string;
   marks?: Mark[];
@@ -34,11 +38,11 @@ type Mark = {
 };
 
 export type ImageAttrs = {
-  id: number;
-  alt: string;
+  id: number | string;
+  alt: string | null;
   storage_key: string;
   prefix: string;
-  caption: string;
+  caption: string | null;
 };
 
 function isContentStructure(content: Json): content is ContentStructure {
@@ -58,15 +62,24 @@ export function contentToHtml(content: Json): string {
   return content.content.map(renderNode).join("");
 }
 
+function hasImageAttrs(attrs: Content["attrs"]): attrs is ImageAttrs {
+  return Boolean(
+      attrs &&
+      (typeof attrs.id === "number" || typeof attrs.id === "string") &&
+      typeof attrs.storage_key === "string" &&
+      typeof attrs.prefix === "string"
+  );
+}
+
 function renderImage(node: Content): string {
-  if (!node.attrs) {
+  if (!hasImageAttrs(node.attrs)) {
     return "";
   }
 
-  const {alt = "", storage_key, caption = "", prefix} = node.attrs as ImageAttrs;
+  const {alt, storage_key, caption, prefix} = node.attrs;
   const captionHtml = caption ? `<figcaption>${caption}</figcaption>` : "";
 
-  return `<figure><img src="${prefix}/cdn-cgi/image/format=auto,width=960/${storage_key}" alt="${alt}" />${captionHtml}</figure>`;
+  return `<figure><img src="${prefix}/cdn-cgi/image/format=auto,width=960/${storage_key}" alt="${alt ?? ""}" />${captionHtml}</figure>`;
 }
 
 function renderNode(node: Content): string {

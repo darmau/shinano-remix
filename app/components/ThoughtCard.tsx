@@ -1,6 +1,5 @@
 import type {Thought} from "~/routes/$lang.thoughts";
 import ContentContainer from "~/components/ContentContainer";
-import type {Json} from "~/types/supabase";
 import ResponsiveImage from "~/components/ResponsiveImage";
 import getTime from "~/utils/getTime";
 import {Link, useOutletContext} from "@remix-run/react";
@@ -20,7 +19,7 @@ export default function ThoughtCard({thought}: { thought: Thought }) {
           ></path>
         </svg>
         <div className = "relative mb-4 space-y-4">
-          <ContentContainer content = {thought.content_json as unknown as Json}/>
+          <ContentContainer content = {thought.content_json}/>
           <div className = "flex gap-3 justify-start items-center">
             <div className = "flex gap-1 items-center">
               <EyeIcon className = "h-4 w-4 inline-block text-zinc-400"/>

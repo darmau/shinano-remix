@@ -111,7 +111,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
       enclosure: post.cover ? {
         url: `https://img.darmau.co/cdn-cgi/image/format=jpeg,width=960/${post.cover.storage_key}`,
         type: 'image/jpeg' as const,
-        length: post.cover.size ?? 0,
+        length: String(post.cover.size ?? 0),
       } : undefined,
     })) : [],
   });

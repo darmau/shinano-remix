@@ -8,23 +8,25 @@ import getLanguageLabel from "~/utils/getLanguageLabel";
 import ThoughtText from "~/locales/thought";
 import i18nLinks from "~/utils/i18nLinks";
 import Subnav from "~/components/Subnav";
+import type {Json} from "~/types/supabase";
+import {isJsonValue} from "~/utils/json";
 
 export interface Thought {
   id: number,
   slug: string,
-  content_json: JSON,
+  content_json: Json,
   created_at: string,
   page_view: number,
-  comments: [{ count: number }],
+  comments: { count: number }[],
   thought_image: {
     image: {
       id: number,
-      alt: string,
+      alt: string | null,
       storage_key: string,
       width: number,
       height: number
     }
-  }[] | null
+  }[]
 }
 
 type LoaderData = {
@@ -38,7 +40,114 @@ type LoadMoreResponse = {
 };
 
 const isLoadMoreThoughts = (data: unknown): data is LoadMoreResponse =>
-    typeof data === "object" && data !== null && Array.isArray((data as LoadMoreResponse).thoughts);
+    typeof data === "object" &&
+    data !== null &&
+    Array.isArray((data as { thoughts?: unknown }).thoughts);
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null;
+
+const toComments = (value: unknown): { count: number }[] => {
+  if (!Array.isArray(value)) {
+    return [{count: 0}];
+  }
+
+  const comments = value
+      .map(item => {
+        if (!isRecord(item)) {
+          return null;
+        }
+        const count = item["count"];
+        return typeof count === "number" ? {count} : null;
+      })
+      .filter((item): item is { count: number } => item !== null);
+
+  return comments.length > 0 ? comments : [{count: 0}];
+};
+
+const toThoughtImages = (value: unknown): Thought["thought_image"] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+      .map(item => {
+        if (!isRecord(item)) {
+          return null;
+        }
+        const image = item["image"];
+        if (!isRecord(image)) {
+          return null;
+        }
+
+        const id = image["id"];
+        const storageKey = image["storage_key"];
+        if (typeof id !== "number" || typeof storageKey !== "string") {
+          return null;
+        }
+
+        const altValue = image["alt"];
+        const widthValue = image["width"];
+        const heightValue = image["height"];
+
+        return {
+          image: {
+            id,
+            storage_key: storageKey,
+            alt: typeof altValue === "string" ? altValue : null,
+            width: typeof widthValue === "number" ? widthValue : 0,
+            height: typeof heightValue === "number" ? heightValue : 0,
+          }
+        };
+      })
+      .filter((item): item is Thought["thought_image"][number] => item !== null);
+};
+
+const asThought = (value: unknown): Thought | null => {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const id = value["id"];
+  const slug = value["slug"];
+  const contentJson = value["content_json"];
+  const createdAt = value["created_at"];
+  const pageView = value["page_view"];
+
+  if (typeof id !== "number") {
+    return null;
+  }
+  if (typeof slug !== "string" || slug.length === 0) {
+    return null;
+  }
+  if (typeof createdAt !== "string" || createdAt.length === 0) {
+    return null;
+  }
+
+  const content_json = isJsonValue(contentJson) ? contentJson : null;
+  const comments = toComments(value["comments"]);
+  const thought_image = toThoughtImages(value["thought_image"]);
+
+  return {
+    id,
+    slug,
+    content_json,
+    created_at: createdAt,
+    page_view: typeof pageView === "number" ? pageView : 0,
+    comments,
+    thought_image,
+  };
+};
+
+const normalizeThoughts = (value: unknown): Thought[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+      .map(asThought)
+      .filter((item): item is Thought => item !== null);
+};
 
 export async function loader({request, context}: LoaderFunctionArgs) {
   const {supabase} = createClient(request, context);
@@ -62,7 +171,7 @@ export async function loader({request, context}: LoaderFunctionArgs) {
   const availableLangs = ["zh", "en", "jp"];
 
   return json<LoaderData>({
-    thoughts: thoughts ?? [],
+    thoughts: normalizeThoughts(thoughts),
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs,
   });
@@ -144,7 +253,7 @@ export async function action({request, context}: ActionFunctionArgs) {
     throw new Error("获取更多思想数据失败", {cause: error});
   }
 
-  return json<LoadMoreResponse>({thoughts: data ?? []});
+  return json<LoadMoreResponse>({thoughts: normalizeThoughts(data)});
 }
 
 export default function Thoughts() {
@@ -158,12 +267,13 @@ export default function Thoughts() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    if (!isLoadMoreThoughts(fetcher.data)) {
+    const payload = fetcher.data;
+    if (!isLoadMoreThoughts(payload)) {
       return;
     }
 
     startTransition(() => {
-      setThoughts((prevThoughts) => [...prevThoughts, ...fetcher.data.thoughts]);
+      setThoughts((prevThoughts) => [...prevThoughts, ...payload.thoughts]);
     });
   }, [fetcher.data]);
 

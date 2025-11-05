@@ -15,8 +15,8 @@ import i18nLinks from "~/utils/i18nLinks";
 type FeaturedRow = {
   id: number;
   slug: string | null;
-  title: string;
-  page_view: number;
+  title: string | null;
+  page_view: number | null;
   language: {
     lang: string | null;
   } | null;
@@ -24,8 +24,8 @@ type FeaturedRow = {
     id: string | number;
     alt: string | null;
     storage_key: string;
-    width: number;
-    height: number;
+    width: number | null;
+    height: number | null;
   } | null;
 };
 
@@ -36,24 +36,50 @@ type LoaderData = {
   availableLangs: string[];
 };
 
-const normalizeFeatured = (rows: FeaturedRow[] | null, fallbackLang: string): FeaturedPhoto[] =>
-    (rows ?? [])
-        .filter((row): row is FeaturedRow & { cover: NonNullable<FeaturedRow["cover"]>; language: NonNullable<FeaturedRow["language"]> } => Boolean(row.cover) && Boolean(row.language))
-        .map((row) => ({
-          id: row.id,
-          slug: row.slug,
-          title: row.title,
-          language: {
-            lang: row.language?.lang ?? fallbackLang,
-          },
-          cover: {
-            id: String(row.cover.id),
-            alt: row.cover.alt,
-            storage_key: row.cover.storage_key,
-            width: row.cover.width,
-            height: row.cover.height,
-          },
-        }));
+const normalizeFeatured = (rows: unknown, fallbackLang: string): FeaturedPhoto[] => {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  const normalized: FeaturedPhoto[] = [];
+
+  rows.forEach(row => {
+    if (!row || typeof row !== "object") {
+      return;
+    }
+
+    const candidate = row as FeaturedRow;
+    if (typeof candidate.id !== "number" || !candidate.cover || !candidate.language) {
+      return;
+    }
+
+    normalized.push({
+      id: candidate.id,
+      slug: candidate.slug,
+      title: candidate.title ?? "",
+      language: {
+        lang: candidate.language.lang ?? fallbackLang,
+      },
+      cover: {
+        id: String(candidate.cover.id),
+        alt: candidate.cover.alt,
+        storage_key: candidate.cover.storage_key,
+        width: candidate.cover.width ?? 0,
+        height: candidate.cover.height ?? 0,
+      },
+    });
+  });
+
+  return normalized;
+};
+
+const isLoaderData = (value: unknown): value is LoaderData =>
+    typeof value === "object" &&
+    value !== null &&
+    "baseUrl" in value &&
+    "availableLangs" in value &&
+    "prefix" in value &&
+    "featuredPhotos" in value;
 
 export default function AllFeaturedAlbums() {
   const {prefix, lang} = useOutletContext<{prefix: string, lang: string}>();
@@ -105,7 +131,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
   
-  if (!data) {
+  if (!isLoaderData(data)) {
     return [{title: 'Not Found'}];
   }
   
@@ -140,7 +166,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     {
       property: "og:image",
       // 没有推荐摄影的时候会有bug
-      content: `${data.prefix}/cdn-cgi/image/format=jpeg,width=960/${data.featuredPhotos?.[0]?.cover.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
+      content: `${data.prefix}/cdn-cgi/image/format=jpeg,width=960/${data.featuredPhotos[0]?.cover.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
     },
     {
       property: "og:description",

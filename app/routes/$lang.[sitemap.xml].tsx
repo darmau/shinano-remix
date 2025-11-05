@@ -1,20 +1,45 @@
 import type {LoaderFunctionArgs} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 
-type SitemapArticle = {
-  slug: string | null;
-  updated_at: string | null;
-};
+type RecordWithKeys = Record<string, unknown>;
 
-type SitemapAlbum = {
-  slug: string | null;
-  updated_at: string | null;
-};
+const isRecord = (value: unknown): value is RecordWithKeys =>
+    typeof value === "object" && value !== null;
 
-type SitemapThought = {
-  slug: string | null;
-  created_at: string | null;
-};
+const toRecordArray = (value: unknown): RecordWithKeys[] =>
+    Array.isArray(value) ? value.filter(isRecord) : [];
+
+const toEntryMarkup = (
+    rows: RecordWithKeys[],
+    dateKey: "updated_at" | "created_at",
+    baseUrl: string,
+    lang: string,
+    pathSegment: string,
+    changefreq: string,
+    priority: string
+) =>
+    rows
+        .map(row => {
+          const slug = row["slug"];
+          const timestamp = row[dateKey];
+
+          if (typeof slug !== "string" || slug.length === 0) {
+            return null;
+          }
+          if (typeof timestamp !== "string" || timestamp.length === 0) {
+            return null;
+          }
+
+          return `
+            <url>
+                <loc>${baseUrl}/${lang}/${pathSegment}/${slug}</loc>
+                <lastmod>${timestamp}</lastmod>
+                <changefreq>${changefreq}</changefreq>
+                <priority>${priority}</priority>
+            </url>`;
+        })
+        .filter((entry): entry is string => typeof entry === "string")
+        .join("");
 
 export async function loader({request, context, params}: LoaderFunctionArgs) {
   const {supabase} = createClient(request, context);
@@ -23,7 +48,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const {data: articles} = await supabase
     .from('article')
-    .select<SitemapArticle>(`
+    .select(`
       slug,
       updated_at,
       language!inner (lang)
@@ -34,7 +59,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const {data: albums} = await supabase
     .from('photo')
-    .select<SitemapAlbum>(`
+    .select(`
       slug,
       updated_at,
       language!inner (lang)
@@ -45,7 +70,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const {data: thoughts} = await supabase
     .from('thought')
-    .select<SitemapThought>(`
+    .select(`
       slug,
       created_at
     `)
@@ -53,38 +78,35 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const now = new Date().toISOString();
 
-  const articleEntries = (articles ?? [])
-      .filter((article): article is SitemapArticle & { slug: string; updated_at: string } => Boolean(article?.slug) && Boolean(article?.updated_at))
-      .map((article) => `
-            <url>
-                <loc>${baseUrl}/${lang}/article/${article.slug}</loc>
-                <lastmod>${article.updated_at}</lastmod>
-                <changefreq>daily</changefreq>
-                <priority>1.0</priority>
-            </url>`)
-      .join("");
+  const articleEntries = toEntryMarkup(
+      toRecordArray(articles),
+      "updated_at",
+      baseUrl,
+      lang,
+      "article",
+      "daily",
+      "1.0"
+  );
 
-  const albumEntries = (albums ?? [])
-      .filter((album): album is SitemapAlbum & { slug: string; updated_at: string } => Boolean(album?.slug) && Boolean(album?.updated_at))
-      .map((album) => `
-            <url>
-                <loc>${baseUrl}/${lang}/album/${album.slug}</loc>
-                <lastmod>${album.updated_at}</lastmod>
-                <changefreq>daily</changefreq>
-                <priority>0.8</priority>
-            </url>`)
-      .join("");
+  const albumEntries = toEntryMarkup(
+      toRecordArray(albums),
+      "updated_at",
+      baseUrl,
+      lang,
+      "album",
+      "daily",
+      "0.8"
+  );
 
-  const thoughtEntries = (thoughts ?? [])
-      .filter((thought): thought is SitemapThought & { slug: string; created_at: string } => Boolean(thought?.slug) && Boolean(thought?.created_at))
-      .map((thought) => `
-            <url>
-                <loc>${baseUrl}/${lang}/thought/${thought.slug}</loc>
-                <lastmod>${thought.created_at}</lastmod>
-                <changefreq>hourly</changefreq>
-                <priority>0.6</priority>
-            </url>`)
-      .join("");
+  const thoughtEntries = toEntryMarkup(
+      toRecordArray(thoughts),
+      "created_at",
+      baseUrl,
+      lang,
+      "thought",
+      "hourly",
+      "0.6"
+  );
 
   const sitemap = `
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

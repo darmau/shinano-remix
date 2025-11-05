@@ -10,16 +10,46 @@ import ArticlesText from "~/locales/articles";
 import Pagination from "~/components/Pagination";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
+import {
+  normalizeArticles,
+  normalizeYearCounts,
+  normalizeCategoryCounts,
+  type YearCount,
+  type CategoryCount,
+} from "~/utils/articles";
+
+type LoaderData = {
+  articles: Article[];
+  countByYear: YearCount[];
+  countByCategory: CategoryCount[];
+  articleCount: number;
+  page: number;
+  baseUrl: string;
+  prefix: string;
+  availableLangs: string[];
+};
+
+const isLoaderData = (value: unknown): value is LoaderData =>
+    typeof value === "object" &&
+    value !== null &&
+    "articles" in value &&
+    "countByYear" in value &&
+    "countByCategory" in value &&
+    "articleCount" in value &&
+    "page" in value &&
+    "baseUrl" in value &&
+    "prefix" in value &&
+    "availableLangs" in value;
 
 export default function AllArticles() {
-  const {articles, countByYear, countByCategory, articleCount, page} = useLoaderData<typeof loader>();
+  const {articles, countByYear, countByCategory, articleCount, page} = useLoaderData<LoaderData>();
   const {lang} = useOutletContext<{ lang: string }>();
   const label = getLanguageLabel(ArticlesText, lang);
   const location = useLocation();
   // 将pathname末尾的page去掉
   const path = location.pathname.replace(/\/\d+$/, '');
 
-  if (!articles || articles.length === 0) {
+  if (articles.length === 0) {
     return (
         <>
           <Subnav active="article" />
@@ -39,9 +69,9 @@ export default function AllArticles() {
         >
           <div className = "grow flex flex-col gap-8 py-8 md:py-0 md:gap-12 md:col-span-2">
             {articles.map((article) => (
-                <NormalArticleCard article = {article as Article} key = {article.id} showAbstract = {true}/>
+                <NormalArticleCard article = {article} key = {article.id} showAbstract = {true}/>
             ))}
-            <Pagination count = {articleCount ?? 0} limit = {12} page = {page} path = {path}/>
+            <Pagination count = {articleCount} limit = {12} page = {page} path = {path}/>
           </div>
           <aside className = "pb-4 space-y-8 md:col-span-1">
             <div className = "space-y-4">
@@ -94,11 +124,15 @@ export default function AllArticles() {
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
-  const baseUrl = data!.baseUrl as string;
+  if (!isLoaderData(data)) {
+    return [{title: label.recent_article}];
+  }
+
+  const baseUrl = data.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
-      data!.availableLangs,
-      `articles/${data!.page}`
+      data.availableLangs,
+      `articles/${data.page}`
   );
 
   return [
@@ -124,11 +158,11 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "og:url",
-      content: `${baseUrl}/${lang}/articles/${data!.page}`
+      content: `${baseUrl}/${lang}/articles/${data.page}`
     },
     {
       property: "og:image",
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/a2b148a3-5799-4be0-a8d4-907f9355f20f`
+      content: `${data.prefix}/cdn-cgi/image/format=jpeg,width=960/a2b148a3-5799-4be0-a8d4-907f9355f20f`
     },
     {
       property: "og:description",
@@ -156,7 +190,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     return new Response(null, {status: 404});
   }
 
-  const {data} = await supabase
+  const {data: articleRows} = await supabase
   .from('article')
   .select(`
       id,
@@ -178,7 +212,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   .limit(12)
   .range((Number(page) - 1) * 12, Number(page) * 12 - 1)
   .order('published_at', {ascending: false})
-  .returns<Article[]>();
+  ;
 
   // 指定语言article的数量，排除草稿
   const {count} = await supabase
@@ -190,27 +224,23 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   .eq('is_draft', false)
   .eq('language.lang', lang);
 
-  const {data: countByYear} = await supabase.rpc('get_article_count_by_year', {lang_name: lang});
+  const {data: countByYearData} = await supabase.rpc('get_article_count_by_year', {lang_name: lang});
 
-  const {data: countByCategory} = await supabase.rpc('get_article_count_by_category', {
+  const {data: countByCategoryData} = await supabase.rpc('get_article_count_by_category', {
     lang_name: lang
-  }).returns<{
-    title: string,
-    slug: string,
-    count: number
-  }[]>();
+  });
 
   const availableLangs = [lang];
 
-  return json({
-    articles: data,
-    countByYear: countByYear,
-    countByCategory: countByCategory,
-    articleCount: count,
+  return json<LoaderData>({
+    articles: normalizeArticles(articleRows),
+    countByYear: normalizeYearCounts(countByYearData),
+    countByCategory: normalizeCategoryCounts(countByCategoryData),
+    articleCount: count ?? 0,
     page: Number(page),
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs
-  })
+  });
 
 }

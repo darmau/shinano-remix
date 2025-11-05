@@ -41,6 +41,64 @@ type LoadMoreResponse = {
 const isLoadMoreResponse = (data: unknown): data is LoadMoreResponse =>
     typeof data === "object" && data !== null && Array.isArray((data as LoadMoreResponse).books);
 
+const isLoaderData = (value: unknown): value is LoaderData =>
+    typeof value === "object" &&
+    value !== null &&
+    "books" in value &&
+    "prefix" in value &&
+    "baseUrl" in value &&
+    "availableLangs" in value &&
+    "count" in value;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null;
+
+const normalizeBooks = (rows: unknown): BookRecord[] => {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  const normalized: BookRecord[] = [];
+
+  rows.forEach(row => {
+    if (!isRecord(row)) {
+      return;
+    }
+
+    const id = row["id"];
+    if (typeof id !== "number") {
+      return;
+    }
+
+    const title = row["title"];
+    const rate = row["rate"];
+    const comment = row["comment"];
+    const link = row["link"];
+    const date = row["date"];
+    const coverValue = row["cover"];
+
+    const cover = isRecord(coverValue) && typeof coverValue["storage_key"] === "string"
+        ? {
+          id: typeof coverValue["id"] === "number" || typeof coverValue["id"] === "string" ? coverValue["id"] : id,
+          alt: typeof coverValue["alt"] === "string" ? coverValue["alt"] as string : null,
+          storage_key: coverValue["storage_key"] as string,
+        }
+        : null;
+
+    normalized.push({
+      id,
+      title: typeof title === "string" ? title : "",
+      rate: typeof rate === "number" ? rate : 0,
+      comment: typeof comment === "string" ? comment : null,
+      link: typeof link === "string" ? link : null,
+      date: typeof date === "string" ? date : null,
+      cover,
+    });
+  });
+
+  return normalized;
+};
+
 // 接收iso8601格式的日期字符串，返回
 
 export default function Book() {
@@ -55,12 +113,13 @@ export default function Book() {
   const label = getLanguageLabel(ThoughtText, lang);
 
   useEffect(() => {
-    if (!isLoadMoreResponse(fetcher.data)) {
+    const payload = fetcher.data;
+    if (!isLoadMoreResponse(payload)) {
       return;
     }
 
     startTransition(() => {
-      setBooks((prevBooks) => [...prevBooks, ...fetcher.data.books]);
+      setBooks((prevBooks) => [...prevBooks, ...payload.books]);
     });
   }, [fetcher.data]);
 
@@ -140,7 +199,7 @@ export async function loader({request, context}: LoaderFunctionArgs) {
   const availableLangs = ["zh", "en", "jp"];
 
   return json<LoaderData>({
-    books: bookData ?? [],
+    books: normalizeBooks(bookData),
     prefix: context.cloudflare.env.IMG_PREFIX,
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs,
@@ -151,15 +210,19 @@ export async function loader({request, context}: LoaderFunctionArgs) {
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(BookText, lang);
-  const baseUrl = data!.baseUrl;
+  if (!isLoaderData(data)) {
+    return [{title: label.title}];
+  }
+
+  const baseUrl = data.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
-      data!.availableLangs,
+      data.availableLangs,
       "book"
   );
 
   return [
-    {title: `${label.title}(${data!.count ?? 0})`},
+    {title: `${label.title}(${data.count ?? 0})`},
     {
       name: "description",
       content: label.description,
@@ -212,6 +275,6 @@ export async function action({request, context}: ActionFunctionArgs) {
   }
 
   return json<LoadMoreResponse>({
-    books: data ?? [],
+    books: normalizeBooks(data),
   });
 }

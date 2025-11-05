@@ -21,6 +21,7 @@ import {CommentBlock} from "~/components/CommentBlock";
 import i18nLinks from "~/utils/i18nLinks";
 import type {SupabaseClient} from "@supabase/supabase-js";
 import {EyeIcon} from "@heroicons/react/24/solid";
+import {parseTurnstileOutcome} from "~/utils/turnstile";
 
 export default function AlbumDetail() {
   const {lang, supabase} = useOutletContext<{ lang: string, supabase: SupabaseClient }>();
@@ -350,7 +351,7 @@ export async function action({request, context}: ActionFunctionArgs) {
         }
     );
 
-    const outcome = await turnstileResponse.json();
+    const outcome = parseTurnstileOutcome(await turnstileResponse.json());
     if (!outcome.success) {
       return json({
         success: false,

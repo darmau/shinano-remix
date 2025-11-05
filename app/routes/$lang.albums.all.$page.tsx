@@ -15,15 +15,15 @@ import i18nLinks from "~/utils/i18nLinks";
 
 type AlbumRow = {
   id: number;
-  title: string;
+  title: string | null;
   slug: string | null;
-  page_view: number;
+  page_view: number | null;
   cover: {
     id: string | number;
     alt: string | null;
     storage_key: string;
-    width: number;
-    height: number;
+    width: number | null;
+    height: number | null;
   } | null;
   language: {
     lang: string | null;
@@ -39,24 +39,52 @@ type LoaderData = {
   availableLangs: string[];
 };
 
-const normalizeAlbums = (rows: AlbumRow[] | null, fallbackLang: string): FeaturedPhoto[] =>
-    (rows ?? [])
-        .filter((row): row is AlbumRow & { cover: NonNullable<AlbumRow["cover"]>; language: NonNullable<AlbumRow["language"]> } => Boolean(row.cover) && Boolean(row.language))
-        .map((row) => ({
-          id: row.id,
-          slug: row.slug,
-          title: row.title,
-          language: {
-            lang: row.language?.lang ?? fallbackLang,
-          },
-          cover: {
-            id: String(row.cover.id),
-            alt: row.cover.alt,
-            storage_key: row.cover.storage_key,
-            width: row.cover.width,
-            height: row.cover.height,
-          },
-        }));
+const normalizeAlbums = (rows: unknown, fallbackLang: string): FeaturedPhoto[] => {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  const normalized: FeaturedPhoto[] = [];
+
+  rows.forEach(row => {
+    if (!row || typeof row !== "object") {
+      return;
+    }
+
+    const candidate = row as AlbumRow;
+    if (typeof candidate.id !== "number" || !candidate.cover || !candidate.language) {
+      return;
+    }
+
+    normalized.push({
+      id: candidate.id,
+      slug: candidate.slug,
+      title: candidate.title ?? "",
+      language: {
+        lang: candidate.language.lang ?? fallbackLang,
+      },
+      cover: {
+        id: String(candidate.cover.id),
+        alt: candidate.cover.alt,
+        storage_key: candidate.cover.storage_key,
+        width: candidate.cover.width ?? 0,
+        height: candidate.cover.height ?? 0,
+      },
+    });
+  });
+
+  return normalized;
+};
+
+const isLoaderData = (value: unknown): value is LoaderData =>
+    typeof value === "object" &&
+    value !== null &&
+    "baseUrl" in value &&
+    "availableLangs" in value &&
+    "page" in value &&
+    "prefix" in value &&
+    "albums" in value &&
+    "count" in value;
 
 export default function AllAlbums() {
   const {prefix, lang} = useOutletContext<{prefix: string, lang: string}>();
@@ -111,12 +139,12 @@ export default function AllAlbums() {
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
-  
-  if (!data) {
+
+  if (!isLoaderData(data)) {
     return [{title: 'Not Found'}];
   }
-  
-  const baseUrl = data.baseUrl as string;
+
+  const baseUrl = data.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
       data.availableLangs,
@@ -147,7 +175,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     {
       property: "og:image",
       // 没有数据的时候会有bug
-      content: `${data.prefix}/cdn-cgi/image/format=jpeg,width=960/${data.albums?.[0]?.cover?.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
+      content: `${data.prefix}/cdn-cgi/image/format=jpeg,width=960/${data.albums[0]?.cover?.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
     },
     {
       property: "og:description",
