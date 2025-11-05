@@ -21,6 +21,7 @@ import {EyeIcon} from "@heroicons/react/24/solid";
 import type {SupabaseClient} from "@supabase/supabase-js";
 import {useEffect, useState} from "react";
 import {parseTurnstileOutcome} from "~/utils/turnstile";
+import {trackPageView} from "~/utils/trackPageView";
 
 export default function ThoughtDetail() {
   const {lang, supabase} = useOutletContext<{ lang: string, supabase: SupabaseClient }>();
@@ -65,13 +66,8 @@ export default function ThoughtDetail() {
   // 阅读量计算
   const [pageView, setPageView] = useState(thoughtData.page_view);
   useEffect(() => {
-    supabase.rpc('thought_page_view', { thought_id: thoughtData.id })
-    .then(({ data, error }) => {
-      if (error) {
-        console.error('阅读量增加失败:', error);
-      } else if (data !== null) {
-        setPageView(data);
-      }
+    trackPageView('thought', thoughtData.id, supabase, (newPageView) => {
+      setPageView(newPageView);
     });
   }, [thoughtData.id, supabase]);
 
