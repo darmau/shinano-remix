@@ -9,6 +9,11 @@ export function createClient(request: Request, context: AppLoadContext) {
       context.cloudflare.env.SUPABASE_URL,
       context.cloudflare.env.SUPABASE_ANON_KEY,
       {
+        cookieOptions: {
+          maxAge: 60 * 60 * 24 * 14,
+          path: '/',
+          sameSite: 'lax',
+        },
         cookies: {
           getAll() {
             return parseCookieHeader(request.headers.get('Cookie') ?? '')

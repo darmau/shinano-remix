@@ -9,7 +9,6 @@ export const loader = ({context}: LoaderFunctionArgs) => {
     User-agent: *
     Allow: /
     Disallow: /*/login
-    Disallow: /*/signup
     Disallow: /en/thought/
     Disallow: /jp/thought/
     Disallow: /en/book

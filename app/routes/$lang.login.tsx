@@ -1,5 +1,5 @@
-import {Form, redirect, useActionData, useOutletContext} from "@remix-run/react";
-import {ActionFunctionArgs, json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import {Form, useActionData, useLoaderData, useNavigation, useOutletContext} from "@remix-run/react";
+import {ActionFunctionArgs, json, LoaderFunctionArgs, MetaFunction, redirect} from "@remix-run/cloudflare";
 import GithubLogin from "~/components/GithubLogin";
 import EmailLogin from "~/components/EmailLogin";
 import SignupText from '~/locales/signup'
@@ -8,14 +8,16 @@ import {createClient} from "~/utils/supabase/server";
 import i18nLinks from "~/utils/i18nLinks";
 
 export async function loader({request, context}: LoaderFunctionArgs) {
-  const origin = new URL(request.url).origin;
+  const requestUrl = new URL(request.url);
+  const origin = requestUrl.origin;
 
   const availableLangs = ["zh", "en", "jp"];
 
   return json({
     origin,
     baseUrl: context.cloudflare.env.BASE_URL,
-    availableLangs
+    availableLangs,
+    error: requestUrl.searchParams.get("error"),
   });
 }
 
@@ -43,6 +45,10 @@ export default function Login() {
   const {lang} = useOutletContext<{lang: string}>();
   const label = getLanguageLabel(SignupText, lang);
   const actionResponse = useActionData<typeof action>();
+  const loaderData = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
+  const isEmailSubmitting = navigation.state === "submitting" && navigation.formData?.get("intent") === "email";
+  const queryError = loaderData?.error === "magic_link" ? label.magic_link_error : null;
 
   return (
       <div className = "h-full bg-zinc-50 flex flex-col justify-center py-16 sm:px-6 lg:px-8">
@@ -55,11 +61,17 @@ export default function Login() {
 
         <div className = "mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
           <Form method = "POST" className = "bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
-            <EmailLogin/>
+            {actionResponse?.success ? (
+                <div className = "rounded-md bg-green-50 p-4 text-sm text-green-700">
+                  {label.email_check}
+                </div>
+            ) : (
+                <EmailLogin disabled = {isEmailSubmitting}/>
+            )}
 
-            {actionResponse?.error && (
+            {(actionResponse?.error || queryError) && (
                 <div className = "mt-6">
-                  <p className = "text-sm text-red-600">{actionResponse.error}</p>
+                  <p className = "text-sm text-red-600">{actionResponse?.error ?? queryError}</p>
                 </div>
             )}
 
@@ -77,13 +89,22 @@ export async function action({request, context}: ActionFunctionArgs) {
   const {supabase, headers} = createClient(request, context)
 
   if (intent === 'email') {
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const lang = formData.get("lang") as string;
+    const email = (formData.get("email") as string | null)?.trim();
+    const lang = ((formData.get("lang") as string | null) ?? "zh").trim() || "zh";
+    const labels = SignupText[lang] ?? SignupText.zh;
 
-    const {error} = await supabase.auth.signInWithPassword({
+    if (!email) {
+      return json({success: false, error: labels.email_required}, {headers});
+    }
+
+    const origin = new URL(request.url).origin;
+    const emailRedirectTo = `${origin}/auth/confirm?next=/${lang}`;
+
+    const {error} = await supabase.auth.signInWithOtp({
       email,
-      password,
+      options: {
+        emailRedirectTo,
+      },
     });
 
     if (error) {
@@ -91,7 +112,7 @@ export async function action({request, context}: ActionFunctionArgs) {
       return json({success: false, error: error.message}, {headers});
     }
 
-    return redirect(`/${lang}`, {headers})
+    return json({success: true, error: null}, {headers});
   } else if (intent === 'github') {
     const {data, error} = await supabase.auth.signInWithOAuth({
       provider: "github",

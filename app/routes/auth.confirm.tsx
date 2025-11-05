@@ -7,10 +7,11 @@ export async function loader({request, context}: LoaderFunctionArgs) {
   const token_hash = requestUrl.searchParams.get('token_hash')
   const type = requestUrl.searchParams.get('type') as EmailOtpType | null
   const next = requestUrl.searchParams.get('next') || '/'
-  const headers = new Headers()
+  const {supabase, headers} = createClient(request, context);
+  const segments = next.split('/').filter(Boolean);
+  const fallbackLang = segments[0] ?? 'zh';
 
   if (token_hash && type) {
-    const {supabase} = createClient(request, context);
 
     const {error} = await supabase.auth.verifyOtp({
       token_hash,
@@ -23,5 +24,5 @@ export async function loader({request, context}: LoaderFunctionArgs) {
   }
 
   // return the user to an error page with instructions
-  return redirect('/signup', {headers})
+  return redirect(`/${fallbackLang}/login?error=magic_link`, {headers})
 }
