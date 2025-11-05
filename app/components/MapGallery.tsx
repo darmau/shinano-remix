@@ -33,6 +33,8 @@ export interface MapImageCollection {
   features: MapImageFeature[];
 }
 
+type MapAlbum = MapImageFeature["properties"]["albums"][number];
+
 interface MapGalleryProps {
   mapboxToken: string;
   imageCollection: MapImageCollection;
@@ -49,6 +51,7 @@ export default function MapGallery({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [selectedImage, setSelectedImage] = useState<MapImageFeature | null>(null);
+  const hasFitToBounds = useRef(false);
   const label = getLanguageLabel(AlbumText, lang);
 
   useEffect(() => {
@@ -166,9 +169,9 @@ export default function MapGallery({
         const imageId = clickedFeature.properties?.imageId;
         
         // 从原始数据中查找完整的 feature
-        const fullFeature = imageCollection.features.find(
-          (f) => f.properties.imageId === imageId
-        );
+      const fullFeature = imageCollection.features.find(
+        (f: MapImageFeature) => f.properties.imageId === imageId
+      );
         
         if (fullFeature) {
           setSelectedImage(fullFeature);
@@ -198,21 +201,48 @@ export default function MapGallery({
         mapInstance.getCanvas().style.cursor = "";
       });
 
-      // 如果有数据，自动适配边界
-      if (imageCollection.features.length > 0) {
-        const bounds = new mapboxgl.LngLatBounds();
-        imageCollection.features.forEach((feature) => {
-          bounds.extend(feature.geometry.coordinates as [number, number]);
-        });
-        mapInstance.fitBounds(bounds, { padding: 50 });
-      }
     });
 
     return () => {
       mapInstance.remove();
       map.current = null;
+      hasFitToBounds.current = false;
     };
   }, [mapboxToken, imageCollection]);
+
+  useEffect(() => {
+    const mapInstance = map.current;
+    if (!mapInstance) return;
+    const updateSource = () => {
+      const source = mapInstance.getSource("photos") as mapboxgl.GeoJSONSource | undefined;
+      if (!source) return;
+
+      source.setData(imageCollection as MapImageCollection);
+
+      if (imageCollection.features.length === 0) {
+        hasFitToBounds.current = false;
+        return;
+      }
+
+      if (!hasFitToBounds.current) {
+        const bounds = new mapboxgl.LngLatBounds();
+        imageCollection.features.forEach((feature: MapImageFeature) => {
+          bounds.extend(feature.geometry.coordinates as [number, number]);
+        });
+        mapInstance.fitBounds(bounds, { padding: 50 });
+        hasFitToBounds.current = true;
+      }
+    };
+
+    if (!mapInstance.isStyleLoaded()) {
+      mapInstance.once("load", updateSource);
+      return () => {
+        mapInstance.off("load", updateSource);
+      };
+    }
+
+    updateSource();
+  }, [imageCollection]);
 
   return (
     <div className="relative w-full h-screen">
@@ -257,7 +287,7 @@ export default function MapGallery({
                 {label.albums_count} ({selectedImage.properties.albums.length})
               </h4>
               <div className="space-y-2">
-                {selectedImage.properties.albums.map((album) => (
+                {selectedImage.properties.albums.map((album: MapAlbum) => (
                   <a
                     key={album.id}
                     href={`/${lang}/album/${album.slug}`}

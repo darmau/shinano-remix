@@ -3,8 +3,7 @@ import { json } from "@remix-run/cloudflare";
 import { useLoaderData, useOutletContext } from "@remix-run/react";
 import { lazy, Suspense } from "react";
 import { createClient } from "~/utils/supabase/server";
-import type { MapImageCollection, MapImageFeature } from "~/components/MapGallery";
-import type { Json } from "~/types/supabase";
+import type { MapImageCollection } from "~/components/MapGallery";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import AlbumText from "~/locales/album";
 import i18nLinks from "~/utils/i18nLinks";
@@ -12,26 +11,6 @@ import Subnav from "~/components/Subnav";
 
 // 懒加载 MapGallery 组件
 const MapGallery = lazy(() => import("~/components/MapGallery"));
-
-type ImageWithAlbums = {
-  image_id: number;
-  image: {
-    storage_key: string;
-    alt: string | null;
-    caption: string | null;
-    location: string | null;
-    width: number | null;
-    height: number | null;
-    exif: Json | null;
-    gps_location: string | null; // PostGIS GEOGRAPHY 返回为 WKT 字符串
-  };
-  photo: {
-    id: number;
-    slug: string | null;
-    title: string | null;
-    published_at: string | null;
-  };
-};
 
 export default function AlbumsMap() {
   const { imageCollection, MAPBOX, imgPrefix } = useLoaderData<typeof loader>();
@@ -65,39 +44,17 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
   const { supabase } = createClient(request, context);
   const lang = params.lang as string;
 
-  // 查询所有带GPS坐标的图片及其关联的相册
-  // 注意：不在这里过滤 GPS，而是获取所有图片，在应用层过滤
-  // 这样可以同时支持 gps_location 和 exif 两种数据源
-  const { data: rawImages, error } = await supabase
-    .from("photo_image")
-    .select(
-      `
-      image_id,
-      image!inner (
-        storage_key,
-        alt,
-        caption,
-        location,
-        width,
-        height,
-        exif,
-        gps_location
-      ),
-      photo!inner (
-        id,
-        slug,
-        title,
-        published_at,
-        is_draft,
-        language!inner (lang)
-      )
-    `
-    )
-    .eq("photo.is_draft", false)
-    .eq("photo.language.lang", lang);
+  console.log(`[Map Loader - Function] Fetching data for lang: ${lang}`);
+  const startTime = Date.now();
+
+  // 🚀 一行调用数据库函数，直接获取完整的 GeoJSON！
+  // @ts-ignore - 自定义数据库函数，未在类型定义中
+  const { data: geojson, error } = await supabase.rpc("get_photo_map_geojson", {
+    lang_code: lang,
+  });
 
   if (error) {
-    console.error("Error fetching images:", error);
+    console.error("Error fetching map data:", error);
     return json({
       imageCollection: { type: "FeatureCollection", features: [] } as MapImageCollection,
       MAPBOX: context.cloudflare.env.MAPBOX_TOKEN,
@@ -107,148 +64,10 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
     });
   }
 
-  console.log(`[Map Loader] Found ${rawImages?.length || 0} photo_image records for lang: ${lang}`);
-
-  // 按 image_id 聚合数据
-  const imageMap = new Map<
-    number,
-    {
-      image: ImageWithAlbums["image"];
-      albums: Array<{
-        id: number;
-        slug: string;
-        title: string;
-        publishedAt: string;
-      }>;
-      coordinates: { lat: number; lng: number };
-    }
-  >();
-
-  rawImages?.forEach((item, index) => {
-    const typedItem = item as ImageWithAlbums;
-    const imageId = typedItem.image_id;
-    let lat: number | null = null;
-    let lng: number | null = null;
-    let source = "";
-
-    // 优先从 gps_location 提取坐标（PostGIS GEOGRAPHY 格式）
-    if (typedItem.image.gps_location) {
-      // 调试：记录第一条 gps_location 的格式
-      if (index === 0) {
-        console.log("[Map Loader] First gps_location format:", typedItem.image.gps_location);
-      }
-
-      // gps_location 格式: "POINT(longitude latitude)" 或 GeoJSON
-      const gpsMatch = typedItem.image.gps_location.match(/POINT\(([-\d.]+)\s+([-\d.]+)\)/);
-      if (gpsMatch) {
-        lng = parseFloat(gpsMatch[1]);
-        lat = parseFloat(gpsMatch[2]);
-        source = "gps_location(WKT)";
-      } else {
-        // 尝试解析为 GeoJSON
-        try {
-          const geoJson = JSON.parse(typedItem.image.gps_location);
-          if (geoJson.type === "Point" && Array.isArray(geoJson.coordinates)) {
-            lng = geoJson.coordinates[0];
-            lat = geoJson.coordinates[1];
-            source = "gps_location(GeoJSON)";
-          }
-        } catch (e) {
-          // 解析失败，尝试直接作为对象访问
-          const gpsObj = typedItem.image.gps_location as any;
-          if (gpsObj && typeof gpsObj === 'object' && gpsObj.type === "Point" && Array.isArray(gpsObj.coordinates)) {
-            lng = gpsObj.coordinates[0];
-            lat = gpsObj.coordinates[1];
-            source = "gps_location(Object)";
-          }
-        }
-      }
-    }
-
-    // 如果 gps_location 没有数据，回退到 exif
-    if (lat === null || lng === null) {
-      const exif = typedItem.image.exif as { latitude?: number; longitude?: number } | null;
-      if (exif && typeof exif.latitude === "number" && typeof exif.longitude === "number") {
-        lat = exif.latitude;
-        lng = exif.longitude;
-        source = "exif";
-      }
-    }
-
-    // 检查是否有有效的GPS坐标
-    if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
-      if (index < 3) {
-        console.log(`[Map Loader] Image ${imageId} skipped: no valid coordinates`);
-      }
-      return;
-    }
-
-    // 验证坐标范围
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      console.log(`[Map Loader] Image ${imageId} skipped: coordinates out of range (${lat}, ${lng})`);
-      return;
-    }
-
-    // 验证必需字段
-    if (!typedItem.photo.slug || !typedItem.photo.title || !typedItem.photo.published_at) {
-      console.log(`[Map Loader] Image ${imageId} skipped: missing photo fields`);
-      return;
-    }
-
-    if (!imageMap.has(imageId)) {
-      imageMap.set(imageId, {
-        image: typedItem.image,
-        albums: [],
-        coordinates: { lat, lng },
-      });
-      if (index < 3) {
-        console.log(`[Map Loader] Image ${imageId} added from ${source}: [${lng}, ${lat}]`);
-      }
-    }
-
-    const imageData = imageMap.get(imageId)!;
-    imageData.albums.push({
-      id: typedItem.photo.id,
-      slug: typedItem.photo.slug,
-      title: typedItem.photo.title,
-      publishedAt: typedItem.photo.published_at,
-    });
-  });
-
-  // 转换为 GeoJSON FeatureCollection
-  const features: MapImageFeature[] = [];
-
-  imageMap.forEach((data, imageId) => {
-    // 按发布时间降序排序相册
-    data.albums.sort(
-      (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-    );
-
-    features.push({
-      type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [data.coordinates.lng, data.coordinates.lat], // GeoJSON 格式：[lng, lat]
-      },
-      properties: {
-        imageId,
-        storageKey: data.image.storage_key,
-        alt: data.image.alt,
-        caption: data.image.caption,
-        location: data.image.location,
-        width: data.image.width ?? 800,
-        height: data.image.height ?? 600,
-        albums: data.albums,
-      },
-    });
-  });
-
-  const imageCollection: MapImageCollection = {
-    type: "FeatureCollection",
-    features,
-  };
-
-  console.log(`[Map Loader] Final result: ${features.length} unique images with GPS data`);
+  const elapsed = Date.now() - startTime;
+  const imageCollection = (geojson || { type: "FeatureCollection", features: [] }) as MapImageCollection;
+  const featureCount = imageCollection.features?.length || 0;
+  console.log(`[Map Loader - Function] ✅ Loaded ${featureCount} images in ${elapsed}ms`);
 
   const availableLangs = ["zh", "en", "jp"];
 
