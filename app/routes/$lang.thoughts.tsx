@@ -151,8 +151,8 @@ export default function Thoughts() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    if (fetcher.data?.thoughts) {
-      setThoughts((prevThoughts) => [...prevThoughts, ...fetcher.data.thoughts]);
+    if (fetcher.data && typeof fetcher.data === 'object' && 'thoughts' in fetcher.data && Array.isArray((fetcher.data as any).thoughts)) {
+      setThoughts((prevThoughts) => [...prevThoughts, ...(fetcher.data as any).thoughts]);
     }
   }, [fetcher.data]);
 

@@ -2,7 +2,6 @@ import {useOutletContext} from "@remix-run/react";
 import getTime from "~/utils/getTime";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import CommentText from '~/locales/comment';
-import {LinkIcon} from "@heroicons/react/24/solid";
 
 export interface CommentProps {
   id: number;

@@ -1,9 +1,6 @@
 import {LoaderFunctionArgs} from "@remix-run/cloudflare";
-import {createClient} from "~/utils/supabase/server";
 
-export async function loader({request, context, params}: LoaderFunctionArgs) {
-  const {supabase} = createClient(request, context);
-  const lang = params.lang as string;
+export async function loader({context}: LoaderFunctionArgs) {
   const baseUrl = context.cloudflare.env.BASE_URL;
 
   const sitemap = `

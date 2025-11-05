@@ -30,7 +30,7 @@ export default function AllAlbums () {
               layout = "columns"
               photos = {photos}
               breakpoints = {[480, 720, 1080]}
-              columns = {(containerWidth) => {
+              columns = {(containerWidth: number) => {
                 if (containerWidth < 480) return 1;
                 if (containerWidth < 720) return 2;
                 if (containerWidth < 960) return 3;
@@ -39,7 +39,7 @@ export default function AllAlbums () {
               spacing = {0}
               render = {{
                 // eslint-disable-next-line no-empty-pattern
-                photo: ({}, {photo}) => (
+                photo: ({}, {photo}: { photo: typeof photos[number] }) => (
                     <Link
                         to = {photo.href} className = "group m-2 relative rounded-md overflow-hidden" key = {photo.key}
                     >
@@ -64,11 +64,16 @@ export default function AllAlbums () {
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
-  const baseUrl = data!.baseUrl as string;
+  
+  if (!data) {
+    return [{title: 'Not Found'}];
+  }
+  
+  const baseUrl = data.baseUrl as string;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
-      data!.availableLangs,
-      `albums/all/${data!.page}`
+      data.availableLangs,
+      `albums/all/${data.page}`
   );
 
   return [
@@ -90,12 +95,12 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "og:url",
-      content: `${baseUrl}/${lang}/albums/all/${data!.page}`
+      content: `${baseUrl}/${lang}/albums/all/${data.page}`
     },
     {
       property: "og:image",
       // 没有数据的时候会有bug
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.albums![0].cover.storage_key || 'a2b148a3-5799-4be0-a8d4-907f9355f20f'}`
+      content: `${data.prefix}/cdn-cgi/image/format=jpeg,width=960/${data.albums?.[0]?.cover?.storage_key || 'a2b148a3-5799-4be0-a8d4-907f9355f20f'}`
     },
     {
       property: "og:description",

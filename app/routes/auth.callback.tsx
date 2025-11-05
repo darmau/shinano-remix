@@ -11,7 +11,11 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     const supabase = createServerClient(context.cloudflare.env.SUPABASE_URL, context.cloudflare.env.SUPABASE_ANON_KEY, {
       cookies: {
         getAll() {
-          return parseCookieHeader(request.headers.get('Cookie') ?? '')
+          const parsed = parseCookieHeader(request.headers.get('Cookie') ?? '')
+          return parsed.map(cookie => ({
+            name: cookie.name,
+            value: cookie.value ?? ''
+          }))
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) =>

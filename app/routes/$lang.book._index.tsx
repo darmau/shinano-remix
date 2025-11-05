@@ -25,8 +25,8 @@ export default function Book () {
   const label = getLanguageLabel(ThoughtText, lang);
 
   useEffect(() => {
-    if (fetcher.data?.books) {
-      setBooks((prevBooks) => [...prevBooks, ...fetcher.data.books]);
+    if (fetcher.data && typeof fetcher.data === 'object' && 'books' in fetcher.data && Array.isArray((fetcher.data as any).books)) {
+      setBooks((prevBooks) => [...prevBooks, ...(fetcher.data as any).books]);
     }
   }, [fetcher.data]);
 
@@ -51,7 +51,7 @@ export default function Book () {
                   {book.cover && (
                       <img
                           src = {`${loaderData.prefix}/cdn-cgi/image/format=auto,width=120/${book.cover.storage_key}`}
-                          alt = {book.cover.alt}
+                          alt = {book.cover.alt ?? ''}
                           className = "h-32 aspect-[3/4] object-cover shadow-lg"
                       />
                   )}

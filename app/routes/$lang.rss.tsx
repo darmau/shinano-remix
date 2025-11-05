@@ -84,14 +84,14 @@ export default function RSS() {
                 </button>
               </div>
               <div className = "grid grid-cols-3 gap-2 mt-8 p-4 lg:p-8">
-                {photos && photos.map((photo) => (
+                {photos && photos.map((photo) => photo.cover && (
                     <div
                         key = {photo.id}
                         className = "aspect-square overflow-hidden rounded"
                     >
                       <img
                           src = {`${prefix}/cdn-cgi/image/format=auto,width=240/${photo.cover.storage_key}`}
-                          alt = {photo.title!}
+                          alt = {photo.title ?? ''}
                           className = "w-full h-full object-cover"
                       />
                     </div>

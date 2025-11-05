@@ -9,11 +9,6 @@ export default function ResponsiveImage({ image, width, classList }: { image: Im
 
   const base = image.width > image.height ? 'width' : 'height';
 
-  useEffect(() => {
-    if (imgRef.current && imgRef.current.complete) {
-      setImageLoaded(true);
-    }
-  }, []);
 
   const highResSrc = `${prefix}/cdn-cgi/image/format=auto,${base}=${width}/${image.storage_key}`;
   const highResSrcSet = `${highResSrc} 1x, ${prefix}/cdn-cgi/image/format=auto,${base}=${width * 2}/${image.storage_key} 2x`;

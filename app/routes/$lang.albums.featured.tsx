@@ -26,7 +26,7 @@ export default function AllFeaturedAlbums () {
               photos = {photos}
               breakpoints = {[480, 720, 960]}
               spacing = {0}
-              columns = {(containerWidth) => {
+              columns = {(containerWidth: number) => {
                 if (containerWidth < 480) return 1;
                 if (containerWidth < 720) return 2;
                 if (containerWidth < 960) return 3;
@@ -34,7 +34,7 @@ export default function AllFeaturedAlbums () {
               }}
               render = {{
                 // eslint-disable-next-line no-empty-pattern
-                photo: ({}, {photo}) => (
+                photo: ({}, {photo}: { photo: typeof photos[number] }) => (
                     <Link
                         to = {photo.href} className = "group m-1 md:m-2 relative rounded-md overflow-hidden"
                         key = {photo.key}
@@ -59,10 +59,15 @@ export default function AllFeaturedAlbums () {
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
-  const baseUrl = data!.baseUrl as string;
+  
+  if (!data) {
+    return [{title: 'Not Found'}];
+  }
+  
+  const baseUrl = data.baseUrl as string;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
-      data!.availableLangs,
+      data.availableLangs,
       "albums/featured"
   );
 

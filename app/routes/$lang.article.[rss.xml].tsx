@@ -108,11 +108,11 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
         <p>请移步博客继续阅读。Please go to the blog to continue reading</p>
         <p><a href="https://darmau.co/${lang}/article/${post.slug}">Continue</a></p
       `,
-      enclosure: post.cover && {
+      enclosure: post.cover ? {
         url: `https://img.darmau.co/cdn-cgi/image/format=jpeg,width=960/${post.cover.storage_key}`,
-        type: 'image/jpeg',
-        length: post.cover.size,
-      },
+        type: 'image/jpeg' as const,
+        length: post.cover.size ?? 0,
+      } : undefined,
     })) : [],
   });
 

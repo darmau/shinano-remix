@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import {useRef, useState} from "react";
 import {useOutletContext} from "@remix-run/react";
 import {ImageAttrs} from "~/components/ContentContainer";
 import { InformationCircleIcon} from "@heroicons/react/20/solid";
@@ -7,12 +7,6 @@ export default function ArticleImage({attrs}: { attrs: ImageAttrs }) {
   const {prefix} = useOutletContext<{ prefix: string }>();
   const [imageLoaded, setImageLoaded] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
-
-  useEffect(() => {
-    if (imgRef.current && imgRef.current.complete) {
-      setImageLoaded(true);
-    }
-  }, []);
 
   const highResSrc = `${prefix}/cdn-cgi/image/format=auto,width=740/${attrs.storage_key}`;
   const highResSrcSet = `${highResSrc} 1x, ${prefix}/cdn-cgi/image/format=auto,width=1280/${attrs.storage_key} 2x`;

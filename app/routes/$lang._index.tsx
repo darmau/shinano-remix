@@ -1,4 +1,4 @@
-import {ActionFunctionArgs, json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import {json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import {createClient} from "~/utils/supabase/server";
@@ -9,7 +9,6 @@ import NormalArticleCard from "~/components/NormalArticleCard";
 import HomeTopArticle from "~/components/HomeTopArticle";
 import CTA from "~/components/CTA";
 import i18nLinks from "~/utils/i18nLinks";
-import {Resend} from "resend";
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;

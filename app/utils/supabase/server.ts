@@ -16,7 +16,11 @@ export function createClient(request: Request, context: AppLoadContext) {
         },
         cookies: {
           getAll() {
-            return parseCookieHeader(request.headers.get('Cookie') ?? '')
+            const parsed = parseCookieHeader(request.headers.get('Cookie') ?? '')
+            return parsed.map(cookie => ({
+              name: cookie.name,
+              value: cookie.value ?? ''
+            }))
           },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({name, value, options}) =>

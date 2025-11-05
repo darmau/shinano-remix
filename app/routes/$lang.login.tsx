@@ -91,7 +91,7 @@ export async function action({request, context}: ActionFunctionArgs) {
   if (intent === 'email') {
     const email = (formData.get("email") as string | null)?.trim();
     const lang = ((formData.get("lang") as string | null) ?? "zh").trim() || "zh";
-    const labels = SignupText[lang] ?? SignupText.zh;
+    const labels = SignupText[lang as keyof typeof SignupText] ?? SignupText.zh;
 
     if (!email) {
       return json({success: false, error: labels.email_required}, {headers});

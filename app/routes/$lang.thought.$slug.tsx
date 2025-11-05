@@ -300,7 +300,7 @@ export async function action({request, context}: ActionFunctionArgs) {
         }
     );
 
-    const outcome = await turnstileResponse.json();
+    const outcome = await turnstileResponse.json() as { success: boolean };
     if (!outcome.success) {
       return json({
         success: false,

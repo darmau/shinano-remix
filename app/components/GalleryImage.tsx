@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useOutletContext } from "@remix-run/react";
 import {GalleryPhoto} from "~/utils/generatePhotoAlbum";
 
@@ -8,12 +8,6 @@ export default function GalleryImage({ image, width, classList }: { image: Galle
   const imgRef = useRef<HTMLImageElement>(null);
 
   const base = image.width > image.height ? 'width' : 'height';
-
-  useEffect(() => {
-    if (imgRef.current && imgRef.current.complete) {
-      setImageLoaded(true);
-    }
-  }, []);
 
   const highResSrc = `${prefix}/cdn-cgi/image/format=auto,${base}=${width}/${image.storage_key}`;
   const highResSrcSet = `${highResSrc} 1x, ${prefix}/cdn-cgi/image/format=auto,${base}=${width * 2}/${image.storage_key} 2x`;
