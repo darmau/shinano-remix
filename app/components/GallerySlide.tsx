@@ -94,6 +94,7 @@ export default function GallerySlide({albumImages, onIndexChange}: { albumImages
               onClick = {() => setOpen(true)}
               type = "button"
               data-umami-event = "Full Screen"
+              aria-label = "Full Screen"
               className = "absolute top-8 right-8 z-50 p-2 rounded-full bg-white/60 backdrop-blur-2xl"
           >
             <ArrowsPointingOutIcon aria-hidden = "true" className = "h-5 w-5"/>
