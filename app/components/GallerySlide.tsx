@@ -19,7 +19,9 @@ export interface AlbumPhoto {
     width: number,
     storage_key: string,
     exif: JSON,
-    location: string
+    location: string,
+    latitude?: number | null,
+    longitude?: number | null
   }
 }
 
