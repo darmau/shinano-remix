@@ -61,8 +61,21 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
       imgPrefix: context.cloudflare.env.IMG_PREFIX,
       baseUrl: context.cloudflare.env.BASE_URL,
       availableLangs: ["zh", "en", "jp"],
+      latestPhotoStorageKey: null,
     });
   }
+
+  // 获取最新相册的封面图片，用于 OpenGraph
+  const { data: latestPhoto } = await supabase
+    .from('photo')
+    .select(`
+      cover (storage_key)
+    `)
+    .eq('language.lang', lang)
+    .eq('is_draft', false)
+    .order('published_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   const elapsed = Date.now() - startTime;
   const imageCollection = (geojson || { type: "FeatureCollection", features: [] }) as MapImageCollection;
@@ -77,6 +90,7 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
     imgPrefix: context.cloudflare.env.IMG_PREFIX,
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs,
+    latestPhotoStorageKey: latestPhoto?.cover?.storage_key || null,
   });
 }
 
@@ -89,7 +103,13 @@ export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
   }
 
   const baseUrl = data.baseUrl;
+  const imgPrefix = data.imgPrefix;
   const multiLangLinks = i18nLinks(baseUrl, lang, data.availableLangs, "albums/map");
+  
+  // 使用最新相册的封面图片，如果没有则使用默认图片
+  const ogImage = data.latestPhotoStorageKey 
+    ? `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/${data.latestPhotoStorageKey}`
+    : `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/a2b148a3-5799-4be0-a8d4-907f9355f20f`;
 
   return [
     { title: label.map_title },
@@ -113,12 +133,20 @@ export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
       content: `${baseUrl}/${lang}/albums/map`,
     },
     {
+      property: "og:image",
+      content: ogImage,
+    },
+    {
       property: "og:description",
       content: label.map_description,
     },
     {
       property: "twitter:card",
       content: "summary_large_image",
+    },
+    {
+      property: "twitter:image",
+      content: ogImage,
     },
     {
       property: "twitter:creator",
