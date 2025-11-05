@@ -220,6 +220,9 @@ export async function loader({
   // 总页数
   const totalPage = count ? Math.ceil(count / limit) : 1;
 
+  // 查询同样的slug是否有其他语言版本
+  // 注意：thought 表可能没有 language 关联，这里假设所有语言都有对应内容
+  // 如果实际数据库结构不同，需要根据实际情况调整
   const availableLangs = ["zh", "en", "jp"];
 
   return json({

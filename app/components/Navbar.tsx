@@ -3,9 +3,10 @@ import {Dialog, DialogPanel, Popover, PopoverButton, PopoverPanel} from "@headle
 import {Bars3Icon, XMarkIcon} from "@heroicons/react/24/outline";
 import throttle from "lodash/throttle";
 import type {NavItem} from "~/locales/navbar";
-import {Link, useLocation} from "@remix-run/react";
+import {Link, useLocation, useMatches} from "@remix-run/react";
 import Profile from "~/components/Profile";
 import TranslateIcon from "~/icons/Translate";
+import {getLanguageSwitcherLinks} from "~/utils/getLanguageSwitcherLinks";
 
 const pathMap = new Map([
   ['', 'article'],
@@ -33,6 +34,31 @@ export default function Navbar({lang, items}: { lang: string, items: NavItem[] }
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const location = useLocation();
+  const matches = useMatches();
+  
+  // 从当前路由的 loader data 中获取 availableLangs
+  // 查找最后一个匹配的路由（最具体的路由）
+  const currentRouteData = matches[matches.length - 1]?.data as { availableLangs?: string[] } | undefined;
+  const availableLangs = currentRouteData?.availableLangs;
+  
+  // 从路径中提取当前路径（去除语言前缀）
+  // 例如：/zh/article/my-article -> article/my-article
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const currentPath = pathParts.length > 1 ? pathParts.slice(1).join('/') : '';
+  
+  // 生成语言切换链接
+  const languageLinks = getLanguageSwitcherLinks(
+    lang,
+    currentPath,
+    availableLangs
+  );
+  
+  // 生成语言选项列表
+  const languageOptions = [
+    { code: 'zh', label: '中文' },
+    { code: 'en', label: 'English' },
+    { code: 'jp', label: '日本語' },
+  ].filter(opt => opt.code !== lang);
 
   useEffect(() => {
     let lastScrollTop = 0;
@@ -76,27 +102,31 @@ export default function Navbar({lang, items}: { lang: string, items: NavItem[] }
                     anchor = "bottom"
                     className = "z-50 shadow-2xl divide-y divide-zinc-100 rounded-md bg-white text-sm transition duration-200 ease-in-out [--anchor-gap:var(--spacing-5)] data-[closed]:-translate-y-1 data-[closed]:opacity-0"
                 >
-                  <Link
-                      reloadDocument
-                      to = "/zh"
-                      className = "block p-4 w-32 transition hover:bg-zinc-50"
-                  >
-                    中文
-                  </Link>
-                  <Link
-                      reloadDocument
-                      to = "/en"
-                      className = "block p-4 w-32 transition hover:bg-zinc-50"
-                  >
-                    English
-                  </Link>
-                  <Link
-                      reloadDocument
-                      to = "/jp"
-                      className = "block p-4 w-32 transition hover:bg-zinc-50"
-                  >
-                    日本語
-                  </Link>
+                  {languageOptions.map((option) => {
+                    const link = languageLinks.get(option.code) || `/${option.code}`;
+                    const isAvailable = availableLangs 
+                      ? availableLangs.includes(option.code)
+                      : true;
+                    
+                    return (
+                      <Link
+                        key={option.code}
+                        reloadDocument
+                        to={link}
+                        className={`block p-4 w-32 transition ${
+                          isAvailable 
+                            ? 'hover:bg-zinc-50' 
+                            : 'opacity-60 hover:bg-zinc-50'
+                        }`}
+                        title={!isAvailable ? '该语言版本暂不可用' : undefined}
+                      >
+                        {option.label}
+                        {!isAvailable && availableLangs && (
+                          <span className="ml-2 text-xs text-zinc-400">(首页)</span>
+                        )}
+                      </Link>
+                    );
+                  })}
                 </PopoverPanel>
               </Popover>
             </div>
@@ -177,27 +207,31 @@ export default function Navbar({lang, items}: { lang: string, items: NavItem[] }
                         anchor = "bottom"
                         className = "z-[60] shadow-2xl divide-y divide-zinc-100 rounded-md bg-white text-sm transition duration-200 ease-in-out [--anchor-gap:var(--spacing-5)] data-[closed]:-translate-y-1 data-[closed]:opacity-0"
                     >
-                      <Link
-                          reloadDocument
-                          to = "/zh/"
-                          className = "block p-4 w-32 transition hover:bg-zinc-50"
-                      >
-                        中文
-                      </Link>
-                      <Link
-                          reloadDocument
-                          to = "/en/"
-                          className = "block p-4 w-32 transition hover:bg-zinc-50"
-                      >
-                        English
-                      </Link>
-                      <Link
-                          reloadDocument
-                          to = "/jp/"
-                          className = "block p-4 w-32 transition hover:bg-zinc-50"
-                      >
-                        日本語
-                      </Link>
+                      {languageOptions.map((option) => {
+                        const link = languageLinks.get(option.code) || `/${option.code}`;
+                        const isAvailable = availableLangs 
+                          ? availableLangs.includes(option.code)
+                          : true;
+                        
+                        return (
+                          <Link
+                            key={option.code}
+                            reloadDocument
+                            to={link}
+                            className={`block p-4 w-32 transition ${
+                              isAvailable 
+                                ? 'hover:bg-zinc-50' 
+                                : 'opacity-60 hover:bg-zinc-50'
+                            }`}
+                            title={!isAvailable ? '该语言版本暂不可用' : undefined}
+                          >
+                            {option.label}
+                            {!isAvailable && availableLangs && (
+                              <span className="ml-2 text-xs text-zinc-400">(首页)</span>
+                            )}
+                          </Link>
+                        );
+                      })}
                     </PopoverPanel>
                   </Popover>
                   <Profile lang = {lang}/>
