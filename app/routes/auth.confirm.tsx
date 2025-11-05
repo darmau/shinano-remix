@@ -6,10 +6,19 @@ export async function loader({request, context}: LoaderFunctionArgs) {
   const requestUrl = new URL(request.url)
   const token_hash = requestUrl.searchParams.get('token_hash')
   const type = requestUrl.searchParams.get('type') as EmailOtpType | null
+  const code = requestUrl.searchParams.get('code')
   const next = requestUrl.searchParams.get('next') || '/'
   const {supabase, headers} = createClient(request, context);
   const segments = next.split('/').filter(Boolean);
   const fallbackLang = segments[0] ?? 'zh';
+
+  if (code) {
+    const {error} = await supabase.auth.exchangeCodeForSession(code)
+
+    if (!error) {
+      return redirect(next, {headers})
+    }
+  }
 
   if (token_hash && type) {
 
