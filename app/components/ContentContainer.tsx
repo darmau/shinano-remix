@@ -1,7 +1,6 @@
 import type {Json} from "~/types/supabase";
 import ArticleImage from "~/components/ArticleImage";
-import hljs from 'highlight.js';
-import 'highlight.js/styles/github-dark-dimmed.css';
+import {useEffect, useState} from "react";
 
 type ContentStructure = {
   content: Content[];
@@ -175,12 +174,39 @@ const Blockquote = ({content}: { content?: ContentItem[] }) => (
     </blockquote>
 );
 
+import {useEffect, useState} from "react";
+
 const CodeBlock = ({attrs, content}: { attrs?: Content["attrs"]; content?: ContentItem[] }) => {
   const language = attrs?.language ?? "";
   const codeContent = content?.[0]?.text ?? "";
+  const [highlightedCode, setHighlightedCode] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 直接使用 hljs.highlight 方法高亮代码
-  const highlightedCode = hljs.highlight(codeContent, {language}).value;
+  useEffect(() => {
+    // 动态导入 highlight.js 和相关样式
+    const loadHighlight = async () => {
+      try {
+        // 加载样式（CSS 导入不需要返回值）
+        await import('highlight.js/styles/github-dark-dimmed.css');
+        
+        // 加载 highlight.js
+        const hljs = await import('highlight.js');
+        
+        // 高亮代码（检查是默认导出还是命名导出）
+        const hljsModule = hljs.default || hljs;
+        const result = hljsModule.highlight(codeContent, {language});
+        setHighlightedCode(result.value);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Failed to load highlight.js:', error);
+        // 如果加载失败，使用原始代码
+        setHighlightedCode(codeContent);
+        setIsLoading(false);
+      }
+    };
+
+    loadHighlight();
+  }, [codeContent, language]);
 
   return (
       <pre className = "hljs rounded-xl overflow-hidden p-4">
@@ -192,10 +218,16 @@ const CodeBlock = ({attrs, content}: { attrs?: Content["attrs"]; content?: Conte
         </span>
         <p>{language}</p>
       </div>
-      <code
-          className = {language ? `language-${language}` : ''}
-          dangerouslySetInnerHTML = {{__html: highlightedCode}}
-      />
+      {isLoading ? (
+          <code className = {language ? `language-${language}` : ''}>
+            {codeContent}
+          </code>
+      ) : (
+          <code
+              className = {language ? `language-${language}` : ''}
+              dangerouslySetInnerHTML = {{__html: highlightedCode}}
+          />
+      )}
     </pre>
   );
 };
