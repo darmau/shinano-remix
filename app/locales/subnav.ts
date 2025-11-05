@@ -34,6 +34,10 @@ const Subnav: SubnavType = {
       {
         "name": "最新",
         "link": "/zh/albums/all/1"
+      },
+      {
+        "name": "地图",
+        "link": "/zh/albums/map"
       }
     ],
     "others": [
@@ -88,6 +92,10 @@ const Subnav: SubnavType = {
       {
         "name": "Latest",
         "link": "/en/albums/all/1"
+      },
+      {
+        "name": "Map",
+        "link": "/en/albums/map"
       }
     ],
     "others": [
@@ -142,6 +150,10 @@ const Subnav: SubnavType = {
       {
         "name": "最新",
         "link": "/jp/albums/all/1"
+      },
+      {
+        "name": "地図",
+        "link": "/jp/albums/map"
       }
     ],
     "others": [

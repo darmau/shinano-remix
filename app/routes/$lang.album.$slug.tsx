@@ -24,6 +24,7 @@ import i18nLinks from "~/utils/i18nLinks";
 import type {SupabaseClient} from "@supabase/supabase-js";
 import {EyeIcon} from "@heroicons/react/24/solid";
 import {parseTurnstileOutcome} from "~/utils/turnstile";
+import {trackPageView} from "~/utils/trackPageView";
 
 export default function AlbumDetail() {
   const {lang, supabase} = useOutletContext<{ lang: string, supabase: SupabaseClient }>();
@@ -83,13 +84,8 @@ export default function AlbumDetail() {
   // 阅读量计算
   const [pageView, setPageView] = useState(albumContent.page_view);
   useEffect(() => {
-    supabase.rpc('photo_page_view', { photo_id: albumContent.id })
-    .then(({ data, error }) => {
-      if (error) {
-        console.error('阅读量增加失败:', error);
-      } else if (data !== null) {
-        setPageView(data);
-      }
+    trackPageView('album', albumContent.id, supabase, (newPageView) => {
+      setPageView(newPageView);
     });
   }, [albumContent.id, supabase]);
 
