@@ -172,6 +172,15 @@ export default function MapGallery({
         
         if (fullFeature) {
           setSelectedImage(fullFeature);
+          
+          // 放大到该点位，增加缩放级别以获得更好的视图
+          const coordinates = fullFeature.geometry.coordinates as [number, number];
+          mapInstance.flyTo({
+            center: coordinates,
+            zoom: 15, // 缩放级别：15 = 街道级别，可以看清周围环境
+            duration: 1000, // 动画持续时间（毫秒）
+            essential: true, // 即使用户开启了"减少动画"设置也执行
+          });
         }
       });
 
