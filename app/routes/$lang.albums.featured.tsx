@@ -1,20 +1,65 @@
 import Subnav from "~/components/Subnav";
-import {json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import {json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {Link, useLoaderData, useOutletContext} from "@remix-run/react";
 import {ServerPhotoAlbum} from "~/components/ServerPhotoAlbum";
 import "react-photo-album/masonry.css";
-import {FeaturedPhoto, generatePhotoAlbum} from "~/utils/generatePhotoAlbum";
+import type {FeaturedPhoto} from "~/utils/generatePhotoAlbum";
+import {generatePhotoAlbum} from "~/utils/generatePhotoAlbum";
 import GalleryImage from "~/components/GalleryImage";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
 
-export default function AllFeaturedAlbums () {
-  const {prefix, lang} = useOutletContext<{prefix: string, lang: string}>();
-  const {featuredPhotos} = useLoaderData<typeof loader>();
+type FeaturedRow = {
+  id: number;
+  slug: string | null;
+  title: string;
+  page_view: number;
+  language: {
+    lang: string | null;
+  } | null;
+  cover: {
+    id: string | number;
+    alt: string | null;
+    storage_key: string;
+    width: number;
+    height: number;
+  } | null;
+};
 
-  const photos = generatePhotoAlbum(featuredPhotos as unknown as FeaturedPhoto[], prefix, lang);
+type LoaderData = {
+  featuredPhotos: FeaturedPhoto[];
+  baseUrl: string;
+  prefix: string;
+  availableLangs: string[];
+};
+
+const normalizeFeatured = (rows: FeaturedRow[] | null, fallbackLang: string): FeaturedPhoto[] =>
+    (rows ?? [])
+        .filter((row): row is FeaturedRow & { cover: NonNullable<FeaturedRow["cover"]>; language: NonNullable<FeaturedRow["language"]> } => Boolean(row.cover) && Boolean(row.language))
+        .map((row) => ({
+          id: row.id,
+          slug: row.slug,
+          title: row.title,
+          language: {
+            lang: row.language?.lang ?? fallbackLang,
+          },
+          cover: {
+            id: String(row.cover.id),
+            alt: row.cover.alt,
+            storage_key: row.cover.storage_key,
+            width: row.cover.width,
+            height: row.cover.height,
+          },
+        }));
+
+export default function AllFeaturedAlbums() {
+  const {prefix, lang} = useOutletContext<{prefix: string, lang: string}>();
+  const {featuredPhotos} = useLoaderData<LoaderData>();
+
+  const photos = generatePhotoAlbum(featuredPhotos, prefix, lang);
 
   return (
       <>
@@ -64,7 +109,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     return [{title: 'Not Found'}];
   }
   
-  const baseUrl = data.baseUrl as string;
+  const baseUrl = data.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
       data.availableLangs,
@@ -95,7 +140,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     {
       property: "og:image",
       // 没有推荐摄影的时候会有bug
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.featuredPhotos![0].cover.storage_key || "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
+      content: `${data.prefix}/cdn-cgi/image/format=jpeg,width=960/${data.featuredPhotos?.[0]?.cover.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
     },
     {
       property: "og:description",
@@ -120,7 +165,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   const table = `random_${lang}_photos` as "random_en_photos" | "random_jp_photos" | "random_zh_photos";
 
   // 从photo表中获取lang对应的language.lang字段的数据，并从photo_image表中获取photo_id对应的数据
-  const {data: featuredPhotos} = await supabase
+  const {data: rawFeaturedPhotos, error} = await supabase
     .from(table)
     .select(`
       id,
@@ -132,12 +177,16 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
       `)
     .limit(24);
 
+  if (error) {
+    return new Response(error.message, {status: 500});
+  }
+
   const availableLangs = ["zh", "en", "jp"];
 
-  return json({
-    featuredPhotos: featuredPhotos,
+  return json<LoaderData>({
+    featuredPhotos: normalizeFeatured(rawFeaturedPhotos, lang),
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
-    availableLangs
-  })
+    availableLangs,
+  });
 }

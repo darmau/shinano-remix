@@ -1,4 +1,4 @@
-import {LoaderFunctionArgs} from "@remix-run/cloudflare";
+import type {LoaderFunctionArgs} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 
 export async function loader({request, context, params}: LoaderFunctionArgs) {

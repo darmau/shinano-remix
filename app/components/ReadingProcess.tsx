@@ -1,7 +1,5 @@
-import {useEffect, useState} from 'react';
-import pkg from 'lodash';
-
-const {throttle} = pkg;
+import {useEffect, useState} from "react";
+import throttle from "lodash/throttle";
 
 function ScrollProgressBar() {
   const [scrollProgress, setScrollProgress] = useState(0);

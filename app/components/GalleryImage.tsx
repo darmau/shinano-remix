@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useOutletContext } from "@remix-run/react";
-import {GalleryPhoto} from "~/utils/generatePhotoAlbum";
+import type {GalleryPhoto} from "~/utils/generatePhotoAlbum";
 
 export default function GalleryImage({ image, width, classList }: { image: GalleryPhoto; width: number; classList: string }) {
   const { prefix } = useOutletContext<{ prefix: string }>();
@@ -18,7 +18,7 @@ export default function GalleryImage({ image, width, classList }: { image: Galle
         <img
             className={`scale-110 brightness-110 absolute inset-0 transition-opacity duration-300 ${imageLoaded ? 'opacity-0' : 'opacity-100'}`}
             src={`${prefix}/cdn-cgi/image/format=auto,${base}=24}/${image.storage_key}`}
-            alt={image.alt || ''}
+            alt={image.alt ?? ""}
             width={width}
             style={{ filter: 'blur(32px)' }}
         />
@@ -39,7 +39,7 @@ export default function GalleryImage({ image, width, classList }: { image: Galle
               src={highResSrc}
               srcSet={highResSrcSet}
               sizes="(max-width: 720px) 100vw, 2x"
-              alt={image.alt || ''}
+              alt={image.alt ?? ""}
               width={width}
               onLoad={() => setImageLoaded(true)}
           />

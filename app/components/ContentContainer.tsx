@@ -1,4 +1,4 @@
-import {Json} from "~/types/supabase";
+import type {Json} from "~/types/supabase";
 import ArticleImage from "~/components/ArticleImage";
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark-dimmed.css';
@@ -63,7 +63,7 @@ export default function ContentContainer({content}: { content: Json }) {
     )
   }
 
-  const article = content.content as Content[];
+  const article = content.content;
 
   return (
       <>
@@ -159,8 +159,8 @@ const Blockquote = ({content}: { content?: ContentItem[] }) => (
 );
 
 const CodeBlock = ({attrs, content}: { attrs?: Content["attrs"]; content?: ContentItem[] }) => {
-  const language = attrs?.language || '';
-  const codeContent = content?.[0]?.text || '';
+  const language = attrs?.language ?? "";
+  const codeContent = content?.[0]?.text ?? "";
 
   // 直接使用 hljs.highlight 方法高亮代码
   const highlightedCode = hljs.highlight(codeContent, {language}).value;

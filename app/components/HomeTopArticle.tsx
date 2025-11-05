@@ -1,4 +1,4 @@
-import {Article} from "~/types/Article";
+import type {Article} from "~/types/Article";
 import {Link, useOutletContext} from "@remix-run/react";
 import getTime from "~/utils/getTime";
 import ResponsiveImage from "~/components/ResponsiveImage";

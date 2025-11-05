@@ -1,6 +1,6 @@
 import {useRef, useState} from "react";
 import {useOutletContext} from "@remix-run/react";
-import {ImageAttrs} from "~/components/ContentContainer";
+import type {ImageAttrs} from "~/components/ContentContainer";
 import { InformationCircleIcon} from "@heroicons/react/20/solid";
 
 export default function ArticleImage({attrs}: { attrs: ImageAttrs }) {
@@ -18,7 +18,7 @@ export default function ArticleImage({attrs}: { attrs: ImageAttrs }) {
           <img
               className = {`brightness-110 absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-0' : 'opacity-100'}`}
               src = {`${prefix}/cdn-cgi/image/format=auto,width=24/${attrs.storage_key}`}
-              alt = {attrs.alt || ''}
+              alt = {attrs.alt ?? ""}
               width = "740"
               style = {{filter: 'blur(36px)'}}
           />
@@ -39,7 +39,7 @@ export default function ArticleImage({attrs}: { attrs: ImageAttrs }) {
                 src = {highResSrc}
                 srcSet = {highResSrcSet}
                 sizes = "(max-width: 720px) 100vw, 2x"
-                alt = {attrs.alt || ''}
+                alt = {attrs.alt ?? ""}
                 width = "740"
                 onLoad = {() => setImageLoaded(true)}
             />

@@ -1,7 +1,7 @@
 import Subnav from "~/components/Subnav";
-import {LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type {LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
-import {Article} from "~/types/Article";
+import type {Article} from "~/types/Article";
 import NormalArticleCard from "~/components/NormalArticleCard";
 import Pagination from "~/components/Pagination";
 import {Link, useLoaderData, useLocation, useOutletContext} from "@remix-run/react";

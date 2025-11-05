@@ -1,6 +1,6 @@
-import {Thought} from "~/routes/$lang.thoughts";
+import type {Thought} from "~/routes/$lang.thoughts";
 import ContentContainer from "~/components/ContentContainer";
-import {Json} from "~/types/supabase";
+import type {Json} from "~/types/supabase";
 import ResponsiveImage from "~/components/ResponsiveImage";
 import getTime from "~/utils/getTime";
 import {Link, useOutletContext} from "@remix-run/react";

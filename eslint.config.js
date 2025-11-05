@@ -6,7 +6,7 @@ import jsxA11yPlugin from "eslint-plugin-jsx-a11y";
 import importPlugin from "eslint-plugin-import";
 import globals from "globals";
 
-const appFiles = ["**/*.{js,jsx,ts,tsx}"];
+const tsFiles = ["**/*.{ts,tsx}"];
 const jsxFiles = ["**/*.{jsx,tsx}"];
 const nodeFiles = [
   "*.config.{js,cjs,mjs,ts,cts,mts}",
@@ -18,6 +18,16 @@ const nodeFiles = [
   "load-context.ts",
 ];
 
+const restrictToTs = (config) => ({
+  ...config,
+  files: config.files ?? tsFiles,
+});
+
+const restrictToJsx = (config) => ({
+  ...config,
+  files: config.files ?? jsxFiles,
+});
+
 export default tseslint.config(
   {
     ignores: [
@@ -28,31 +38,31 @@ export default tseslint.config(
     ],
   },
   js.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
-  ...tseslint.configs.stylisticTypeChecked,
+  ...tseslint.configs.recommendedTypeChecked.map(restrictToTs),
   {
-    files: jsxFiles,
-    rules: {
-      ...reactPlugin.configs.flat.recommended.rules,
-      ...reactPlugin.configs.flat["jsx-runtime"].rules,
-    },
+    ...restrictToJsx(reactPlugin.configs.flat.recommended),
+  },
+  {
+    ...restrictToJsx(reactPlugin.configs.flat["jsx-runtime"]),
+  },
+  {
+    ...restrictToJsx(reactHooksPlugin.configs.flat["recommended-latest"]),
   },
   {
     files: jsxFiles,
-    rules: {
-      ...reactHooksPlugin.configs.flat["recommended-latest"].rules,
-    },
-  },
-  {
-    files: appFiles,
     rules: {
       ...jsxA11yPlugin.configs.recommended.rules,
+    },
+  },
+  {
+    files: tsFiles,
+    rules: {
       ...importPlugin.configs.recommended.rules,
       ...importPlugin.configs.typescript.rules,
     },
   },
   {
-    files: appFiles,
+    files: tsFiles,
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {

@@ -1,12 +1,11 @@
-import {useEffect, useState} from 'react'
-import {Dialog, DialogPanel, Popover, PopoverButton, PopoverPanel,} from '@headlessui/react'
-import {Bars3Icon, XMarkIcon,} from '@heroicons/react/24/outline'
-import {NavItem} from '~/locales/navbar'
+import {useEffect, useState} from "react";
+import {Dialog, DialogPanel, Popover, PopoverButton, PopoverPanel} from "@headlessui/react";
+import {Bars3Icon, XMarkIcon} from "@heroicons/react/24/outline";
+import throttle from "lodash/throttle";
+import type {NavItem} from "~/locales/navbar";
 import {Link, useLocation} from "@remix-run/react";
 import Profile from "~/components/Profile";
 import TranslateIcon from "~/icons/Translate";
-import pkg from 'lodash';
-const {throttle} = pkg;
 
 const pathMap = new Map([
   ['', 'article'],
@@ -40,7 +39,7 @@ export default function Navbar({lang, items}: { lang: string, items: NavItem[] }
     const navbar = document.getElementById('navbar');
 
     const handleScroll = throttle(() => {
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const scrollTop = window.scrollY ?? document.documentElement.scrollTop;
       if (scrollTop > lastScrollTop && scrollTop > 120) {
         // 向下滚动
         navbar!.style.top = '-88px'; // 隐藏导航栏

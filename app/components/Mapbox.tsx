@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { useEffect, useRef } from "react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 export interface EXIF {
-  latitude?: number;
-  longitude?: number;
-  [key: string]: any;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 interface MapComponentProps {
@@ -17,48 +16,51 @@ export default function MapComponent({ mapboxToken, exifData }: MapComponentProp
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const marker = useRef<mapboxgl.Marker | null>(null);
-  const [lng, setLng] = useState<number | null>(null);
-  const [lat, setLat] = useState<number | null>(null);
 
   useEffect(() => {
-    if (mapboxToken) {
-      mapboxgl.accessToken = mapboxToken;
+    if (!mapboxToken || !mapContainer.current) {
+      return;
     }
 
-    if (!map.current && mapContainer.current) {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/outdoors-v12',
-        center: [104.32, 30.23],
-        zoom: 2
-      });
-    }
+    mapboxgl.accessToken = mapboxToken;
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: "mapbox://styles/mapbox/outdoors-v12",
+      center: [104.32, 30.23],
+      zoom: 2,
+    });
 
-    // 从 EXIF 数据中提取经纬度
-    if (exifData && exifData.latitude && exifData.longitude) {
-      setLng(exifData.longitude);
-      setLat(exifData.latitude);
-    }
-  }, [mapboxToken, exifData]);
+    return () => {
+      marker.current = null;
+      map.current?.remove();
+      map.current = null;
+    };
+  }, [mapboxToken]);
 
   useEffect(() => {
-    if (map.current && lng !== null && lat !== null) {
-      // 更新地图中心
-      map.current.flyTo({
-        center: [lng, lat],
-        zoom: 13
-      });
-
-      // 更新或创建标记
-      if (marker.current) {
-        marker.current.setLngLat([lng, lat]);
-      } else {
-        marker.current = new mapboxgl.Marker()
-        .setLngLat([lng, lat])
-        .addTo(map.current);
-      }
+    if (!map.current) {
+      return;
     }
-  }, [lng, lat]);
 
-  return <div ref={mapContainer} style={{ width: '100%', height: '400px' }} />;
+    const latitude = exifData?.latitude ?? null;
+    const longitude = exifData?.longitude ?? null;
+
+    if (latitude === null || longitude === null) {
+      return;
+    }
+
+    const target: [number, number] = [longitude, latitude];
+    map.current.flyTo({
+      center: target,
+      zoom: 13,
+    });
+
+    if (!marker.current) {
+      marker.current = new mapboxgl.Marker().addTo(map.current);
+    }
+
+    marker.current.setLngLat(target);
+  }, [exifData]);
+
+  return <div ref={mapContainer} style={{ width: "100%", height: "400px" }} />;
 }

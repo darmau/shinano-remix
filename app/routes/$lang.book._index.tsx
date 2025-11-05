@@ -1,4 +1,5 @@
-import {ActionFunctionArgs, json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import { json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {useFetcher, useLoaderData, useOutletContext} from "@remix-run/react";
 import RateStars from "~/components/RateStars";
@@ -117,7 +118,7 @@ export async function loader({request, context}: LoaderFunctionArgs) {
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(BookText, lang);
-  const baseUrl = data!.baseUrl as string;
+  const baseUrl = data!.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
       data!.availableLangs,

@@ -1,4 +1,4 @@
-import {LoaderFunctionArgs} from "@remix-run/cloudflare";
+import type {LoaderFunctionArgs} from "@remix-run/cloudflare";
 
 export const loader = ({context}: LoaderFunctionArgs) => {
   const baseUrl = context.cloudflare.env.BASE_URL;

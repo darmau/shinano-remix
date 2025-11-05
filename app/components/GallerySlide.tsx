@@ -1,14 +1,14 @@
 import "yet-another-react-lightbox/styles.css";
 import {useOutletContext} from "@remix-run/react";
 import Lightbox from "yet-another-react-lightbox";
-import {useCallback, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {Captions, Inline, Thumbnails} from "yet-another-react-lightbox/plugins";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 import "yet-another-react-lightbox/plugins/captions.css";
 import {ArrowsPointingOutIcon, ChevronLeftIcon, ChevronRightIcon} from "@heroicons/react/24/solid";
-import pkg from 'lodash';
-import EXIF, {EXIFProps} from "~/components/EXIF";
-const {debounce} = pkg;
+import debounce from "lodash/debounce";
+import type {EXIFProps} from "~/components/EXIF";
+import EXIF from "~/components/EXIF";
 
 export interface AlbumPhoto {
   order: number,
@@ -28,13 +28,17 @@ export default function GallerySlide({albumImages, onIndexChange}: { albumImages
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
 
-  const debouncedOnChange = useCallback(
-      debounce((currentIndex) => {
+  const debouncedOnChange = useMemo(
+      () => debounce((currentIndex: number) => {
         setIndex(currentIndex);
         onIndexChange(currentIndex);
       }, 300),
-      [setIndex, onIndexChange]
+      [onIndexChange]
   );
+
+  useEffect(() => () => {
+    debouncedOnChange.cancel();
+  }, [debouncedOnChange]);
 
   const defaultSlides = generateSlides(albumImages, prefix, 1280);
   const fullscreenSlides = generateSlides(albumImages, prefix, 2400);
@@ -133,4 +137,3 @@ function generateSlides(albumImages: AlbumPhoto[], prefix: string, targetWidth: 
     }
   })
 }
-

@@ -1,4 +1,4 @@
-import { Json } from "~/types/supabase";
+import type { Json } from "~/types/supabase";
 
 type ContentStructure = {
   content: Content[];
@@ -59,9 +59,14 @@ export function contentToHtml(content: Json): string {
 }
 
 function renderImage(node: Content): string {
-  const { alt, storage_key, caption, prefix } = node.attrs as unknown as ImageAttrs;
-  return `<figure><img src="${prefix}/cdn-cgi/image/format=auto,width=960/${storage_key}" alt="${alt}" />${caption &&
-  <figcaption>${caption}</figcaption>}</figure>`;
+  if (!node.attrs) {
+    return "";
+  }
+
+  const {alt = "", storage_key, caption = "", prefix} = node.attrs as ImageAttrs;
+  const captionHtml = caption ? `<figcaption>${caption}</figcaption>` : "";
+
+  return `<figure><img src="${prefix}/cdn-cgi/image/format=auto,width=960/${storage_key}" alt="${alt}" />${captionHtml}</figure>`;
 }
 
 function renderNode(node: Content): string {
@@ -105,7 +110,7 @@ function renderTextNode(node: Content): string {
     return "<br />";
   }
 
-  let content = node.text || "";
+  let content = node.text ?? "";
   if (node.marks) {
     node.marks.forEach(mark => {
       switch (mark.type) {
@@ -142,7 +147,7 @@ function renderTable(content?: ContentItem[]): string {
 }
 
 function renderTableRow(row: ContentItem): string {
-  return row.content?.map(cell => `<td>${renderContent(cell.content)}</td>`).join("") || "";
+  return row.content?.map(cell => `<td>${renderContent(cell.content)}</td>`).join("") ?? "";
 }
 
 function renderList(content?: ContentItem[]): string {

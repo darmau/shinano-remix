@@ -1,14 +1,14 @@
 import Subnav from "~/components/Subnav";
-import {LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type {LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
-import {Article} from "~/types/Article";
+import type {Article} from "~/types/Article";
 import {Link, useLoaderData, useLocation, useOutletContext} from "@remix-run/react";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ArticlesText from "~/locales/articles";
 import NormalArticleCard from "~/components/NormalArticleCard";
 import Pagination from "~/components/Pagination";
 import ResponsiveImage from "~/components/ResponsiveImage";
-import {Image} from "~/types/Image";
+import type {Image} from "~/types/Image";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
 

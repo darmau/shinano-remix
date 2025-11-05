@@ -1,21 +1,24 @@
-import Breadcrumb, {BreadcrumbProps} from "~/components/Breadcrumb";
+import type {BreadcrumbProps} from "~/components/Breadcrumb";
+import Breadcrumb from "~/components/Breadcrumb";
 import {Link, useActionData, useLoaderData, useOutletContext} from "@remix-run/react";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ThoughtText from "~/locales/thought";
-import {ActionFunctionArgs, json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import { json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
-import {Json} from "~/types/supabase";
+import type {Json} from "~/types/supabase";
 import ContentContainer from "~/components/ContentContainer";
 import ResponsiveImage from "~/components/ResponsiveImage";
-import {Image} from "~/types/Image";
+import type {Image} from "~/types/Image";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 import "yet-another-react-lightbox/plugins/captions.css";
-import {CommentBlock, CommentProps} from "~/components/CommentBlock";
+import type { CommentProps} from "~/components/CommentBlock";
+import {CommentBlock} from "~/components/CommentBlock";
 import CommentEditor from "~/components/CommentEditor";
 import i18nLinks from "~/utils/i18nLinks";
 import getTime from "~/utils/getTime";
 import {EyeIcon} from "@heroicons/react/24/solid";
-import {SupabaseClient} from "@supabase/supabase-js";
+import type {SupabaseClient} from "@supabase/supabase-js";
 import {useEffect, useState} from "react";
 
 export default function ThoughtDetail() {
@@ -82,7 +85,7 @@ export default function ThoughtDetail() {
                 <div className = "space-y-2">
                   {thoughtImages.map((image) => (
                       <ResponsiveImage
-                          key = {image.image!.id} image = {image.image as Image} width = {560}
+                          key = {image.image.id} image = {image.image as Image} width = {560}
                           classList = "rounded"
                       />
                   ))}
@@ -233,7 +236,7 @@ export async function loader({
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
-  const baseUrl = data!.baseUrl as string;
+  const baseUrl = data!.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
       data!.availableLangs,
@@ -300,7 +303,7 @@ export async function action({request, context}: ActionFunctionArgs) {
         }
     );
 
-    const outcome = await turnstileResponse.json() as { success: boolean };
+    const outcome = await turnstileResponse.json();
     if (!outcome.success) {
       return json({
         success: false,

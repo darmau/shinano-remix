@@ -1,20 +1,25 @@
-import {ActionFunctionArgs, json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import { json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {Link, useActionData, useLoaderData, useOutletContext} from "@remix-run/react";
-import {Json} from "~/types/supabase";
+import type {Json} from "~/types/supabase";
 import ContentContainer from "~/components/ContentContainer";
 import getTime from "~/utils/getTime";
-import GallerySlide, {AlbumPhoto} from "~/components/GallerySlide";
+import type {AlbumPhoto} from "~/components/GallerySlide";
+import GallerySlide from "~/components/GallerySlide";
 import {useEffect, useState} from "react";
-import Mapbox, {EXIF} from "~/components/Mapbox";
+import type {EXIF} from "~/components/Mapbox";
+import Mapbox from "~/components/Mapbox";
 import {MapPinIcon} from "@heroicons/react/20/solid";
-import Breadcrumb, {BreadcrumbProps} from "~/components/Breadcrumb";
+import type {BreadcrumbProps} from "~/components/Breadcrumb";
+import Breadcrumb from "~/components/Breadcrumb";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import AlbumText from "~/locales/album";
 import CommentEditor from "~/components/CommentEditor";
-import {CommentBlock, CommentProps} from "~/components/CommentBlock";
+import type { CommentProps} from "~/components/CommentBlock";
+import {CommentBlock} from "~/components/CommentBlock";
 import i18nLinks from "~/utils/i18nLinks";
-import {SupabaseClient} from "@supabase/supabase-js";
+import type {SupabaseClient} from "@supabase/supabase-js";
 import {EyeIcon} from "@heroicons/react/24/solid";
 
 export default function AlbumDetail() {
@@ -42,7 +47,7 @@ export default function AlbumDetail() {
       current: false
     },
     {
-      name: albumContent.title! as string,
+      name: albumContent.title!,
       to: `album/${albumContent.slug}`,
       current: true
     }
@@ -103,9 +108,9 @@ export default function AlbumDetail() {
             )}
             <div className = "flex gap-2 justify-start items-center">
               <MapPinIcon className = "w-6 h-6 text-violet-700 inline-block"/>
-              <p className = "text-sm text-zinc-500">{albumImages![currentIndex].image!.location}</p>
+              <p className = "text-sm text-zinc-500">{albumImages![currentIndex].image.location}</p>
             </div>
-            <Mapbox mapboxToken = {MAPBOX} exifData = {albumImages![currentIndex].image!.exif as EXIF}/>
+            <Mapbox mapboxToken = {MAPBOX} exifData = {albumImages![currentIndex].image.exif as EXIF}/>
           </div>
           <div className = "col-span-1 lg:col-span-2 lg:self-start">
             <CommentEditor
@@ -259,7 +264,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
-  const baseUrl = data!.baseUrl as string;
+  const baseUrl = data!.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
       data!.availableLangs,
@@ -289,7 +294,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "og:image",
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.albumImages![0].image!.storage_key}`
+      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.albumImages![0].image.storage_key}`
     },
     {
       property: "og:description",
@@ -297,7 +302,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "twitter:image",
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.albumImages![0].image!.storage_key}`
+      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.albumImages![0].image.storage_key}`
     },
     {
       property: "twitter:title",
@@ -345,7 +350,7 @@ export async function action({request, context}: ActionFunctionArgs) {
         }
     );
 
-    const outcome = await turnstileResponse.json() as { success: boolean };
+    const outcome = await turnstileResponse.json();
     if (!outcome.success) {
       return json({
         success: false,

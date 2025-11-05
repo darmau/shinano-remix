@@ -1,4 +1,4 @@
-import {Article} from "~/types/Article";
+import type {Article} from "~/types/Article";
 import {Link, useOutletContext} from "@remix-run/react";
 import getTime from "~/utils/getTime";
 import {ChatBubbleOvalLeftIcon, EyeIcon} from "@heroicons/react/24/outline";
@@ -11,7 +11,7 @@ export default function NormalArticleCard({article, showAbstract}: {
 
   return (
       <article
-          title = {article.abstract || ''}
+          title = {article.abstract ?? ""}
           className="group"
       >
         <Link

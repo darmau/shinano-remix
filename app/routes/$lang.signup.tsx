@@ -1,4 +1,5 @@
-import {redirect, type LoaderFunctionArgs} from "@remix-run/cloudflare";
+import {redirect } from "@remix-run/cloudflare";
+import type {LoaderFunctionArgs} from "@remix-run/cloudflare";
 
 export const loader = ({params}: LoaderFunctionArgs) => {
   const lang = (params.lang as string) ?? "zh";

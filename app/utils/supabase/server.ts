@@ -1,6 +1,6 @@
 import {createServerClient, parseCookieHeader, serializeCookieHeader} from '@supabase/ssr';
-import {AppLoadContext} from "@remix-run/cloudflare";
-import {Database} from "~/types/supabase";
+import type {AppLoadContext} from "@remix-run/cloudflare";
+import type {Database} from "~/types/supabase";
 
 export function createClient(request: Request, context: AppLoadContext) {
   const headers = new Headers();

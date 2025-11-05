@@ -1,6 +1,6 @@
-import {LoaderFunctionArgs} from "@remix-run/cloudflare";
+import type {LoaderFunctionArgs} from "@remix-run/cloudflare";
 
-export async function loader({context}: LoaderFunctionArgs) {
+export function loader({context}: LoaderFunctionArgs) {
   const baseUrl = context.cloudflare.env.BASE_URL;
 
   const sitemap = `
