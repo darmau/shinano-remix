@@ -326,6 +326,9 @@ export type Database = {
           storage_key: string
           taken_at: string | null
           width: number | null
+          gps_location: unknown | null
+          latitude: number | null
+          longitude: number | null
         }
         Insert: {
           alt?: string | null
@@ -343,6 +346,8 @@ export type Database = {
           storage_key?: string
           taken_at?: string | null
           width?: number | null
+          gps_location?: unknown | null
+          // latitude and longitude are generated columns, cannot be inserted
         }
         Update: {
           alt?: string | null
@@ -360,6 +365,8 @@ export type Database = {
           storage_key?: string
           taken_at?: string | null
           width?: number | null
+          gps_location?: unknown | null
+          // latitude and longitude are generated columns, cannot be updated
         }
         Relationships: []
       }

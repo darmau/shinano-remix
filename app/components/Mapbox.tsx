@@ -44,27 +44,54 @@ export default function MapComponent({ mapboxToken, exifData }: MapComponentProp
     // 监听地图加载完成事件
     const handleMapLoad = () => {
       isMapLoaded.current = true;
+      console.log('Mapbox loaded, checking for GPS data...');
       
       // 如果地图加载完成时已经有 exifData，立即应用
       const currentExif = exifDataRef.current;
-      if (currentExif?.latitude != null && currentExif?.longitude != null) {
-        const lat = currentExif.latitude;
-        const lng = currentExif.longitude;
-        
-        if (typeof lat === 'number' && typeof lng === 'number' && 
-            !isNaN(lat) && !isNaN(lng)) {
-          const target: [number, number] = [lng, lat];
-          mapInstance.flyTo({
-            center: target,
-            zoom: 13,
-          });
+      console.log('Initial exifData on map load:', currentExif);
+      
+      if (!currentExif) {
+        console.log('No exifData available yet');
+        return;
+      }
+      
+      const latitude = currentExif.latitude;
+      const longitude = currentExif.longitude;
+      
+      if (latitude == null || longitude == null) {
+        console.log('No GPS coordinates in exifData');
+        return;
+      }
+      
+      const lat = Number(latitude);
+      const lng = Number(longitude);
+      
+      if (isNaN(lat) || isNaN(lng)) {
+        console.warn('Invalid GPS coordinates on load:', { latitude, longitude });
+        return;
+      }
+      
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        console.warn('GPS coordinates out of range on load:', { lat, lng });
+        return;
+      }
+      
+      console.log('Setting map position to:', { lat, lng });
+      const target: [number, number] = [lng, lat];
+      
+      mapInstance.flyTo({
+        center: target,
+        zoom: 13,
+      });
 
-          if (!marker.current) {
-            marker.current = new mapboxgl.Marker();
-            marker.current.addTo(mapInstance);
-          }
-          marker.current.setLngLat(target);
-        }
+      if (!marker.current) {
+        marker.current = new mapboxgl.Marker();
+        marker.current.setLngLat(target); // 必须先设置位置
+        marker.current.addTo(mapInstance); // 然后再添加到地图
+        console.log('Marker created and added to map at:', target);
+      } else {
+        marker.current.setLngLat(target);
+        console.log('Marker position updated to:', target);
       }
     };
     
@@ -83,14 +110,25 @@ export default function MapComponent({ mapboxToken, exifData }: MapComponentProp
 
   // 处理 exifData 变化
   useEffect(() => {
+    console.log('exifData changed:', exifData);
+    console.log('Map ready:', !!map.current, 'Map loaded:', isMapLoaded.current);
+    
     if (!map.current || !isMapLoaded.current) {
+      console.log('Map not ready yet, skipping update');
       return;
     }
 
-    const latitude = exifData?.latitude ?? null;
-    const longitude = exifData?.longitude ?? null;
+    if (!exifData) {
+      console.log('No exifData provided');
+      return;
+    }
 
-    if (latitude === null || longitude === null) {
+    const latitude = exifData.latitude;
+    const longitude = exifData.longitude;
+
+    // 检查是否有有效的坐标
+    if (latitude == null || longitude == null) {
+      console.log('No GPS coordinates in exifData, removing marker');
       // 如果没有坐标，移除现有标记
       if (marker.current) {
         marker.current.remove();
@@ -99,14 +137,27 @@ export default function MapComponent({ mapboxToken, exifData }: MapComponentProp
       return;
     }
 
+    // 转换为数字并验证
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+
+    console.log('Processing GPS coordinates:', { lat, lng });
+
     // 确保坐标是有效数字
-    if (typeof latitude !== 'number' || typeof longitude !== 'number' || 
-        isNaN(latitude) || isNaN(longitude)) {
+    if (isNaN(lat) || isNaN(lng)) {
+      console.warn('Invalid GPS coordinates:', { latitude, longitude });
       return;
     }
 
-    const target: [number, number] = [longitude, latitude];
+    // 验证经纬度范围
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      console.warn('GPS coordinates out of range:', { lat, lng });
+      return;
+    }
+
+    const target: [number, number] = [lng, lat];
     
+    console.log('Moving map to:', target);
     // 先移动地图
     map.current.flyTo({
       center: target,
@@ -115,13 +166,15 @@ export default function MapComponent({ mapboxToken, exifData }: MapComponentProp
 
     // 创建或更新标记
     if (!marker.current) {
+      console.log('Creating new marker');
       marker.current = new mapboxgl.Marker();
-      // 先添加到地图，这样标记才能正确初始化
-      marker.current.addTo(map.current);
+      marker.current.setLngLat(target); // 必须先设置位置
+      marker.current.addTo(map.current); // 然后再添加到地图
+      console.log('Marker created and added at:', target);
+    } else {
+      marker.current.setLngLat(target);
+      console.log('Marker position updated to:', target);
     }
-    
-    // 设置标记位置
-    marker.current.setLngLat(target);
   }, [exifData]);
 
   return <div ref={mapContainer} style={{ width: "100%", height: "400px" }} />;

@@ -43,6 +43,18 @@ export default function AlbumDetail() {
 
   const label = getLanguageLabel(AlbumText, lang);
 
+  // 调试：输出GPS数据
+  useEffect(() => {
+    if (albumImages && albumImages[currentIndex]) {
+      console.log('Current image GPS data:', {
+        latitude: albumImages[currentIndex].image.latitude,
+        longitude: albumImages[currentIndex].image.longitude,
+        latitude_type: typeof albumImages[currentIndex].image.latitude,
+        longitude_type: typeof albumImages[currentIndex].image.longitude
+      });
+    }
+  }, [currentIndex, albumImages]);
+
   const breadcrumbPages: BreadcrumbProps[] = [
     {
       name: label.latest_albums,
@@ -113,13 +125,21 @@ export default function AlbumDetail() {
               <MapPinIcon className = "w-6 h-6 text-violet-700 inline-block"/>
               <p className = "text-sm text-zinc-500">{albumImages![currentIndex].image.location}</p>
             </div>
-            <Suspense fallback={
-              <div className="w-full h-[400px] bg-gray-100 rounded-lg flex items-center justify-center">
-                <div className="text-sm text-gray-500">加载地图中...</div>
-              </div>
-            }>
-              <Mapbox mapboxToken = {MAPBOX} exifData = {albumImages![currentIndex].image.exif as EXIF}/>
-            </Suspense>
+            {albumImages && albumImages[currentIndex] && (
+              <Suspense fallback={
+                <div className="w-full h-[400px] bg-gray-100 rounded-lg flex items-center justify-center">
+                  <div className="text-sm text-gray-500">加载地图中...</div>
+                </div>
+              }>
+                <Mapbox 
+                  mapboxToken = {MAPBOX} 
+                  exifData = {{
+                    latitude: albumImages[currentIndex].image.latitude ?? null,
+                    longitude: albumImages[currentIndex].image.longitude ?? null
+                  }}
+                />
+              </Suspense>
+            )}
           </div>
           <div className = "col-span-1 lg:col-span-2 lg:self-start">
             <CommentEditor
@@ -207,7 +227,17 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   .from('photo_image')
   .select(`
       order,
-      image (alt, caption, height, width, storage_key, exif, location)
+      image (
+        alt, 
+        caption, 
+        height, 
+        width, 
+        storage_key, 
+        exif, 
+        location,
+        latitude,
+        longitude
+      )
     `)
   .eq('photo_id', albumContent.id)
   .order('order', {ascending: true});
