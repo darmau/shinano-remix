@@ -135,16 +135,10 @@ export default function Contact() {
             ) : (
                 <div className = "flex justify-between">
                   <p className = "text-red-400 text-sm">{label.require_login}</p>
-                  <div className = "space-x-4">
-                    <Link
-                        to = {`/${lang}/login`}
-                        className = "text-violet-700 font-medium"
-                    >{label.login}</Link>
-                    <Link
-                        to = {`/${lang}/signup`}
-                        className = "bg-violet-600 px-3 py-2 rounded text-white font-medium"
-                    >{label.signup}</Link>
-                  </div>
+                  <Link
+                      to = {`/${lang}/login`}
+                      className = "bg-violet-600 px-3 py-2 rounded text-white font-medium"
+                  >{label.login}</Link>
                 </div>
             )}
           </Form>
