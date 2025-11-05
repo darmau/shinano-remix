@@ -1,20 +1,91 @@
 import Subnav from "~/components/Subnav";
-import {json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import {json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {Link, useLoaderData, useOutletContext} from "@remix-run/react";
 import {ServerPhotoAlbum} from "~/components/ServerPhotoAlbum";
 import "react-photo-album/masonry.css";
-import {FeaturedPhoto, generatePhotoAlbum} from "~/utils/generatePhotoAlbum";
+import type {FeaturedPhoto} from "~/utils/generatePhotoAlbum";
+import {generatePhotoAlbum} from "~/utils/generatePhotoAlbum";
 import GalleryImage from "~/components/GalleryImage";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
 
-export default function AllFeaturedAlbums () {
-  const {prefix, lang} = useOutletContext<{prefix: string, lang: string}>();
-  const {featuredPhotos} = useLoaderData<typeof loader>();
+type FeaturedRow = {
+  id: number;
+  slug: string | null;
+  title: string | null;
+  page_view: number | null;
+  language: {
+    lang: string | null;
+  } | null;
+  cover: {
+    id: string | number;
+    alt: string | null;
+    storage_key: string;
+    width: number | null;
+    height: number | null;
+  } | null;
+};
 
-  const photos = generatePhotoAlbum(featuredPhotos as unknown as FeaturedPhoto[], prefix, lang);
+type LoaderData = {
+  featuredPhotos: FeaturedPhoto[];
+  baseUrl: string;
+  prefix: string;
+  availableLangs: string[];
+};
+
+const normalizeFeatured = (rows: unknown, fallbackLang: string): FeaturedPhoto[] => {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  const normalized: FeaturedPhoto[] = [];
+
+  rows.forEach(row => {
+    if (!row || typeof row !== "object") {
+      return;
+    }
+
+    const candidate = row as FeaturedRow;
+    if (typeof candidate.id !== "number" || !candidate.cover || !candidate.language) {
+      return;
+    }
+
+    normalized.push({
+      id: candidate.id,
+      slug: candidate.slug,
+      title: candidate.title ?? "",
+      language: {
+        lang: candidate.language.lang ?? fallbackLang,
+      },
+      cover: {
+        id: String(candidate.cover.id),
+        alt: candidate.cover.alt,
+        storage_key: candidate.cover.storage_key,
+        width: candidate.cover.width ?? 0,
+        height: candidate.cover.height ?? 0,
+      },
+    });
+  });
+
+  return normalized;
+};
+
+const isLoaderData = (value: unknown): value is LoaderData =>
+    typeof value === "object" &&
+    value !== null &&
+    "baseUrl" in value &&
+    "availableLangs" in value &&
+    "prefix" in value &&
+    "featuredPhotos" in value;
+
+export default function AllFeaturedAlbums() {
+  const {prefix, lang} = useOutletContext<{prefix: string, lang: string}>();
+  const {featuredPhotos} = useLoaderData<LoaderData>();
+
+  const photos = generatePhotoAlbum(featuredPhotos, prefix, lang);
 
   return (
       <>
@@ -26,7 +97,7 @@ export default function AllFeaturedAlbums () {
               photos = {photos}
               breakpoints = {[480, 720, 960]}
               spacing = {0}
-              columns = {(containerWidth) => {
+              columns = {(containerWidth: number) => {
                 if (containerWidth < 480) return 1;
                 if (containerWidth < 720) return 2;
                 if (containerWidth < 960) return 3;
@@ -34,7 +105,7 @@ export default function AllFeaturedAlbums () {
               }}
               render = {{
                 // eslint-disable-next-line no-empty-pattern
-                photo: ({}, {photo}) => (
+                photo: ({}, {photo}: { photo: typeof photos[number] }) => (
                     <Link
                         to = {photo.href} className = "group m-1 md:m-2 relative rounded-md overflow-hidden"
                         key = {photo.key}
@@ -59,10 +130,15 @@ export default function AllFeaturedAlbums () {
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
-  const baseUrl = data!.baseUrl as string;
+  
+  if (!isLoaderData(data)) {
+    return [{title: 'Not Found'}];
+  }
+  
+  const baseUrl = data.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
-      data!.availableLangs,
+      data.availableLangs,
       "albums/featured"
   );
 
@@ -90,7 +166,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     {
       property: "og:image",
       // 没有推荐摄影的时候会有bug
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.featuredPhotos![0].cover.storage_key || "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
+      content: `${data.prefix}/cdn-cgi/image/format=jpeg,width=960/${data.featuredPhotos[0]?.cover.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
     },
     {
       property: "og:description",
@@ -115,7 +191,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   const table = `random_${lang}_photos` as "random_en_photos" | "random_jp_photos" | "random_zh_photos";
 
   // 从photo表中获取lang对应的language.lang字段的数据，并从photo_image表中获取photo_id对应的数据
-  const {data: featuredPhotos} = await supabase
+  const {data: rawFeaturedPhotos, error} = await supabase
     .from(table)
     .select(`
       id,
@@ -127,12 +203,16 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
       `)
     .limit(24);
 
+  if (error) {
+    return new Response(error.message, {status: 500});
+  }
+
   const availableLangs = ["zh", "en", "jp"];
 
-  return json({
-    featuredPhotos: featuredPhotos,
+  return json<LoaderData>({
+    featuredPhotos: normalizeFeatured(rawFeaturedPhotos, lang),
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
-    availableLangs
-  })
+    availableLangs,
+  });
 }

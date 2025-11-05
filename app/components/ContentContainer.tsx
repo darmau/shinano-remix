@@ -1,7 +1,6 @@
-import {Json} from "~/types/supabase";
+import type {Json} from "~/types/supabase";
 import ArticleImage from "~/components/ArticleImage";
-import hljs from 'highlight.js';
-import 'highlight.js/styles/github-dark-dimmed.css';
+import {useEffect, useState} from "react";
 
 type ContentStructure = {
   content: Content[];
@@ -12,13 +11,19 @@ export type Content = {
   content?: ContentItem[];
   attrs?: {
     level?: number;
-    id?: string;
+    id?: string | number;
     language?: string;
     start?: number;
     href?: string;
     target?: string;
     rel?: string;
     class?: string | null;
+    alt?: string | null;
+    storage_key?: string;
+    prefix?: string;
+    caption?: string | null;
+    width?: number;
+    height?: number;
   };
   text?: string;
   marks?: Mark[];
@@ -37,11 +42,13 @@ type Mark = {
 };
 
 export type ImageAttrs = {
-  id: number;
-  alt: string;
+  id: number | string;
+  alt: string | null;
   storage_key: string;
   prefix: string;
-  caption: string;
+  caption: string | null;
+  width?: number;
+  height?: number;
 };
 
 // 类型守卫函数
@@ -63,7 +70,7 @@ export default function ContentContainer({content}: { content: Json }) {
     )
   }
 
-  const article = content.content as Content[];
+  const article = content.content;
 
   return (
       <>
@@ -73,6 +80,13 @@ export default function ContentContainer({content}: { content: Json }) {
       </>
   )
 }
+
+const hasImageAttrs = (attrs: Content["attrs"]): attrs is ImageAttrs => Boolean(
+    attrs &&
+    (typeof attrs.id === "number" || typeof attrs.id === "string") &&
+    typeof attrs.storage_key === "string" &&
+    typeof attrs.prefix === "string"
+);
 
 const Node = ({node}: { node: Content }) => {
   switch (node.type) {
@@ -89,7 +103,7 @@ const Node = ({node}: { node: Content }) => {
     case 'horizontalRule':
       return <Horizental/>;
     case 'image':
-      return <Image attrs = {node.attrs as unknown as ImageAttrs}/>;
+      return hasImageAttrs(node.attrs) ? <Image attrs = {node.attrs}/> : null;
     case 'table':
       return <Table content = {node.content}/>;
     case 'bulletList':
@@ -110,11 +124,13 @@ const Paragraph = ({content}: { content?: ContentItem[] }) => (
 );
 
 const Heading = ({attrs, content}: { attrs?: Content["attrs"]; content?: ContentItem[] }) => {
+  const headingId = attrs?.id !== undefined ? String(attrs.id) : undefined;
+
   switch (attrs?.level) {
     case 2:
       return <h2
           className = "mt-16 font-bold text-3xl text-zinc-800"
-          id = {attrs?.id}
+          id = {headingId}
       >
         {content?.map((item, index) => (
             <TextNode key = {index} node = {item}/>
@@ -123,7 +139,7 @@ const Heading = ({attrs, content}: { attrs?: Content["attrs"]; content?: Content
     case 3:
       return <h3
           className = "mt-12 mb-4 font-bold text-2xl text-zinc-700"
-          id = {attrs?.id}
+          id = {headingId}
       >
         {content?.map((item, index) => (
             <TextNode key = {index} node = {item}/>
@@ -132,7 +148,7 @@ const Heading = ({attrs, content}: { attrs?: Content["attrs"]; content?: Content
     case 4:
       return <h4
           className = "mt-8 mb-4 font-bold text-xl text-zinc-600"
-          id = {attrs?.id}
+          id = {headingId}
       >
         {content?.map((item, index) => (
             <TextNode key = {index} node = {item}/>
@@ -141,7 +157,7 @@ const Heading = ({attrs, content}: { attrs?: Content["attrs"]; content?: Content
     default:
       return <h2
           className = "mb-4 font-bold text-3xl text-zinc-800"
-          id = {attrs?.id}
+          id = {headingId}
       >
         {content?.map((item, index) => (
             <TextNode key = {index} node = {item}/>
@@ -158,12 +174,39 @@ const Blockquote = ({content}: { content?: ContentItem[] }) => (
     </blockquote>
 );
 
-const CodeBlock = ({attrs, content}: { attrs?: Content["attrs"]; content?: ContentItem[] }) => {
-  const language = attrs?.language || '';
-  const codeContent = content?.[0]?.text || '';
+import {useEffect, useState} from "react";
 
-  // 直接使用 hljs.highlight 方法高亮代码
-  const highlightedCode = hljs.highlight(codeContent, {language}).value;
+const CodeBlock = ({attrs, content}: { attrs?: Content["attrs"]; content?: ContentItem[] }) => {
+  const language = attrs?.language ?? "";
+  const codeContent = content?.[0]?.text ?? "";
+  const [highlightedCode, setHighlightedCode] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // 动态导入 highlight.js 和相关样式
+    const loadHighlight = async () => {
+      try {
+        // 加载样式（CSS 导入不需要返回值）
+        await import('highlight.js/styles/github-dark-dimmed.css');
+        
+        // 加载 highlight.js
+        const hljs = await import('highlight.js');
+        
+        // 高亮代码（检查是默认导出还是命名导出）
+        const hljsModule = hljs.default || hljs;
+        const result = hljsModule.highlight(codeContent, {language});
+        setHighlightedCode(result.value);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Failed to load highlight.js:', error);
+        // 如果加载失败，使用原始代码
+        setHighlightedCode(codeContent);
+        setIsLoading(false);
+      }
+    };
+
+    loadHighlight();
+  }, [codeContent, language]);
 
   return (
       <pre className = "hljs rounded-xl overflow-hidden p-4">
@@ -175,10 +218,16 @@ const CodeBlock = ({attrs, content}: { attrs?: Content["attrs"]; content?: Conte
         </span>
         <p>{language}</p>
       </div>
-      <code
-          className = {language ? `language-${language}` : ''}
-          dangerouslySetInnerHTML = {{__html: highlightedCode}}
-      />
+      {isLoading ? (
+          <code className = {language ? `language-${language}` : ''}>
+            {codeContent}
+          </code>
+      ) : (
+          <code
+              className = {language ? `language-${language}` : ''}
+              dangerouslySetInnerHTML = {{__html: highlightedCode}}
+          />
+      )}
     </pre>
   );
 };

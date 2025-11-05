@@ -1,5 +1,5 @@
-import {Json} from "~/types/supabase";
-import {Content} from "~/components/ContentContainer";
+import type {Json} from "~/types/supabase";
+import type {Content} from "~/components/ContentContainer";
 import {Link} from "@remix-run/react";
 import ShareButton from "~/components/ShareButton";
 
@@ -61,7 +61,7 @@ export default function Catalog({content, url, title, lang}: { content: Json, ur
     );
   }
 
-  const article = content.content as Content[];
+  const article = content.content;
 
   return (
       <nav aria-label="Table of contents"
@@ -70,7 +70,7 @@ export default function Catalog({content, url, title, lang}: { content: Json, ur
         <div className="flex flex-col gap-2 border-b pb-6">
           {generateTableOfContents(article)}
         </div>
-        <ShareButton url = {url} title = {title!} lang = {lang}/>
+        <ShareButton url = {url} title = {title} lang = {lang}/>
       </nav>
   );
 }

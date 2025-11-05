@@ -1,5 +1,6 @@
 import {Form, useActionData, useLoaderData, useNavigation, useOutletContext} from "@remix-run/react";
-import {ActionFunctionArgs, json, LoaderFunctionArgs, MetaFunction, redirect} from "@remix-run/cloudflare";
+import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import { json, redirect} from "@remix-run/cloudflare";
 import GithubLogin from "~/components/GithubLogin";
 import EmailLogin from "~/components/EmailLogin";
 import SignupText from '~/locales/signup'
@@ -24,7 +25,7 @@ export async function loader({request, context}: LoaderFunctionArgs) {
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(SignupText, lang);
-  const baseUrl = data!.baseUrl as string;
+  const baseUrl = data!.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
       data!.availableLangs,
@@ -49,6 +50,7 @@ export default function Login() {
   const navigation = useNavigation();
   const isEmailSubmitting = navigation.state === "submitting" && navigation.formData?.get("intent") === "email";
   const queryError = loaderData?.error === "magic_link" ? label.magic_link_error : null;
+  const errorMessage = actionResponse?.error ?? queryError;
 
   return (
       <div className = "h-full bg-zinc-50 flex flex-col justify-center py-16 sm:px-6 lg:px-8">
@@ -69,9 +71,9 @@ export default function Login() {
                 <EmailLogin disabled = {isEmailSubmitting}/>
             )}
 
-            {(actionResponse?.error || queryError) && (
+            {errorMessage && (
                 <div className = "mt-6">
-                  <p className = "text-sm text-red-600">{actionResponse?.error ?? queryError}</p>
+                  <p className = "text-sm text-red-600">{errorMessage}</p>
                 </div>
             )}
 
@@ -90,8 +92,9 @@ export async function action({request, context}: ActionFunctionArgs) {
 
   if (intent === 'email') {
     const email = (formData.get("email") as string | null)?.trim();
-    const lang = ((formData.get("lang") as string | null) ?? "zh").trim() || "zh";
-    const labels = SignupText[lang] ?? SignupText.zh;
+    const rawLang = (formData.get("lang") as string | null)?.trim();
+    const lang = rawLang?.length ? rawLang : "zh";
+    const labels = SignupText[lang as keyof typeof SignupText] ?? SignupText.zh;
 
     if (!email) {
       return json({success: false, error: labels.email_required}, {headers});
@@ -131,10 +134,8 @@ export async function action({request, context}: ActionFunctionArgs) {
     }
   }
 
-  throw () => {
-    return new Response(`Unknown intent: ${intent}`, {
-      status: 400,
-      statusText: "Bad Request",
-    });
-  }
+  throw new Response(`Unknown intent: ${intent}`, {
+    status: 400,
+    statusText: "Bad Request",
+  });
 }

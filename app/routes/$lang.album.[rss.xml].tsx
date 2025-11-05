@@ -1,4 +1,4 @@
-import {LoaderFunctionArgs} from "@remix-run/cloudflare";
+import type {LoaderFunctionArgs} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from '~/locales/homepage';
@@ -104,11 +104,11 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
       link: `https://darmau.co/${lang}/album/${post.slug}`,
       guid: post.id,
       content: getFirstThreeParagraphs(post.content_text),
-      enclosure: post.cover && {
+      enclosure: post.cover ? {
         url: `https://img.darmau.co/cdn-cgi/image/format=jpeg,width=960/https://img.darmau.co/${post.cover.storage_key}`,
-        type: 'image/jpeg',
-        length: post.cover.size,
-      },
+        type: 'image/jpeg' as const,
+        length: String(post.cover.size ?? 0),
+      } : undefined,
     })) : [],
   });
 

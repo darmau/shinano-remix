@@ -1,8 +1,10 @@
 import Subnav from "~/components/Subnav";
-import {json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type {LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import {json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {Link, useLoaderData, useLocation, useOutletContext} from "@remix-run/react";
-import {FeaturedPhoto, generatePhotoAlbum} from "~/utils/generatePhotoAlbum";
+import type {FeaturedPhoto} from "~/utils/generatePhotoAlbum";
+import {generatePhotoAlbum} from "~/utils/generatePhotoAlbum";
 import {ServerPhotoAlbum} from "~/components/ServerPhotoAlbum";
 import GalleryImage from "~/components/GalleryImage";
 import "react-photo-album/columns.css";
@@ -11,15 +13,88 @@ import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
 
-export default function AllAlbums () {
+type AlbumRow = {
+  id: number;
+  title: string | null;
+  slug: string | null;
+  page_view: number | null;
+  cover: {
+    id: string | number;
+    alt: string | null;
+    storage_key: string;
+    width: number | null;
+    height: number | null;
+  } | null;
+  language: {
+    lang: string | null;
+  } | null;
+};
+
+type LoaderData = {
+  albums: FeaturedPhoto[];
+  count: number;
+  page: number;
+  baseUrl: string;
+  prefix: string;
+  availableLangs: string[];
+};
+
+const normalizeAlbums = (rows: unknown, fallbackLang: string): FeaturedPhoto[] => {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  const normalized: FeaturedPhoto[] = [];
+
+  rows.forEach(row => {
+    if (!row || typeof row !== "object") {
+      return;
+    }
+
+    const candidate = row as AlbumRow;
+    if (typeof candidate.id !== "number" || !candidate.cover || !candidate.language) {
+      return;
+    }
+
+    normalized.push({
+      id: candidate.id,
+      slug: candidate.slug,
+      title: candidate.title ?? "",
+      language: {
+        lang: candidate.language.lang ?? fallbackLang,
+      },
+      cover: {
+        id: String(candidate.cover.id),
+        alt: candidate.cover.alt,
+        storage_key: candidate.cover.storage_key,
+        width: candidate.cover.width ?? 0,
+        height: candidate.cover.height ?? 0,
+      },
+    });
+  });
+
+  return normalized;
+};
+
+const isLoaderData = (value: unknown): value is LoaderData =>
+    typeof value === "object" &&
+    value !== null &&
+    "baseUrl" in value &&
+    "availableLangs" in value &&
+    "page" in value &&
+    "prefix" in value &&
+    "albums" in value &&
+    "count" in value;
+
+export default function AllAlbums() {
   const {prefix, lang} = useOutletContext<{prefix: string, lang: string}>();
-  const {albums, count, page} = useLoaderData<typeof loader>();
+  const {albums, count, page} = useLoaderData<LoaderData>();
   const location = useLocation();
 
   // 将pathname末尾的page去掉
   const path = location.pathname.replace(/\/\d+$/, '');
 
-  const photos = generatePhotoAlbum(albums as unknown as FeaturedPhoto[], prefix, lang);
+  const photos = generatePhotoAlbum(albums, prefix, lang);
 
   return (
       <>
@@ -30,7 +105,7 @@ export default function AllAlbums () {
               layout = "columns"
               photos = {photos}
               breakpoints = {[480, 720, 1080]}
-              columns = {(containerWidth) => {
+              columns = {(containerWidth: number) => {
                 if (containerWidth < 480) return 1;
                 if (containerWidth < 720) return 2;
                 if (containerWidth < 960) return 3;
@@ -39,7 +114,7 @@ export default function AllAlbums () {
               spacing = {0}
               render = {{
                 // eslint-disable-next-line no-empty-pattern
-                photo: ({}, {photo}) => (
+                photo: ({}, {photo}: { photo: typeof photos[number] }) => (
                     <Link
                         to = {photo.href} className = "group m-2 relative rounded-md overflow-hidden" key = {photo.key}
                     >
@@ -55,7 +130,7 @@ export default function AllAlbums () {
                 )
               }}
           />
-          <Pagination count = {count || 0} limit = {16} page = {page} path = {path}/>
+          <Pagination count = {count ?? 0} limit = {16} page = {page} path = {path}/>
         </div>
       </>
   )
@@ -64,11 +139,16 @@ export default function AllAlbums () {
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
-  const baseUrl = data!.baseUrl as string;
+
+  if (!isLoaderData(data)) {
+    return [{title: 'Not Found'}];
+  }
+
+  const baseUrl = data.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
-      data!.availableLangs,
-      `albums/all/${data!.page}`
+      data.availableLangs,
+      `albums/all/${data.page}`
   );
 
   return [
@@ -90,12 +170,12 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "og:url",
-      content: `${baseUrl}/${lang}/albums/all/${data!.page}`
+      content: `${baseUrl}/${lang}/albums/all/${data.page}`
     },
     {
       property: "og:image",
       // 没有数据的时候会有bug
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.albums![0].cover.storage_key || 'a2b148a3-5799-4be0-a8d4-907f9355f20f'}`
+      content: `${data.prefix}/cdn-cgi/image/format=jpeg,width=960/${data.albums[0]?.cover?.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
     },
     {
       property: "og:description",
@@ -123,7 +203,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     return new Response(null, {status: 404});
   }
 
-  const {data: albums} = await supabase
+  const {data: albumRows, error: albumsError} = await supabase
   .from('photo')
   .select(`
       id,
@@ -137,7 +217,11 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   .eq('is_draft', false)
   .limit(12)
   .range((Number(page) - 1) * 16, Number(page) * 16 - 1)
-  .order('published_at', {ascending: false})
+  .order('published_at', {ascending: false});
+
+  if (albumsError) {
+    return new Response(albumsError.message, {status: 500});
+  }
 
   // 指定语言album的数量，排除草稿
   const {count} = await supabase
@@ -150,13 +234,14 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   .eq('language.lang', lang);
 
   const availableLangs = [lang];
+  const albums = normalizeAlbums(albumRows, lang);
 
-  return json({
-    albums: albums,
-    count: count,
+  return json<LoaderData>({
+    albums,
+    count: count ?? 0,
     page: Number(page),
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
-    availableLangs
-  })
+    availableLangs,
+  });
 }

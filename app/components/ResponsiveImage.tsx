@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Image } from "~/types/Image";
+import {useState, useRef} from "react";
+import type { Image } from "~/types/Image";
 import { useOutletContext } from "@remix-run/react";
 
 export default function ResponsiveImage({ image, width, classList }: { image: Image; width: number; classList: string }) {
@@ -9,11 +9,6 @@ export default function ResponsiveImage({ image, width, classList }: { image: Im
 
   const base = image.width > image.height ? 'width' : 'height';
 
-  useEffect(() => {
-    if (imgRef.current && imgRef.current.complete) {
-      setImageLoaded(true);
-    }
-  }, []);
 
   const highResSrc = `${prefix}/cdn-cgi/image/format=auto,${base}=${width}/${image.storage_key}`;
   const highResSrcSet = `${highResSrc} 1x, ${prefix}/cdn-cgi/image/format=auto,${base}=${width * 2}/${image.storage_key} 2x`;
@@ -24,7 +19,7 @@ export default function ResponsiveImage({ image, width, classList }: { image: Im
         <img
             className={`scale-105 brightness-110 absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-0' : 'opacity-100'}`}
             src={`${prefix}/cdn-cgi/image/format=auto,${base}=24/${image.storage_key}`}
-            alt={image.alt || ''}
+            alt={image.alt ?? ""}
             width={width}
             style={{ filter: 'blur(32px)' }}
         />
@@ -45,7 +40,7 @@ export default function ResponsiveImage({ image, width, classList }: { image: Im
               src={highResSrc}
               srcSet={highResSrcSet}
               sizes="(max-width: 720px) 100vw, 2x"
-              alt={image.alt || ''}
+              alt={image.alt ?? ""}
               width={width}
               onLoad={() => setImageLoaded(true)}
           />

@@ -9,12 +9,13 @@ export interface BreadcrumbProps {
 
 export default function Breadcrumb({pages}: {pages: BreadcrumbProps[]}) {
   const {lang} = useOutletContext<{lang: string}>();
+  const homeLabel = lang === 'zh' ? '首页' : lang === 'jp' ? 'ホーム' : 'Home';
   return (
       <nav aria-label="Breadcrumb" className="flex my-4">
         <ol className="flex items-center space-x-4">
           <li>
             <div>
-              <Link to={`/${lang}`} className="text-gray-400 hover:text-gray-500">
+              <Link to={`/${lang}`} className="text-gray-400 hover:text-gray-500" aria-label={homeLabel}>
                 <HomeIcon aria-hidden="true" className="h-5 w-5 flex-shrink-0" />
               </Link>
             </div>

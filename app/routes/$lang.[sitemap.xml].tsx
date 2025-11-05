@@ -1,5 +1,45 @@
-import {LoaderFunctionArgs} from "@remix-run/cloudflare";
+import type {LoaderFunctionArgs} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
+
+type RecordWithKeys = Record<string, unknown>;
+
+const isRecord = (value: unknown): value is RecordWithKeys =>
+    typeof value === "object" && value !== null;
+
+const toRecordArray = (value: unknown): RecordWithKeys[] =>
+    Array.isArray(value) ? value.filter(isRecord) : [];
+
+const toEntryMarkup = (
+    rows: RecordWithKeys[],
+    dateKey: "updated_at" | "created_at",
+    baseUrl: string,
+    lang: string,
+    pathSegment: string,
+    changefreq: string,
+    priority: string
+) =>
+    rows
+        .map(row => {
+          const slug = row["slug"];
+          const timestamp = row[dateKey];
+
+          if (typeof slug !== "string" || slug.length === 0) {
+            return null;
+          }
+          if (typeof timestamp !== "string" || timestamp.length === 0) {
+            return null;
+          }
+
+          return `
+            <url>
+                <loc>${baseUrl}/${lang}/${pathSegment}/${slug}</loc>
+                <lastmod>${timestamp}</lastmod>
+                <changefreq>${changefreq}</changefreq>
+                <priority>${priority}</priority>
+            </url>`;
+        })
+        .filter((entry): entry is string => typeof entry === "string")
+        .join("");
 
 export async function loader({request, context, params}: LoaderFunctionArgs) {
   const {supabase} = createClient(request, context);
@@ -37,6 +77,36 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     .order('created_at', {ascending: false});
 
   const now = new Date().toISOString();
+
+  const articleEntries = toEntryMarkup(
+      toRecordArray(articles),
+      "updated_at",
+      baseUrl,
+      lang,
+      "article",
+      "daily",
+      "1.0"
+  );
+
+  const albumEntries = toEntryMarkup(
+      toRecordArray(albums),
+      "updated_at",
+      baseUrl,
+      lang,
+      "album",
+      "daily",
+      "0.8"
+  );
+
+  const thoughtEntries = toEntryMarkup(
+      toRecordArray(thoughts),
+      "created_at",
+      baseUrl,
+      lang,
+      "thought",
+      "hourly",
+      "0.6"
+  );
 
   const sitemap = `
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -76,32 +146,11 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
             <changefreq>monthly</changefreq>
             <priority>0.5</priority>
         </url>
-        ${articles && articles.map(article => `
-            <url>
-                <loc>${baseUrl}/${lang}/article/${article.slug}</loc>
-                <lastmod>${article.updated_at}</lastmod>
-                <changefreq>daily</changefreq>
-                <priority>1.0</priority>
-            </url>
-            `)}
-    
-        ${albums && albums.map(album => `
-            <url>
-                <loc>${baseUrl}/${lang}/album/${album.slug}</loc>
-                <lastmod>${album.updated_at}</lastmod>
-                <changefreq>daily</changefreq>
-                <priority>0.8</priority>
-            </url>
-        `)}
-    
-        ${thoughts && thoughts.map(thought => `
-            <url>
-                <loc>${baseUrl}/${lang}/thought/${thought.slug}</loc>
-                <lastmod>${thought.created_at}</lastmod>
-                <changefreq>hourly</changefreq>
-                <priority>0.6</priority>
-            </url>
-        `)}
+        ${articleEntries}
+
+        ${albumEntries}
+
+        ${thoughtEntries}
     </urlset>
   `
 

@@ -1,7 +1,8 @@
 import Subnav from "~/components/Subnav";
-import {LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type {LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import {json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
-import {Article} from "~/types/Article";
+import type {Article} from "~/types/Article";
 import NormalArticleCard from "~/components/NormalArticleCard";
 import Pagination from "~/components/Pagination";
 import {Link, useLoaderData, useLocation, useOutletContext} from "@remix-run/react";
@@ -9,6 +10,37 @@ import getLanguageLabel from "~/utils/getLanguageLabel";
 import ArticlesText from "~/locales/articles";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
+import {
+  normalizeArticles,
+  normalizeYearCounts,
+  normalizeCategoryCounts,
+} from "~/utils/articles";
+import type {YearCount, CategoryCount} from "~/utils/articles";
+
+type LoaderData = {
+  articles: Article[];
+  countByYear: YearCount[];
+  countByCategory: CategoryCount[];
+  articleCount: number;
+  page: number;
+  year: number;
+  baseUrl: string;
+  prefix: string;
+  availableLangs: string[];
+};
+
+const isLoaderData = (value: unknown): value is LoaderData =>
+    typeof value === "object" &&
+    value !== null &&
+    "articles" in value &&
+    "countByYear" in value &&
+    "countByCategory" in value &&
+    "articleCount" in value &&
+    "page" in value &&
+    "year" in value &&
+    "baseUrl" in value &&
+    "prefix" in value &&
+    "availableLangs" in value;
 
 export default function ArchiveArticles() {
   const {
@@ -18,14 +50,14 @@ export default function ArchiveArticles() {
     articleCount,
     page,
     year
-  } = useLoaderData<typeof loader>();
+  } = useLoaderData<LoaderData>();
   const {lang} = useOutletContext<{ lang: string }>();
   const label = getLanguageLabel(ArticlesText, lang);
   const location = useLocation();
   // 将pathname末尾的page去掉
   const path = location.pathname.replace(/\/\d+$/, '');
 
-  if (!articles || articles.length === 0) {
+  if (articles.length === 0) {
     return (
         <>
           <Subnav active = "article"/>
@@ -48,15 +80,15 @@ export default function ArchiveArticles() {
         >
           <div className = "grow flex flex-col gap-8 md:gap-12 md:col-span-2">
             {articles.map((article) => (
-                <NormalArticleCard article = {article as Article} key = {article.id} showAbstract = {true}/>
+                <NormalArticleCard article = {article} key = {article.id} showAbstract = {true}/>
             ))}
-            <Pagination count = {articleCount || 0} limit = {12} page = {page} path = {path}/>
+            <Pagination count = {articleCount} limit = {12} page = {page} path = {path}/>
           </div>
           <aside className = "pb-4 space-y-8 md:col-span-1">
             <div className = "space-y-4">
               <h3 className = "text-sm font-semibold text-violet-600">{label.year}</h3>
               <ol className = "">
-                {countByYear && countByYear.map((year) => (
+                {countByYear.map((year) => (
                     <li
                         key = {year.year}
                         className = "p-2 rounded-md hover:bg-zinc-50 cursor-pointer"
@@ -74,7 +106,7 @@ export default function ArchiveArticles() {
             <div className = "space-y-4">
               <h3 className = "text-sm font-semibold text-violet-600">{label.category}</h3>
               <ol className = "">
-                {countByCategory && countByCategory.map((category) => {
+                {countByCategory.map((category) => {
                   if (category.count === 0) {
                     return null;
                   }
@@ -103,15 +135,19 @@ export default function ArchiveArticles() {
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
-  const baseUrl = data!.baseUrl as string;
+  if (!isLoaderData(data)) {
+    return [{title: label.archive_article_title}];
+  }
+
+  const baseUrl = data.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
-      data!.availableLangs,
-      `articles/archive/${data!.year}/${data!.page}`
+      data.availableLangs,
+      `articles/archive/${data.year}/${data.page}`
   );
 
   return [
-    {title: `${data!.year} - ${label.archive_article_title}`},
+    {title: `${data.year} - ${label.archive_article_title}`},
     {
       name: "description",
       content: label.archive_article_description,
@@ -133,11 +169,11 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "og:url",
-      content: `${baseUrl}/${lang}/articles/archive/${data!.year}/${data!.page}`
+      content: `${baseUrl}/${lang}/articles/archive/${data.year}/${data.page}`
     },
     {
       property: "og:image",
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/a2b148a3-5799-4be0-a8d4-907f9355f20f`
+      content: `${data.prefix}/cdn-cgi/image/format=jpeg,width=960/a2b148a3-5799-4be0-a8d4-907f9355f20f`
     },
     {
       property: "og:description",
@@ -167,7 +203,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   }
 
   // 查询指定语言，published_at在年份之间，排除草稿
-  const {data: articles} = await supabase
+  const {data: articleRows} = await supabase
   .from('article')
   .select(`
       id,
@@ -190,8 +226,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   .gte('published_at', `${year}-01-01T00:00:00Z`)
   .lte('published_at', `${year}-12-31T23:59:59Z`)
   .order('published_at', {ascending: false})
-  .range((Number(page) - 1) * 12, Number(page) * 12 - 1)
-  .returns<Article[]>();
+  .range((Number(page) - 1) * 12, Number(page) * 12 - 1);
 
   // 指定语言article的数量，排除草稿
   const {count} = await supabase
@@ -205,27 +240,23 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   .gte('published_at', `${year}-01-01T00:00:00Z`)
   .lte('published_at', `${year}-12-31T23:59:59Z`);
 
-  const {data: countByYear} = await supabase.rpc('get_article_count_by_year', {lang_name: lang});
+  const {data: countByYearData} = await supabase.rpc('get_article_count_by_year', {lang_name: lang});
 
-  const {data: countByCategory} = await supabase.rpc('get_article_count_by_category', {
+  const {data: countByCategoryData} = await supabase.rpc('get_article_count_by_category', {
     lang_name: lang
-  }).returns<{
-    title: string,
-    slug: string,
-    count: number
-  }[]>();
+  });
 
   const availableLangs = [lang];
 
-  return {
-    articles: articles,
-    year: year,
-    countByYear: countByYear,
-    countByCategory: countByCategory,
-    articleCount: count,
+  return json<LoaderData>({
+    articles: normalizeArticles(articleRows),
+    year: Number(year),
+    countByYear: normalizeYearCounts(countByYearData),
+    countByCategory: normalizeCategoryCounts(countByCategoryData),
+    articleCount: count ?? 0,
     page: Number(page),
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs
-  }
+  });
 }

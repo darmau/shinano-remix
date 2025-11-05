@@ -1,21 +1,42 @@
 import Subnav from "~/components/Subnav";
-import {LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type {LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import {json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
-import {Article} from "~/types/Article";
+import type {Article} from "~/types/Article";
 import {useLoaderData, useLocation} from "@remix-run/react";
 import Pagination from "~/components/Pagination";
 import FeaturedArticle from "~/components/FeaturedArticle";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
+import {normalizeArticles} from "~/utils/articles";
+
+type LoaderData = {
+  articles: Article[];
+  articleCount: number;
+  page: number;
+  baseUrl: string;
+  prefix: string;
+  availableLangs: string[];
+};
+
+const isLoaderData = (value: unknown): value is LoaderData =>
+    typeof value === "object" &&
+    value !== null &&
+    "articles" in value &&
+    "articleCount" in value &&
+    "page" in value &&
+    "baseUrl" in value &&
+    "prefix" in value &&
+    "availableLangs" in value;
 
 export default function AllFeaturedArticles() {
-  const {articles, articleCount, page} = useLoaderData<typeof loader>();
+  const {articles, articleCount, page} = useLoaderData<LoaderData>();
   const location = useLocation();
   // 将pathname末尾的page去掉
   const path = location.pathname.replace(/\/\d+$/, '');
 
-  if (!articles || articles.length === 0) {
+  if (articles.length === 0) {
     return (
         <div>
           No articles found
@@ -32,10 +53,10 @@ export default function AllFeaturedArticles() {
         >
           <div className = "grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {articles.map((article) => (
-                <FeaturedArticle article = {article as Article} key = {article.id}/>
+                <FeaturedArticle article = {article} key = {article.id}/>
             ))}
           </div>
-          <Pagination count = {articleCount || 0} limit = {12} page = {page} path = {path}/>
+          <Pagination count = {articleCount} limit = {12} page = {page} path = {path}/>
         </div>
       </>
   )
@@ -44,10 +65,14 @@ export default function AllFeaturedArticles() {
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
-  const baseUrl = data!.baseUrl as string;
+  if (!isLoaderData(data) || data.articles.length === 0) {
+    return [{title: label.featured_article_title}];
+  }
+
+  const baseUrl = data.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
-      data!.availableLangs,
+      data.availableLangs,
       `articles/featured`
   );
 
@@ -74,11 +99,11 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "og:url",
-      content: `${baseUrl}/${lang}/articles/featured/${data!.page}`
+      content: `${baseUrl}/${lang}/articles/featured/${data.page}`
     },
     {
       property: "og:image",
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.articles[0].cover.storage_key || 'a2b148a3-5799-4be0-a8d4-907f9355f20f'}`
+      content: `${data.prefix}/cdn-cgi/image/format=jpeg,width=960/${data.articles[0].cover?.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
     },
     {
       property: "og:description",
@@ -129,8 +154,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   .range((Number(page) - 1) * 12, Number(page) * 12 - 1)
   .filter('is_draft', 'eq', false)
   .filter('is_featured', 'eq', true)
-  .order('published_at', {ascending: false})
-  .returns<Article[]>();
+  .order('published_at', {ascending: false});
 
   // 指定语言article的数量，排除草稿
   const {count} = await supabase
@@ -145,13 +169,13 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const availableLangs = ['zh', 'en', 'jp'];
 
-  return {
-    articles: data,
-    articleCount: count,
+  return json<LoaderData>({
+    articles: normalizeArticles(data),
+    articleCount: count ?? 0,
     page: Number(page),
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs
-  }
+  });
 
 }

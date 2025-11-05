@@ -1,6 +1,6 @@
 import {createServerClient, parseCookieHeader, serializeCookieHeader} from '@supabase/ssr';
-import {AppLoadContext} from "@remix-run/cloudflare";
-import {Database} from "~/types/supabase";
+import type {AppLoadContext} from "@remix-run/cloudflare";
+import type {Database} from "~/types/supabase";
 
 export function createClient(request: Request, context: AppLoadContext) {
   const headers = new Headers();
@@ -16,7 +16,11 @@ export function createClient(request: Request, context: AppLoadContext) {
         },
         cookies: {
           getAll() {
-            return parseCookieHeader(request.headers.get('Cookie') ?? '')
+            const parsed = parseCookieHeader(request.headers.get('Cookie') ?? '')
+            return parsed.map(cookie => ({
+              name: cookie.name,
+              value: cookie.value ?? ''
+            }))
           },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({name, value, options}) =>

@@ -4,7 +4,7 @@ import YoutubeIcon from "~/icons/Youtube";
 import InstagramIcon from "~/icons/Instagram";
 import {Link} from "@remix-run/react";
 import RSSIcon from "~/icons/RSS";
-import {footerLinks} from "~/utils/getFooterLabels";
+import type {footerLinks} from "~/utils/getFooterLabels";
 
 const navigation = {
   social: [

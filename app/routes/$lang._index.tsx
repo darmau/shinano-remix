@@ -1,20 +1,19 @@
-import {ActionFunctionArgs, json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import {json} from "@remix-run/cloudflare";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import {createClient} from "~/utils/supabase/server";
 import {useLoaderData} from "@remix-run/react";
-import {Article} from "~/types/Article";
+import type {Article} from "~/types/Article";
 import Subnav from "~/components/Subnav";
 import NormalArticleCard from "~/components/NormalArticleCard";
 import HomeTopArticle from "~/components/HomeTopArticle";
-import CTA from "~/components/CTA";
 import i18nLinks from "~/utils/i18nLinks";
-import {Resend} from "resend";
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
-  const baseUrl = data!.baseUrl as string;
+  const baseUrl = data!.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
       data!.availableLangs,
@@ -121,7 +120,6 @@ export default function Index() {
             </div>
           </div>
         </div>
-        <CTA/>
       </>
   );
 }

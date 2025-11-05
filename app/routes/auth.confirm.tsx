@@ -1,5 +1,6 @@
-import {redirect, type LoaderFunctionArgs} from '@remix-run/cloudflare'
-import {type EmailOtpType} from '@supabase/supabase-js'
+import {redirect } from '@remix-run/cloudflare'
+import type {LoaderFunctionArgs} from '@remix-run/cloudflare';
+import type {EmailOtpType} from '@supabase/supabase-js';
 import {createClient} from "~/utils/supabase/server";
 
 export async function loader({request, context}: LoaderFunctionArgs) {
@@ -7,7 +8,7 @@ export async function loader({request, context}: LoaderFunctionArgs) {
   const token_hash = requestUrl.searchParams.get('token_hash')
   const type = requestUrl.searchParams.get('type') as EmailOtpType | null
   const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') || '/'
+  const next = requestUrl.searchParams.get("next") ?? "/";
   const {supabase, headers} = createClient(request, context);
   const segments = next.split('/').filter(Boolean);
   const fallbackLang = segments[0] ?? 'zh';

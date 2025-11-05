@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { useEffect, useRef } from "react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 export interface EXIF {
-  latitude?: number;
-  longitude?: number;
-  [key: string]: any;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 interface MapComponentProps {
@@ -17,48 +16,113 @@ export default function MapComponent({ mapboxToken, exifData }: MapComponentProp
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const marker = useRef<mapboxgl.Marker | null>(null);
-  const [lng, setLng] = useState<number | null>(null);
-  const [lat, setLat] = useState<number | null>(null);
-
+  const isMapLoaded = useRef(false);
+  const exifDataRef = useRef(exifData);
+  
+  // 保持 exifData ref 最新
   useEffect(() => {
-    if (mapboxToken) {
-      mapboxgl.accessToken = mapboxToken;
-    }
+    exifDataRef.current = exifData;
+  }, [exifData]);
 
-    if (!map.current && mapContainer.current) {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/outdoors-v12',
-        center: [104.32, 30.23],
-        zoom: 2
-      });
-    }
-
-    // 从 EXIF 数据中提取经纬度
-    if (exifData && exifData.latitude && exifData.longitude) {
-      setLng(exifData.longitude);
-      setLat(exifData.latitude);
-    }
-  }, [mapboxToken, exifData]);
-
+  // 初始化地图
   useEffect(() => {
-    if (map.current && lng !== null && lat !== null) {
-      // 更新地图中心
-      map.current.flyTo({
-        center: [lng, lat],
-        zoom: 13
-      });
+    if (!mapboxToken || !mapContainer.current) {
+      return;
+    }
 
-      // 更新或创建标记
-      if (marker.current) {
-        marker.current.setLngLat([lng, lat]);
-      } else {
-        marker.current = new mapboxgl.Marker()
-        .setLngLat([lng, lat])
-        .addTo(map.current);
+    mapboxgl.accessToken = mapboxToken;
+    const mapInstance = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: "mapbox://styles/mapbox/outdoors-v12",
+      center: [104.32, 30.23],
+      zoom: 2,
+    });
+
+    map.current = mapInstance;
+    isMapLoaded.current = false;
+
+    // 监听地图加载完成事件
+    const handleMapLoad = () => {
+      isMapLoaded.current = true;
+      
+      // 如果地图加载完成时已经有 exifData，立即应用
+      const currentExif = exifDataRef.current;
+      if (currentExif?.latitude != null && currentExif?.longitude != null) {
+        const lat = currentExif.latitude;
+        const lng = currentExif.longitude;
+        
+        if (typeof lat === 'number' && typeof lng === 'number' && 
+            !isNaN(lat) && !isNaN(lng)) {
+          const target: [number, number] = [lng, lat];
+          mapInstance.flyTo({
+            center: target,
+            zoom: 13,
+          });
+
+          if (!marker.current) {
+            marker.current = new mapboxgl.Marker();
+            marker.current.addTo(mapInstance);
+          }
+          marker.current.setLngLat(target);
+        }
       }
-    }
-  }, [lng, lat]);
+    };
+    
+    mapInstance.on('load', handleMapLoad);
 
-  return <div ref={mapContainer} style={{ width: '100%', height: '400px' }} />;
+    return () => {
+      if (marker.current) {
+        marker.current.remove();
+        marker.current = null;
+      }
+      mapInstance.remove();
+      map.current = null;
+      isMapLoaded.current = false;
+    };
+  }, [mapboxToken]);
+
+  // 处理 exifData 变化
+  useEffect(() => {
+    if (!map.current || !isMapLoaded.current) {
+      return;
+    }
+
+    const latitude = exifData?.latitude ?? null;
+    const longitude = exifData?.longitude ?? null;
+
+    if (latitude === null || longitude === null) {
+      // 如果没有坐标，移除现有标记
+      if (marker.current) {
+        marker.current.remove();
+        marker.current = null;
+      }
+      return;
+    }
+
+    // 确保坐标是有效数字
+    if (typeof latitude !== 'number' || typeof longitude !== 'number' || 
+        isNaN(latitude) || isNaN(longitude)) {
+      return;
+    }
+
+    const target: [number, number] = [longitude, latitude];
+    
+    // 先移动地图
+    map.current.flyTo({
+      center: target,
+      zoom: 13,
+    });
+
+    // 创建或更新标记
+    if (!marker.current) {
+      marker.current = new mapboxgl.Marker();
+      // 先添加到地图，这样标记才能正确初始化
+      marker.current.addTo(map.current);
+    }
+    
+    // 设置标记位置
+    marker.current.setLngLat(target);
+  }, [exifData]);
+
+  return <div ref={mapContainer} style={{ width: "100%", height: "400px" }} />;
 }

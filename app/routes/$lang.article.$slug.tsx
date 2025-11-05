@@ -1,23 +1,28 @@
-import {ActionFunctionArgs, json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import { json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {Link, useActionData, useLoaderData, useLocation, useOutletContext} from "@remix-run/react";
 import ResponsiveImage from "~/components/ResponsiveImage";
-import {Image} from "~/types/Image";
+import type {Image} from "~/types/Image";
 import getTime from "~/utils/getTime";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ArticleText from '~/locales/article';
 import ContentContainer from "~/components/ContentContainer";
-import {Json} from "~/types/supabase";
+import type {Json} from "~/types/supabase";
 import Catalog from "~/components/Catalog";
 import ReadingProcess from "~/components/ReadingProcess";
-import NextAndPrev, {NeighboringPost} from "~/components/NextAndPrev";
-import Breadcrumb, {BreadcrumbProps} from "~/components/Breadcrumb";
+import type {NeighboringPost} from "~/components/NextAndPrev";
+import NextAndPrev from "~/components/NextAndPrev";
+import type {BreadcrumbProps} from "~/components/Breadcrumb";
+import Breadcrumb from "~/components/Breadcrumb";
 import CommentEditor from "~/components/CommentEditor";
-import {CommentBlock, CommentProps} from "~/components/CommentBlock";
+import type { CommentProps} from "~/components/CommentBlock";
+import {CommentBlock} from "~/components/CommentBlock";
 import i18nLinks from "~/utils/i18nLinks";
 import {useEffect, useState} from "react";
-import {SupabaseClient} from "@supabase/supabase-js";
+import type {SupabaseClient} from "@supabase/supabase-js";
 import {EyeIcon} from "@heroicons/react/24/solid";
+import {parseTurnstileOutcome} from "~/utils/turnstile";
 
 export default function ArticleDetail() {
   const {lang, supabase} = useOutletContext<{ lang: string, supabase: SupabaseClient }>();
@@ -51,7 +56,7 @@ export default function ArticleDetail() {
       current: false
     },
     {
-      name: article.title! as string,
+      name: article.title!,
       to: `article/${article.slug}`,
       current: true
     }
@@ -291,8 +296,8 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   return json({
     article: articleContent,
-    previousArticle: previousArticle || null,
-    nextArticle: nextArticle || null,
+    previousArticle: previousArticle ?? null,
+    nextArticle: nextArticle ?? null,
     domain: context.cloudflare.env.BASE_URL,
     comments,
     page,
@@ -307,7 +312,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
-  const baseUrl = data!.baseUrl as string;
+  const baseUrl = data!.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
       data!.availableLangs,
@@ -318,7 +323,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     {title: data!.article.title},
     {
       name: "description",
-      content: data!.article.abstract || data!.article.subtitle,
+      content: data!.article.abstract ?? data!.article.subtitle,
     },
     {
       tagName: "link",
@@ -341,7 +346,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "og:image",
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.article.cover?.storage_key || 'a2b148a3-5799-4be0-a8d4-907f9355f20f'}`
+      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.article.cover?.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
     },
     {
       property: "og:description",
@@ -349,7 +354,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "twitter:image",
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.article.cover?.storage_key || 'a2b148a3-5799-4be0-a8d4-907f9355f20f'}`
+      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.article.cover?.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
     },
     {
       property: "twitter:title",
@@ -397,7 +402,7 @@ export async function action({request, context}: ActionFunctionArgs) {
         }
     );
 
-    const outcome = await turnstileResponse.json();
+    const outcome = parseTurnstileOutcome(await turnstileResponse.json());
     if (!outcome.success) {
       return json({
         success: false,

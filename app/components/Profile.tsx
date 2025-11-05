@@ -1,5 +1,6 @@
 // 本组件检测当前是否有登录，如果没有，显示登录按钮，如果有，显示用户信息
-import {json, LoaderFunctionArgs} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs} from "@remix-run/cloudflare";
+import {json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {Link, useLoaderData} from "@remix-run/react";
 import getLanguageLabel from "~/utils/getLanguageLabel";

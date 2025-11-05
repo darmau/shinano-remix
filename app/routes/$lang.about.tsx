@@ -1,11 +1,12 @@
 import Subnav from "~/components/Subnav";
-import {json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import {json} from "@remix-run/cloudflare";
 import AboutText from "~/locales/about";
 import HomepageText from "~/locales/homepage";
 import {useLoaderData} from "@remix-run/react";
 import ResponsiveImage from "~/components/ResponsiveImage";
 import {createClient} from "~/utils/supabase/server";
-import {Image} from "~/types/Image";
+import type {Image} from "~/types/Image";
 import TwitterIcon from "~/icons/Twitter";
 import GithubIcon from "~/icons/Github";
 import InstagramIcon from "~/icons/Instagram";
@@ -76,7 +77,7 @@ export default function AboutMe () {
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
-  const baseUrl = data!.baseUrl as string;
+  const baseUrl = data!.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
       data!.availableLangs,

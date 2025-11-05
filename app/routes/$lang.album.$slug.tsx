@@ -1,21 +1,29 @@
-import {ActionFunctionArgs, json, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import { json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {Link, useActionData, useLoaderData, useOutletContext} from "@remix-run/react";
-import {Json} from "~/types/supabase";
+import type {Json} from "~/types/supabase";
 import ContentContainer from "~/components/ContentContainer";
 import getTime from "~/utils/getTime";
-import GallerySlide, {AlbumPhoto} from "~/components/GallerySlide";
-import {useEffect, useState} from "react";
-import Mapbox, {EXIF} from "~/components/Mapbox";
+import type {AlbumPhoto} from "~/components/GallerySlide";
+import GallerySlide from "~/components/GallerySlide";
+import {useEffect, useState, lazy, Suspense} from "react";
+import type {EXIF} from "~/components/Mapbox";
 import {MapPinIcon} from "@heroicons/react/20/solid";
-import Breadcrumb, {BreadcrumbProps} from "~/components/Breadcrumb";
+
+// 动态导入 Mapbox 组件以优化加载速度
+const Mapbox = lazy(() => import("~/components/Mapbox"));
+import type {BreadcrumbProps} from "~/components/Breadcrumb";
+import Breadcrumb from "~/components/Breadcrumb";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import AlbumText from "~/locales/album";
 import CommentEditor from "~/components/CommentEditor";
-import {CommentBlock, CommentProps} from "~/components/CommentBlock";
+import type { CommentProps} from "~/components/CommentBlock";
+import {CommentBlock} from "~/components/CommentBlock";
 import i18nLinks from "~/utils/i18nLinks";
-import {SupabaseClient} from "@supabase/supabase-js";
+import type {SupabaseClient} from "@supabase/supabase-js";
 import {EyeIcon} from "@heroicons/react/24/solid";
+import {parseTurnstileOutcome} from "~/utils/turnstile";
 
 export default function AlbumDetail() {
   const {lang, supabase} = useOutletContext<{ lang: string, supabase: SupabaseClient }>();
@@ -42,7 +50,7 @@ export default function AlbumDetail() {
       current: false
     },
     {
-      name: albumContent.title! as string,
+      name: albumContent.title!,
       to: `album/${albumContent.slug}`,
       current: true
     }
@@ -103,9 +111,15 @@ export default function AlbumDetail() {
             )}
             <div className = "flex gap-2 justify-start items-center">
               <MapPinIcon className = "w-6 h-6 text-violet-700 inline-block"/>
-              <p className = "text-sm text-zinc-500">{albumImages![currentIndex].image!.location}</p>
+              <p className = "text-sm text-zinc-500">{albumImages![currentIndex].image.location}</p>
             </div>
-            <Mapbox mapboxToken = {MAPBOX} exifData = {albumImages![currentIndex].image!.exif as EXIF}/>
+            <Suspense fallback={
+              <div className="w-full h-[400px] bg-gray-100 rounded-lg flex items-center justify-center">
+                <div className="text-sm text-gray-500">加载地图中...</div>
+              </div>
+            }>
+              <Mapbox mapboxToken = {MAPBOX} exifData = {albumImages![currentIndex].image.exif as EXIF}/>
+            </Suspense>
           </div>
           <div className = "col-span-1 lg:col-span-2 lg:self-start">
             <CommentEditor
@@ -259,7 +273,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   const lang = params.lang as string;
-  const baseUrl = data!.baseUrl as string;
+  const baseUrl = data!.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
       data!.availableLangs,
@@ -270,7 +284,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     {title: data!.albumContent.title},
     {
       name: "description",
-      content: data!.albumContent.abstract || data!.albumContent.content_text,
+      content: data!.albumContent.abstract ?? data!.albumContent.content_text,
     },
     {
       tagName: "link",
@@ -289,15 +303,15 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "og:image",
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.albumImages![0].image!.storage_key}`
+      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.albumImages![0].image.storage_key}`
     },
     {
       property: "og:description",
-      content: data!.albumContent.abstract || data!.albumContent.content_text
+      content: data!.albumContent.abstract ?? data!.albumContent.content_text
     },
     {
       property: "twitter:image",
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.albumImages![0].image!.storage_key}`
+      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.albumImages![0].image.storage_key}`
     },
     {
       property: "twitter:title",
@@ -305,7 +319,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "twitter:description",
-      content: data!.albumContent.abstract || data!.albumContent.content_text
+      content: data!.albumContent.abstract ?? data!.albumContent.content_text
     },
     {
       property: "twitter:card",
@@ -345,7 +359,7 @@ export async function action({request, context}: ActionFunctionArgs) {
         }
     );
 
-    const outcome = await turnstileResponse.json();
+    const outcome = parseTurnstileOutcome(await turnstileResponse.json());
     if (!outcome.success) {
       return json({
         success: false,

@@ -1,17 +1,22 @@
-import { redirect, type LoaderFunctionArgs } from '@remix-run/cloudflare'
+import { redirect  } from '@remix-run/cloudflare'
+import type {LoaderFunctionArgs} from '@remix-run/cloudflare';
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') || '/'
+  const next = requestUrl.searchParams.get("next") ?? "/";
   const headers = new Headers()
 
   if (code) {
     const supabase = createServerClient(context.cloudflare.env.SUPABASE_URL, context.cloudflare.env.SUPABASE_ANON_KEY, {
       cookies: {
         getAll() {
-          return parseCookieHeader(request.headers.get('Cookie') ?? '')
+          const parsed = parseCookieHeader(request.headers.get('Cookie') ?? '')
+          return parsed.map(cookie => ({
+            name: cookie.name,
+            value: cookie.value ?? ''
+          }))
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) =>

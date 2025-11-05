@@ -1,7 +1,9 @@
-import {LoaderFunctionArgs} from "@remix-run/cloudflare";
+import type {LoaderFunctionArgs} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from '~/locales/homepage';
+import {contentToHtml} from "~/components/RSSContainer";
+import type {Json} from "~/types/supabase";
 
 export type RssEntry = {
   title: string | null;
@@ -81,6 +83,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
       subtitle,
       abstract,
       published_at,
+      content_json,
       category (title),
       cover (alt, size, storage_key),
       language!inner (lang)
@@ -90,30 +93,48 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     .order('published_at', {ascending: false})
     .limit(30);
 
+  const prefix = context.cloudflare.env.IMG_PREFIX;
+  
   const feed = generateRss({
     title: `${label.title} - ${label.article}`,
     description: label.description,
     language: lang,
     link: `https://darmau.co/${lang}`,
-    entries: posts ? posts.map((post) => ({
-      description: post.subtitle,
-      pubDate: post.published_at,
-      title: post.title,
-      author: '李大毛',
-      category: post.category!.title,
-      link: `https://darmau.co/${lang}/article/${post.slug}`,
-      guid: post.id,
-      content: `
-        <p>${post.abstract}</p>
-        <p>请移步博客继续阅读。Please go to the blog to continue reading</p>
-        <p><a href="https://darmau.co/${lang}/article/${post.slug}">Continue</a></p
-      `,
-      enclosure: post.cover && {
-        url: `https://img.darmau.co/cdn-cgi/image/format=jpeg,width=960/${post.cover.storage_key}`,
-        type: 'image/jpeg',
-        length: post.cover.size,
-      },
-    })) : [],
+    entries: posts ? posts.map((post) => {
+      // 生成完整的HTML内容
+      let fullContent = "";
+      if (post.content_json) {
+        fullContent = contentToHtml(post.content_json as Json, prefix);
+      } else if (post.abstract) {
+        // 如果没有content_json，使用摘要作为后备
+        fullContent = `<p>${post.abstract}</p>`;
+      }
+      
+      // 如果有封面图片，添加到内容开头
+      if (post.cover) {
+        const altText = post.cover.alt 
+          ? post.cover.alt.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+          : "";
+        const coverImage = `<figure style="margin: 1rem 0;"><img src="${prefix}/cdn-cgi/image/format=jpeg,width=960/${post.cover.storage_key}" alt="${altText}" style="max-width: 100%; height: auto; border-radius: 0.375rem;" /></figure>`;
+        fullContent = coverImage + fullContent;
+      }
+      
+      return {
+        description: post.subtitle,
+        pubDate: post.published_at,
+        title: post.title,
+        author: '李大毛',
+        category: post.category!.title,
+        link: `https://darmau.co/${lang}/article/${post.slug}`,
+        guid: post.id,
+        content: fullContent,
+        enclosure: post.cover ? {
+          url: `${prefix}/cdn-cgi/image/format=jpeg,width=960/${post.cover.storage_key}`,
+          type: 'image/jpeg' as const,
+          length: String(post.cover.size ?? 0),
+        } : undefined,
+      };
+    }) : [],
   });
 
   return new Response(feed, {

@@ -1,8 +1,8 @@
 import {Form, useOutletContext} from "@remix-run/react";
 import CommentText from '~/locales/comment';
 import getLanguageLabel from "~/utils/getLanguageLabel";
-import {Session} from "@supabase/supabase-js";
-import {CommentProps} from "~/components/CommentBlock";
+import type {Session} from "@supabase/supabase-js";
+import type {CommentProps} from "~/components/CommentBlock";
 import { Turnstile } from '@marsidev/react-turnstile'
 
 export default function CommentEditor({contentTable, contentId, session, replyingTo, onCancelReply}: {
