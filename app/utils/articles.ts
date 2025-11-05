@@ -110,11 +110,27 @@ export const normalizeYearCounts = (value: unknown): YearCount[] => {
         if (!isRecord(item)) {
           return null;
         }
-        const year = item["year"];
+        const yearValue = item["year"];
         const count = item["count"];
-        if (typeof year !== "number" || typeof count !== "number") {
+        
+        // RPC 函数返回的 year 可能是 string 或 number，需要统一处理
+        let year: number;
+        if (typeof yearValue === "number") {
+          year = yearValue;
+        } else if (typeof yearValue === "string") {
+          const parsedYear = parseInt(yearValue, 10);
+          if (isNaN(parsedYear)) {
+            return null;
+          }
+          year = parsedYear;
+        } else {
           return null;
         }
+        
+        if (typeof count !== "number") {
+          return null;
+        }
+        
         return {year, count};
       })
       .filter((entry): entry is YearCount => entry !== null);

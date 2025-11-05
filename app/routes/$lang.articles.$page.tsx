@@ -76,19 +76,23 @@ export default function AllArticles() {
             <div className = "space-y-4">
               <h3 className = "text-sm font-semibold text-violet-600">{label.year}</h3>
               <ol className = "">
-                {countByYear && countByYear.map((year) => (
-                    <li
-                        key = {year.year}
-                        className = "p-2 rounded-md hover:bg-zinc-50 cursor-pointer"
-                    >
-                      <Link
-                          to = {`/${lang}/articles/archive/${year.year}/1`}
-                          className = "text-base text-zinc-500 block"
-                      >
-                        {year.year} ({year.count})
-                      </Link>
-                    </li>
-                ))}
+                {countByYear && countByYear.length > 0 ? (
+                    countByYear.map((year) => (
+                        <li
+                            key = {year.year}
+                            className = "p-2 rounded-md hover:bg-zinc-50 cursor-pointer"
+                        >
+                          <Link
+                              to = {`/${lang}/articles/archive/${year.year}/1`}
+                              className = "text-base text-zinc-500 block"
+                          >
+                            {year.year} ({year.count})
+                          </Link>
+                        </li>
+                    ))
+                ) : (
+                    <li className = "text-sm text-zinc-400 p-2">暂无数据</li>
+                )}
               </ol>
             </div>
             <div className = "space-y-4">
