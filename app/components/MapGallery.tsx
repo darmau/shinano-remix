@@ -228,7 +228,7 @@ export default function MapGallery({
             {/* 图片 */}
             <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-zinc-100">
               <img
-                src={`${imgPrefix}/cdn-cgi/image/format=webp,width=640/${selectedImage.properties.storageKey}`}
+                src={`${imgPrefix}/cdn-cgi/image/format=avif,width=640/${selectedImage.properties.storageKey}`}
                 alt={selectedImage.properties.alt || ""}
                 className="w-full h-full object-cover"
                 loading="lazy"
