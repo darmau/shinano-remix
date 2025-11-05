@@ -51,7 +51,9 @@ export default function MapGallery({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [selectedImage, setSelectedImage] = useState<MapImageFeature | null>(null);
+  const [clusterImages, setClusterImages] = useState<MapImageFeature[]>([]);
   const hasFitToBounds = useRef(false);
+  const imageCollectionRef = useRef(imageCollection);
   const label = getLanguageLabel(AlbumText, lang);
 
   useEffect(() => {
@@ -137,7 +139,7 @@ export default function MapGallery({
         },
       });
 
-      // 点击聚合时放大
+      // 点击聚合时的处理：根据缩放级别决定是放大还是显示列表
       mapInstance.on("click", "clusters", (e) => {
         const features = mapInstance.queryRenderedFeatures(e.point, {
           layers: ["clusters"],
@@ -147,18 +149,47 @@ export default function MapGallery({
         
         const clusterId = features[0].properties?.cluster_id;
         const source = mapInstance.getSource("photos") as mapboxgl.GeoJSONSource;
+        const currentZoom = mapInstance.getZoom();
+        const zoomThreshold = 13; // 缩放阈值：13级
         
-        source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-          if (err) return;
+        // 如果当前缩放级别达到阈值，直接显示图片列表
+        if (currentZoom >= zoomThreshold) {
+          // 获取聚合中的所有图片
+          source.getClusterLeaves(
+            clusterId,
+            Number.MAX_SAFE_INTEGER, // 获取所有图片
+            0, // 偏移量
+            (err, leaves) => {
+              if (err) return;
+              
+              // 从原始数据中查找对应的完整 feature
+              const clusterFeatures: MapImageFeature[] = leaves
+                .map((leaf: any) => {
+                  const imageId = leaf.properties?.imageId;
+                  return imageCollectionRef.current.features.find(
+                    (f: MapImageFeature) => f.properties.imageId === imageId
+                  );
+                })
+                .filter((f: MapImageFeature | undefined): f is MapImageFeature => f !== undefined);
+              
+              setClusterImages(clusterFeatures);
+              setSelectedImage(null); // 关闭单个图片详情
+            }
+          );
+        } else {
+          // 如果缩放级别未达到阈值，继续放大到分解聚合的级别
+          source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+            if (err) return;
 
-        const geometry = features[0].geometry;
-        if (geometry.type === "Point" && zoom !== null) {
-          mapInstance.easeTo({
-            center: geometry.coordinates as [number, number],
-            zoom: zoom,
+            const geometry = features[0].geometry;
+            if (geometry.type === "Point" && zoom !== null) {
+              mapInstance.easeTo({
+                center: geometry.coordinates as [number, number],
+                zoom: zoom,
+              });
+            }
           });
         }
-        });
       });
 
       // 点击单个点显示详情
@@ -169,12 +200,13 @@ export default function MapGallery({
         const imageId = clickedFeature.properties?.imageId;
         
         // 从原始数据中查找完整的 feature
-      const fullFeature = imageCollection.features.find(
-        (f: MapImageFeature) => f.properties.imageId === imageId
-      );
+        const fullFeature = imageCollectionRef.current.features.find(
+          (f: MapImageFeature) => f.properties.imageId === imageId
+        );
         
         if (fullFeature) {
           setSelectedImage(fullFeature);
+          setClusterImages([]); // 关闭聚合列表
           
           // 放大到该点位，增加缩放级别以获得更好的视图
           const coordinates = fullFeature.geometry.coordinates as [number, number];
@@ -209,6 +241,11 @@ export default function MapGallery({
       hasFitToBounds.current = false;
     };
   }, [mapboxToken, imageCollection]);
+
+  // 更新 imageCollection ref
+  useEffect(() => {
+    imageCollectionRef.current = imageCollection;
+  }, [imageCollection]);
 
   useEffect(() => {
     const mapInstance = map.current;
@@ -247,6 +284,70 @@ export default function MapGallery({
   return (
     <div className="relative w-full h-screen">
       <div ref={mapContainer} className="w-full h-full" />
+      
+      {/* 聚合图片列表面板 */}
+      {clusterImages.length > 0 && (
+        <div className="absolute top-4 right-4 w-96 max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl z-10">
+          <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-zinc-800">
+              {label.map_title} ({clusterImages.length})
+            </h3>
+            <button
+              onClick={() => setClusterImages([])}
+              className="text-zinc-500 hover:text-zinc-700"
+            >
+              <XMarkIcon className="h-6 w-6" />
+            </button>
+          </div>
+          
+          <div className="p-4 space-y-3">
+            {clusterImages.map((feature) => (
+              <div
+                key={feature.properties.imageId}
+                onClick={() => {
+                  setSelectedImage(feature);
+                  setClusterImages([]);
+                  // 放大到该点位
+                  const coordinates = feature.geometry.coordinates as [number, number];
+                  map.current?.flyTo({
+                    center: coordinates,
+                    zoom: 15,
+                    duration: 1000,
+                    essential: true,
+                  });
+                }}
+                className="cursor-pointer rounded-lg overflow-hidden bg-zinc-50 hover:bg-zinc-100 transition-colors border border-zinc-200 hover:border-violet-300"
+              >
+                <div className="relative aspect-[4/3] overflow-hidden bg-zinc-100">
+                  <img
+                    src={`${imgPrefix}/cdn-cgi/image/format=avif,width=640/${feature.properties.storageKey}`}
+                    alt={feature.properties.alt || ""}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-3">
+                  {feature.properties.location && (
+                    <p className="text-sm font-medium text-zinc-800 mb-1">
+                      {feature.properties.location}
+                    </p>
+                  )}
+                  {feature.properties.caption && (
+                    <p className="text-xs text-zinc-600 line-clamp-2">
+                      {feature.properties.caption}
+                    </p>
+                  )}
+                  {feature.properties.albums.length > 0 && (
+                    <p className="text-xs text-zinc-500 mt-1">
+                      {label.albums_count}: {feature.properties.albums.length}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       {/* 图片详情面板 */}
       {selectedImage && (
