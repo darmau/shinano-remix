@@ -2,7 +2,7 @@ import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-
 import { json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {useFetcher, useLoaderData, useOutletContext} from "@remix-run/react";
-import {useEffect, useState} from "react";
+import {startTransition, useEffect, useState} from "react";
 import ThoughtCard from "~/components/ThoughtCard";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ThoughtText from "~/locales/thought";
@@ -27,6 +27,19 @@ export interface Thought {
   }[] | null
 }
 
+type LoaderData = {
+  thoughts: Thought[];
+  baseUrl: string;
+  availableLangs: string[];
+};
+
+type LoadMoreResponse = {
+  thoughts: Thought[];
+};
+
+const isLoadMoreThoughts = (data: unknown): data is LoadMoreResponse =>
+    typeof data === "object" && data !== null && Array.isArray((data as LoadMoreResponse).thoughts);
+
 export async function loader({request, context}: LoaderFunctionArgs) {
   const {supabase} = createClient(request, context);
 
@@ -46,20 +59,13 @@ export async function loader({request, context}: LoaderFunctionArgs) {
   .order('created_at', {ascending: false})
   .limit(12);
 
-  if (!thoughts) {
-    throw new Response(null, {
-      status: 404,
-      statusText: 'Thoughts not exists'
-    })
-  }
-
   const availableLangs = ["zh", "en", "jp"];
 
-  return json({
-    thoughts,
+  return json<LoaderData>({
+    thoughts: thoughts ?? [],
     baseUrl: context.cloudflare.env.BASE_URL,
-    availableLangs
-  })
+    availableLangs,
+  });
 }
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
@@ -135,14 +141,14 @@ export async function action({request, context}: ActionFunctionArgs) {
   .order("created_at", {ascending: false});
 
   if (error) {
-    throw new Error("获取更多思想数据失败");
+    throw new Error("获取更多思想数据失败", {cause: error});
   }
 
-  return json<{thoughts: Thought[]}>({thoughts: data as unknown as Thought[] || []});
+  return json<LoadMoreResponse>({thoughts: data ?? []});
 }
 
 export default function Thoughts() {
-  const loaderData = useLoaderData<typeof loader>();
+  const loaderData = useLoaderData<LoaderData>();
   const fetcher = useFetcher();
 
   const {lang} = useOutletContext<{lang: string}>();
@@ -152,9 +158,13 @@ export default function Thoughts() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    if (fetcher.data && typeof fetcher.data === 'object' && 'thoughts' in fetcher.data && Array.isArray((fetcher.data as any).thoughts)) {
-      setThoughts((prevThoughts) => [...prevThoughts, ...(fetcher.data as any).thoughts]);
+    if (!isLoadMoreThoughts(fetcher.data)) {
+      return;
     }
+
+    startTransition(() => {
+      setThoughts((prevThoughts) => [...prevThoughts, ...fetcher.data.thoughts]);
+    });
   }, [fetcher.data]);
 
   const loadMore = () => {
@@ -169,7 +179,7 @@ export default function Thoughts() {
         <div className = "w-full flex-1 min-h-full max-w-2xl mx-auto p-4 md:py-8 lg:mb-16">
           <div className = "flex flex-col gap-4">
             {thoughts.map((thought) => (
-                <ThoughtCard thought = {thought as unknown as Thought} key = {thought.id}/>
+                <ThoughtCard thought = {thought} key = {thought.id}/>
             ))}
           </div>
           <button

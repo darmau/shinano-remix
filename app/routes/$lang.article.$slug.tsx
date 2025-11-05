@@ -295,8 +295,8 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   return json({
     article: articleContent,
-    previousArticle: previousArticle || null,
-    nextArticle: nextArticle || null,
+    previousArticle: previousArticle ?? null,
+    nextArticle: nextArticle ?? null,
     domain: context.cloudflare.env.BASE_URL,
     comments,
     page,
@@ -322,7 +322,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     {title: data!.article.title},
     {
       name: "description",
-      content: data!.article.abstract || data!.article.subtitle,
+      content: data!.article.abstract ?? data!.article.subtitle,
     },
     {
       tagName: "link",
@@ -345,7 +345,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "og:image",
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.article.cover?.storage_key || 'a2b148a3-5799-4be0-a8d4-907f9355f20f'}`
+      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.article.cover?.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
     },
     {
       property: "og:description",
@@ -353,7 +353,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "twitter:image",
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.article.cover?.storage_key || 'a2b148a3-5799-4be0-a8d4-907f9355f20f'}`
+      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.article.cover?.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
     },
     {
       property: "twitter:title",

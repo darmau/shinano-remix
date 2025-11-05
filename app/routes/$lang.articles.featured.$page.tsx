@@ -35,7 +35,7 @@ export default function AllFeaturedArticles() {
                 <FeaturedArticle article = {article as Article} key = {article.id}/>
             ))}
           </div>
-          <Pagination count = {articleCount || 0} limit = {12} page = {page} path = {path}/>
+          <Pagination count = {articleCount ?? 0} limit = {12} page = {page} path = {path}/>
         </div>
       </>
   )
@@ -78,7 +78,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "og:image",
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.articles[0].cover.storage_key || 'a2b148a3-5799-4be0-a8d4-907f9355f20f'}`
+      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.articles[0].cover.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
     },
     {
       property: "og:description",

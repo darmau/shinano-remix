@@ -9,13 +9,42 @@ import Subnav from "~/components/Subnav";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import BookText from "~/locales/books";
 import i18nLinks from "~/utils/i18nLinks";
-import {useEffect, useState} from "react";
+import {startTransition, useEffect, useState} from "react";
 import ThoughtText from "~/locales/thought";
+
+type BookRecord = {
+  id: number;
+  title: string;
+  rate: number;
+  comment: string | null;
+  link: string | null;
+  date: string | null;
+  cover: {
+    id: string | number;
+    alt: string | null;
+    storage_key: string;
+  } | null;
+};
+
+type LoaderData = {
+  books: BookRecord[];
+  prefix: string;
+  baseUrl: string;
+  availableLangs: string[];
+  count: number | null;
+};
+
+type LoadMoreResponse = {
+  books: BookRecord[];
+};
+
+const isLoadMoreResponse = (data: unknown): data is LoadMoreResponse =>
+    typeof data === "object" && data !== null && Array.isArray((data as LoadMoreResponse).books);
 
 // 接收iso8601格式的日期字符串，返回
 
-export default function Book () {
-  const loaderData = useLoaderData<typeof loader>();
+export default function Book() {
+  const loaderData = useLoaderData<LoaderData>();
   const {lang} = useOutletContext<{lang: string}>();
   const fetcher = useFetcher();
 
@@ -26,9 +55,13 @@ export default function Book () {
   const label = getLanguageLabel(ThoughtText, lang);
 
   useEffect(() => {
-    if (fetcher.data && typeof fetcher.data === 'object' && 'books' in fetcher.data && Array.isArray((fetcher.data as any).books)) {
-      setBooks((prevBooks) => [...prevBooks, ...(fetcher.data as any).books]);
+    if (!isLoadMoreResponse(fetcher.data)) {
+      return;
     }
+
+    startTransition(() => {
+      setBooks((prevBooks) => [...prevBooks, ...fetcher.data.books]);
+    });
   }, [fetcher.data]);
 
   const loadMore = () => {
@@ -106,13 +139,13 @@ export async function loader({request, context}: LoaderFunctionArgs) {
 
   const availableLangs = ["zh", "en", "jp"];
 
-  return json({
-    books: bookData,
+  return json<LoaderData>({
+    books: bookData ?? [],
     prefix: context.cloudflare.env.IMG_PREFIX,
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs,
-    count
-  })
+    count: count ?? null,
+  });
 }
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
@@ -126,7 +159,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   );
 
   return [
-    {title: label.title + '(' + data!.count + ')'},
+    {title: `${label.title}(${data!.count ?? 0})`},
     {
       name: "description",
       content: label.description,
@@ -178,7 +211,7 @@ export async function action({request, context}: ActionFunctionArgs) {
     throw new Error("获取更多读书数据失败");
   }
 
-  return json({
-    books: data
+  return json<LoadMoreResponse>({
+    books: data ?? [],
   });
 }

@@ -8,7 +8,6 @@ import type {Article} from "~/types/Article";
 import Subnav from "~/components/Subnav";
 import NormalArticleCard from "~/components/NormalArticleCard";
 import HomeTopArticle from "~/components/HomeTopArticle";
-import CTA from "~/components/CTA";
 import i18nLinks from "~/utils/i18nLinks";
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {

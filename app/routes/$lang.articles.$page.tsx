@@ -41,7 +41,7 @@ export default function AllArticles() {
             {articles.map((article) => (
                 <NormalArticleCard article = {article as Article} key = {article.id} showAbstract = {true}/>
             ))}
-            <Pagination count = {articleCount || 0} limit = {12} page = {page} path = {path}/>
+            <Pagination count = {articleCount ?? 0} limit = {12} page = {page} path = {path}/>
           </div>
           <aside className = "pb-4 space-y-8 md:col-span-1">
             <div className = "space-y-4">

@@ -57,7 +57,7 @@ export default function ArticlesByCategory() {
             {articles.map((article) => (
                 <NormalArticleCard article = {article as Article} key = {article.id} showAbstract = {true}/>
             ))}
-            <Pagination count = {articleCount || 0} limit = {12} page = {page} path = {path}/>
+            <Pagination count = {articleCount ?? 0} limit = {12} page = {page} path = {path}/>
           </div>
           <aside className = "pb-4 space-y-8 md:col-span-1">
             <div className = "space-y-4">
@@ -144,7 +144,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "og:image",
-      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.category!.cover.storage_key || 'a2b148a3-5799-4be0-a8d4-907f9355f20f'}`
+      content: `${data!.prefix}/cdn-cgi/image/format=jpeg,width=960/${data!.category!.cover.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
     },
     {
       property: "og:description",

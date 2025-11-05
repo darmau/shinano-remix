@@ -55,10 +55,7 @@ export default function MapComponent({ mapboxToken, exifData }: MapComponentProp
       zoom: 13,
     });
 
-    if (!marker.current) {
-      marker.current = new mapboxgl.Marker().addTo(map.current);
-    }
-
+    marker.current ??= new mapboxgl.Marker().addTo(map.current);
     marker.current.setLngLat(target);
   }, [exifData]);
 

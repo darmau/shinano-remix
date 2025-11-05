@@ -38,7 +38,7 @@ export default tseslint.config(
     ],
   },
   js.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked.map(restrictToTs),
+  ...tseslint.configs.recommended.map(restrictToTs),
   {
     ...restrictToJsx(reactPlugin.configs.flat.recommended),
   },
@@ -146,6 +146,12 @@ export default tseslint.config(
             "postcss.config.js",
             "eslint.config.js",
           ],
+        },
+      ],
+      "@typescript-eslint/only-throw-error": [
+        "error",
+        {
+          allow: ["Response"],
         },
       ],
     },

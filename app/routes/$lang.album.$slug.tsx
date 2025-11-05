@@ -275,7 +275,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     {title: data!.albumContent.title},
     {
       name: "description",
-      content: data!.albumContent.abstract || data!.albumContent.content_text,
+      content: data!.albumContent.abstract ?? data!.albumContent.content_text,
     },
     {
       tagName: "link",
@@ -298,7 +298,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "og:description",
-      content: data!.albumContent.abstract || data!.albumContent.content_text
+      content: data!.albumContent.abstract ?? data!.albumContent.content_text
     },
     {
       property: "twitter:image",
@@ -310,7 +310,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "twitter:description",
-      content: data!.albumContent.abstract || data!.albumContent.content_text
+      content: data!.albumContent.abstract ?? data!.albumContent.content_text
     },
     {
       property: "twitter:card",
