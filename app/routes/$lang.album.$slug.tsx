@@ -7,10 +7,12 @@ import ContentContainer from "~/components/ContentContainer";
 import getTime from "~/utils/getTime";
 import type {AlbumPhoto} from "~/components/GallerySlide";
 import GallerySlide from "~/components/GallerySlide";
-import {useEffect, useState} from "react";
+import {useEffect, useState, lazy, Suspense} from "react";
 import type {EXIF} from "~/components/Mapbox";
-import Mapbox from "~/components/Mapbox";
 import {MapPinIcon} from "@heroicons/react/20/solid";
+
+// 动态导入 Mapbox 组件以优化加载速度
+const Mapbox = lazy(() => import("~/components/Mapbox"));
 import type {BreadcrumbProps} from "~/components/Breadcrumb";
 import Breadcrumb from "~/components/Breadcrumb";
 import getLanguageLabel from "~/utils/getLanguageLabel";
@@ -111,7 +113,13 @@ export default function AlbumDetail() {
               <MapPinIcon className = "w-6 h-6 text-violet-700 inline-block"/>
               <p className = "text-sm text-zinc-500">{albumImages![currentIndex].image.location}</p>
             </div>
-            <Mapbox mapboxToken = {MAPBOX} exifData = {albumImages![currentIndex].image.exif as EXIF}/>
+            <Suspense fallback={
+              <div className="w-full h-[400px] bg-gray-100 rounded-lg flex items-center justify-center">
+                <div className="text-sm text-gray-500">加载地图中...</div>
+              </div>
+            }>
+              <Mapbox mapboxToken = {MAPBOX} exifData = {albumImages![currentIndex].image.exif as EXIF}/>
+            </Suspense>
           </div>
           <div className = "col-span-1 lg:col-span-2 lg:self-start">
             <CommentEditor
