@@ -16,10 +16,8 @@ import {
   normalizeYearCounts,
   normalizeCategoryCounts,
   normalizeCategorySummary,
-  type YearCount,
-  type CategoryCount,
-  type CategorySummary,
 } from "~/utils/articles";
+import type {YearCount, CategoryCount, CategorySummary} from "~/utils/articles";
 
 type LoaderData = {
   articles: Article[];
