@@ -31,8 +31,6 @@ export const action = async ({ request, context }: ActionFunctionArgs) => {
   const contact = formData.get("contact");
   const message = formData.get("message");
 
-  console.log(session.user.id)
-
   // 去public.users表中查找当前用户的id
   const { data: user, error: userError } = await supabase
     .from('users')

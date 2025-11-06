@@ -45,7 +45,6 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
   const { supabase } = createClient(request, context);
   const lang = params.lang as string;
 
-  console.log(`[Map Loader - Function] Fetching data for lang: ${lang}`);
   const startTime = Date.now();
 
   // 🚀 一行调用数据库函数，直接获取完整的 GeoJSON！
@@ -81,7 +80,6 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
   const elapsed = Date.now() - startTime;
   const imageCollection = (geojson || { type: "FeatureCollection", features: [] }) as MapImageCollection;
   const featureCount = imageCollection.features?.length || 0;
-  console.log(`[Map Loader - Function] ✅ Loaded ${featureCount} images in ${elapsed}ms`);
 
   const availableLangs = ["zh", "en", "jp"];
 

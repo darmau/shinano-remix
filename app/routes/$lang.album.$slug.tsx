@@ -44,18 +44,6 @@ export default function AlbumDetail() {
 
   const label = getLanguageLabel(AlbumText, lang);
 
-  // 调试：输出GPS数据
-  useEffect(() => {
-    if (albumImages && albumImages[currentIndex]) {
-      console.log('Current image GPS data:', {
-        latitude: albumImages[currentIndex].image.latitude,
-        longitude: albumImages[currentIndex].image.longitude,
-        latitude_type: typeof albumImages[currentIndex].image.latitude,
-        longitude_type: typeof albumImages[currentIndex].image.longitude
-      });
-    }
-  }, [currentIndex, albumImages]);
-
   const breadcrumbPages: BreadcrumbProps[] = [
     {
       name: label.latest_albums,

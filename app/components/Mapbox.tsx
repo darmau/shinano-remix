@@ -119,10 +119,8 @@ export default function MapComponent({ mapboxToken, exifData, lang = 'en' }: Map
         marker.current = new mapboxgl.Marker();
         marker.current.setLngLat(target); // 必须先设置位置
         marker.current.addTo(mapInstance); // 然后再添加到地图
-        console.log('Marker created and added to map at:', target);
       } else {
         marker.current.setLngLat(target);
-        console.log('Marker position updated to:', target);
       }
     };
     
@@ -140,14 +138,9 @@ export default function MapComponent({ mapboxToken, exifData, lang = 'en' }: Map
     };
   }, [mapboxToken, shouldLoadMap]); // 依赖 shouldLoadMap，延迟加载直到进入视口
 
-  // 注意：语言变化时不重新创建地图，避免额外的 map load
-  // MapboxLanguage 控件在初始化时已设置，动态更新需要重新加载样式，会产生新的 map load
-  // 为了节省成本，我们接受地图保持初始语言，这是合理的权衡
-
   // 处理 exifData 变化
   useEffect(() => {
     console.log('exifData changed:', exifData);
-    console.log('Map ready:', !!map.current, 'Map loaded:', isMapLoaded.current);
     
     if (!map.current || !isMapLoaded.current) {
       console.log('Map not ready yet, skipping update');
@@ -193,7 +186,6 @@ export default function MapComponent({ mapboxToken, exifData, lang = 'en' }: Map
 
     const target: [number, number] = [lng, lat];
     
-    console.log('Moving map to:', target);
     // 先移动地图
     map.current.flyTo({
       center: target,
@@ -202,14 +194,11 @@ export default function MapComponent({ mapboxToken, exifData, lang = 'en' }: Map
 
     // 创建或更新标记
     if (!marker.current) {
-      console.log('Creating new marker');
       marker.current = new mapboxgl.Marker();
       marker.current.setLngLat(target); // 必须先设置位置
       marker.current.addTo(map.current); // 然后再添加到地图
-      console.log('Marker created and added at:', target);
     } else {
       marker.current.setLngLat(target);
-      console.log('Marker position updated to:', target);
     }
   }, [exifData]);
 
