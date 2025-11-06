@@ -67,7 +67,7 @@ export default function Catalog({content, url, title, lang}: { content: Json, ur
       <nav aria-label="Table of contents"
            className="md:w-full md:sticky md:top-24 md:h-fit space-y-6"
       >
-        <div className="flex flex-col gap-2 border-b pb-6">
+        <div className="flex flex-col gap-2 border-b border-gray-200 pb-6">
           {generateTableOfContents(article)}
         </div>
         <ShareButton url = {url} title = {title} lang = {lang}/>

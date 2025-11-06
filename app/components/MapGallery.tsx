@@ -305,7 +305,7 @@ export default function MapGallery({
       {/* 聚合图片列表面板 */}
       {clusterImages.length > 0 && (
         <div className="absolute top-4 right-4 w-96 max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl z-10">
-          <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+          <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center z-10">
             <h3 className="text-lg font-semibold text-zinc-800">
               {label.map_title} ({clusterImages.length})
             </h3>

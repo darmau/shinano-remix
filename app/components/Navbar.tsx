@@ -93,7 +93,7 @@ export default function Navbar({lang, items}: { lang: string, items: NavItem[] }
                 <header className="font-medium font-serif text-lg">积薪</header>
               </Link>
               <Popover>
-                <PopoverButton className = "flex border items-center rounded text-sm ml-2 px-1.5 gap-1 py-1 data-hover:bg-zinc-50">
+                <PopoverButton className = "flex border border-gray-200 items-center rounded text-sm ml-2 px-1.5 gap-1 py-1 data-hover:bg-zinc-50">
                   <TranslateIcon className = "size-4 text-gray-900"/>
                   {langMap.get(lang)}
                 </PopoverButton>

@@ -48,8 +48,8 @@ export default function RSS() {
           </header>
 
           <div className = "grid grid-cols-1 gap-8 lg:grid-cols-3">
-            <section className = "rounded-2xl border shadow-lg">
-              <div className="p-4 lg:p-8 border-b space-y-4">
+            <section className = "rounded-2xl border border-gray-200 shadow-lg">
+              <div className="p-4 lg:p-8 border-b border-gray-200 space-y-4">
                 <h3 className = "font-medium text-lg text-zinc-700">{label.article}</h3>
                 <code className = "text-sm block font-mono text-zinc-600">{`https://darmau.co/${lang}/article/rss.xml`}</code>
                 <button
@@ -70,8 +70,8 @@ export default function RSS() {
                 ))}
               </ol>}
             </section>
-            <section className = "rounded-2xl border shadow-lg">
-              <div className = "p-4 lg:p-8 border-b space-y-4">
+            <section className = "rounded-2xl border border-gray-200 shadow-lg">
+              <div className = "p-4 lg:p-8 border-b border-gray-200 space-y-4">
                 <h3 className = "font-medium text-lg text-zinc-700">{label.photography}</h3>
                 <code className = "text-sm block font-mono text-zinc-600">{`https://darmau.co/${lang}/album/rss.xml`}</code>
                 <button
@@ -98,8 +98,8 @@ export default function RSS() {
                 ))}
               </div>
             </section>
-            <section className = "rounded-2xl border shadow-lg">
-              <div className = "p-4 lg:p-8 border-b space-y-4">
+            <section className = "rounded-2xl border border-gray-200 shadow-lg">
+              <div className = "p-4 lg:p-8 border-b border-gray-200 space-y-4">
                 <h3 className = "font-medium text-lg text-zinc-700">{label.thought}</h3>
                 <code className = "text-sm block font-mono text-zinc-600">{`https://darmau.co/${lang}/thought/rss.xml`}</code>
                 <button

@@ -110,7 +110,7 @@ export default function ThoughtDetail() {
                 replyingTo = {replyingTo}
                 onCancelReply = {handleCancelReply}
             />
-            <div className = "flex flex-col gap-4 divide-y">
+          <div className= "flex flex-col gap-4 divide-y divide-none">
               {actionResponse?.error && <p className = "mt-2 text-sm text-red-500">{actionResponse.error}</p>}
               {actionResponse?.success && <p className = "mt-2 text-sm text-green-500">{actionResponse.success}</p>}
               {comments && comments.map((comment) => (
