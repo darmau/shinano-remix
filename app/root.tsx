@@ -39,10 +39,10 @@ export const loader = async ({request, context}: LoaderFunctionArgs) => {
   }
 
   const env = {
-    SUPABASE_URL: context.cloudflare.env.SUPABASE_URL,
-    SUPABASE_ANON_KEY: context.cloudflare.env.SUPABASE_ANON_KEY,
-    PREFIX: context.cloudflare.env.IMG_PREFIX,
-    TURNSTILE_SITE_KEY: context.cloudflare.env.TURNSTILE_SITE_KEY,
+    SUPABASE_URL: context?.cloudflare?.env?.SUPABASE_URL || process.env.SUPABASE_URL,
+    SUPABASE_ANON_KEY: context?.cloudflare?.env?.SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
+    PREFIX: context?.cloudflare?.env?.IMG_PREFIX || process.env.IMG_PREFIX,
+    TURNSTILE_SITE_KEY: context?.cloudflare?.env?.TURNSTILE_SITE_KEY || process.env.TURNSTILE_SITE_KEY,
   };
 
   const {supabase} = createClient(request, context);
