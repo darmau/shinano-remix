@@ -1,5 +1,5 @@
 import "yet-another-react-lightbox/styles.css";
-import {useOutletContext} from "@remix-run/react";
+import { useOutletContext } from "react-router";
 import Lightbox from "yet-another-react-lightbox";
 import {useEffect, useMemo, useState} from "react";
 import {Captions, Inline, Thumbnails} from "yet-another-react-lightbox/plugins";

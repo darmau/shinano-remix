@@ -1,8 +1,8 @@
-import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import {createClient} from "~/utils/supabase/server";
-import {useLoaderData} from "@remix-run/react";
+import { useLoaderData } from "react-router";
 import type {Article} from "~/types/Article";
 import Subnav from "~/components/Subnav";
 import NormalArticleCard from "~/components/NormalArticleCard";

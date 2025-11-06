@@ -1,6 +1,6 @@
-import {Form, useActionData, useLoaderData, useNavigation, useOutletContext} from "@remix-run/react";
-import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import { redirect} from "@remix-run/cloudflare";
+import { Form, useActionData, useLoaderData, useNavigation, useOutletContext } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
+import { redirect } from "react-router";
 import GithubLogin from "~/components/GithubLogin";
 import EmailLogin from "~/components/EmailLogin";
 import SignupText from '~/locales/signup'

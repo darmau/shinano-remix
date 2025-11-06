@@ -1,4 +1,4 @@
-import {Link, useOutletContext} from "@remix-run/react";
+import { Link, useOutletContext } from "react-router";
 import SubNavItems from "~/locales/subnav";
 
 export default function Subnav ({active}: {active: string}) {

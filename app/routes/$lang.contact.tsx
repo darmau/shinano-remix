@@ -1,6 +1,6 @@
 import Subnav from "~/components/Subnav";
-import {Form, useActionData, Link, useOutletContext, useRouteLoaderData} from "@remix-run/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs , MetaFunction} from "@remix-run/cloudflare";
+import { Form, useActionData, Link, useOutletContext, useRouteLoaderData } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import type {loader as rootLoader} from "~/root";
 import getLanguageLabel from "~/utils/getLanguageLabel";

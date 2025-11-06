@@ -1,7 +1,7 @@
 import Subnav from "~/components/Subnav";
-import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
 import SiteText from "~/locales/site";
-import {useLoaderData} from "@remix-run/react";
+import { useLoaderData } from 'react-router';
 import Supabase from '~/icons/Supabase.svg';
 import Cloudflare from '~/icons/Cloudflare.svg';
 import SvelteKit from '~/icons/Svelte.svg';

@@ -1,6 +1,6 @@
-import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
-import {useFetcher, useLoaderData, useOutletContext} from "@remix-run/react";
+import { useFetcher, useLoaderData, useOutletContext } from "react-router";
 import RateStars from "~/components/RateStars";
 import getDate from "~/utils/getDate";
 import {LinkIcon} from "@heroicons/react/24/solid";

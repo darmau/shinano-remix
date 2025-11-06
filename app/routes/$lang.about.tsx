@@ -1,8 +1,8 @@
 import Subnav from "~/components/Subnav";
-import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import AboutText from "~/locales/about";
 import HomepageText from "~/locales/homepage";
-import {useLoaderData} from "@remix-run/react";
+import { useLoaderData } from "react-router";
 import ResponsiveImage from "~/components/ResponsiveImage";
 import {createClient} from "~/utils/supabase/server";
 import type {Image} from "~/types/Image";

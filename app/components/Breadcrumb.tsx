@@ -1,5 +1,5 @@
 import {HomeIcon} from "@heroicons/react/24/solid";
-import {Link, useOutletContext} from "@remix-run/react";
+import { Link, useOutletContext } from "react-router";
 
 export interface BreadcrumbProps {
   name: string;

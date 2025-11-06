@@ -3,7 +3,7 @@ import {Dialog, DialogPanel, Popover, PopoverButton, PopoverPanel} from "@headle
 import {Bars3Icon, XMarkIcon} from "@heroicons/react/24/outline";
 import throttle from "lodash/throttle";
 import type {NavItem} from "~/locales/navbar";
-import {Link, useLocation, useMatches} from "@remix-run/react";
+import { Link, useLocation, useMatches } from "react-router";
 import Profile from "~/components/Profile";
 import TranslateIcon from "~/icons/Translate";
 import {getLanguageSwitcherLinks} from "~/utils/getLanguageSwitcherLinks";

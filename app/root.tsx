@@ -10,10 +10,10 @@ import {
   useLoaderData,
   useNavigation,
   useRevalidator,
-  useRouteError
-} from "@remix-run/react";
+  useRouteError,
+} from "react-router";
 import "./tailwind.css";
-import type { LoaderFunctionArgs} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs } from "react-router";
 import {getLang} from "~/utils/getLang";
 import {createClient} from "~/utils/supabase/server";
 import {useEffect, useState} from "react";

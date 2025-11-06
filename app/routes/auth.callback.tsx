@@ -1,5 +1,5 @@
-import { redirect  } from '@remix-run/cloudflare'
-import type {LoaderFunctionArgs} from '@remix-run/cloudflare';
+import { redirect } from 'react-router';
+import type { LoaderFunctionArgs } from 'react-router';
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
 
 export async function loader({ request, context }: LoaderFunctionArgs) {

@@ -1,9 +1,9 @@
 import type {BreadcrumbProps} from "~/components/Breadcrumb";
 import Breadcrumb from "~/components/Breadcrumb";
-import {Link, useActionData, useLoaderData, useOutletContext, useRouteLoaderData} from "@remix-run/react";
+import { Link, useActionData, useLoaderData, useOutletContext, useRouteLoaderData } from "react-router";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ThoughtText from "~/locales/thought";
-import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import type {Json} from "~/types/supabase";
 import ContentContainer from "~/components/ContentContainer";

@@ -1,4 +1,4 @@
-import {useOutletContext} from "@remix-run/react";
+import { useOutletContext } from "react-router";
 import HomepageText from "~/locales/homepage";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 

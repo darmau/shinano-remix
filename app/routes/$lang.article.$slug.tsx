@@ -1,6 +1,13 @@
-import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
-import {Link, useActionData, useLoaderData, useLocation, useOutletContext, useRouteLoaderData} from "@remix-run/react";
+import {
+  Link,
+  useActionData,
+  useLoaderData,
+  useLocation,
+  useOutletContext,
+  useRouteLoaderData,
+} from "react-router";
 import ResponsiveImage from "~/components/ResponsiveImage";
 import type {Image} from "~/types/Image";
 import getTime from "~/utils/getTime";

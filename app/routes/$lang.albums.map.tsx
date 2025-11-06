@@ -1,5 +1,5 @@
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
-import { useLoaderData, useOutletContext } from "@remix-run/react";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useLoaderData, useOutletContext } from "react-router";
 import { lazy, Suspense } from "react";
 import { createClient } from "~/utils/supabase/server";
 import type { MapImageCollection } from "~/components/MapGallery";

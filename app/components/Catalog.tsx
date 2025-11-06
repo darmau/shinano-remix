@@ -1,6 +1,6 @@
 import type {Json} from "~/types/supabase";
 import type {Content} from "~/components/ContentContainer";
-import {Link} from "@remix-run/react";
+import { Link } from "react-router";
 import ShareButton from "~/components/ShareButton";
 
 type ContentStructure = {

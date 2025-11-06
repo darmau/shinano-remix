@@ -1,4 +1,4 @@
-import {Form, useOutletContext} from "@remix-run/react";
+import { Form, useOutletContext } from "react-router";
 import CommentText from '~/locales/comment';
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import type {Session} from "@supabase/supabase-js";

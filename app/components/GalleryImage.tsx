@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useOutletContext } from "@remix-run/react";
+import { useOutletContext } from "react-router";
 import type {GalleryPhoto} from "~/utils/generatePhotoAlbum";
 
 export default function GalleryImage({ image, width, classList }: { image: GalleryPhoto; width: number; classList: string }) {

@@ -1,5 +1,5 @@
 import type {Article} from "~/types/Article";
-import {Link, useOutletContext} from "@remix-run/react";
+import { Link, useOutletContext } from "react-router";
 import getTime from "~/utils/getTime";
 import {ChatBubbleOvalLeftIcon, EyeIcon} from "@heroicons/react/24/outline";
 

@@ -1,5 +1,5 @@
 import {createServerClient, parseCookieHeader, serializeCookieHeader} from '@supabase/ssr';
-import type {AppLoadContext} from "@remix-run/cloudflare";
+import type { AppLoadContext } from "react-router";
 import type {Database} from "~/types/supabase";
 
 export function createClient(request: Request, context: AppLoadContext) {

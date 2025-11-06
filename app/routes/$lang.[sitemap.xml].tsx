@@ -1,4 +1,4 @@
-import type {LoaderFunctionArgs} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 
 type RecordWithKeys = Record<string, unknown>;

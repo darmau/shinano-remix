@@ -1,7 +1,7 @@
 import Subnav from "~/components/Subnav";
-import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
-import {Link, useLoaderData, useOutletContext} from "@remix-run/react";
+import { Link, useLoaderData, useOutletContext } from "react-router";
 import {ServerPhotoAlbum} from "~/components/ServerPhotoAlbum";
 import "react-photo-album/masonry.css";
 import type {FeaturedPhoto} from "~/utils/generatePhotoAlbum";

@@ -2,7 +2,7 @@ import type {Thought} from "~/routes/$lang.thoughts";
 import ContentContainer from "~/components/ContentContainer";
 import ResponsiveImage from "~/components/ResponsiveImage";
 import getTime from "~/utils/getTime";
-import {Link, useOutletContext} from "@remix-run/react";
+import { Link, useOutletContext } from "react-router";
 import {EyeIcon} from "@heroicons/react/24/solid";
 import {ChatBubbleOvalLeftIcon} from "@heroicons/react/24/outline";
 

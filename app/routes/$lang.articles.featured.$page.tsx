@@ -1,8 +1,8 @@
 import Subnav from "~/components/Subnav";
-import type {LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import type {Article} from "~/types/Article";
-import {useLoaderData, useLocation} from "@remix-run/react";
+import { useLoaderData, useLocation } from "react-router";
 import Pagination from "~/components/Pagination";
 import FeaturedArticle from "~/components/FeaturedArticle";
 import getLanguageLabel from "~/utils/getLanguageLabel";

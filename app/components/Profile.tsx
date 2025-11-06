@@ -1,5 +1,5 @@
 // 本组件检测当前是否有登录，如果没有，显示登录按钮，如果有，显示用户信息
-import {Link, useRouteLoaderData} from "@remix-run/react";
+import { Link, useRouteLoaderData } from "react-router";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ProfileText from "~/locales/profile";
 import type {loader as rootLoader} from "~/root";
