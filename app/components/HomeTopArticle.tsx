@@ -42,8 +42,8 @@ export default function HomeTopArticle({article, isTop, classList}: {
               &nbsp;·&nbsp;
               <span>{getTime(article.published_at, lang)}</span>
             </div>
-            <h3 className = {`font-medium text-zinc-800 group-hover:text-violet-900 ${isTop ? 'text-3xl' : 'text-2xl'}`}>{article.title}</h3>
-            <h4 className = "text-base text-zinc-500 leading-7">{article.subtitle}</h4>
+            <h2 className = {`font-medium text-zinc-800 group-hover:text-violet-900 ${isTop ? 'text-3xl' : 'text-2xl'}`}>{article.title}</h2>
+            <h3 className = "text-base text-zinc-500 leading-7">{article.subtitle}</h3>
             {article.topic && (
                 <div className = "flex flex-wrap gap-2">
                   {article.topic.map((topic, index) => (
