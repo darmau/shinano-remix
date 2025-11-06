@@ -42,6 +42,8 @@ export default function ResponsiveImage({ image, width, classList }: { image: Im
               sizes="(max-width: 720px) 100vw, 2x"
               alt={image.alt ?? ""}
               width={width}
+              loading="lazy"
+              decoding="async"
               onLoad={() => setImageLoaded(true)}
           />
         </picture>

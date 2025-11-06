@@ -193,45 +193,52 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     return new Response(null, {status: 404});
   }
 
-  const {data: articleRows} = await supabase
-  .from('article')
-  .select(`
-      id,
-      title,
-      slug,
-      subtitle,
-      abstract,
-      is_featured,
-      is_premium,
-      topic,
-      published_at,
-      page_view,
-      category (title, slug),
-      language!inner (lang),
-      comments:comment(count)
-    `)
-  .eq('language.lang', lang)
-  .eq('is_draft', false)
-  .limit(12)
-  .range((Number(page) - 1) * 12, Number(page) * 12 - 1)
-  .order('published_at', {ascending: false})
-  ;
+  const [
+    articleRowsResult,
+    articleCountResult,
+    countByYearResult,
+    countByCategoryResult
+  ] = await Promise.all([
+    supabase
+      .from('article')
+      .select(`
+        id,
+        title,
+        slug,
+        subtitle,
+        abstract,
+        is_featured,
+        is_premium,
+        topic,
+        published_at,
+        page_view,
+        category (title, slug),
+        language!inner (lang),
+        comments:comment(count)
+      `)
+      .eq('language.lang', lang)
+      .eq('is_draft', false)
+      .limit(12)
+      .range((Number(page) - 1) * 12, Number(page) * 12 - 1)
+      .order('published_at', {ascending: false}),
+    supabase
+      .from('article')
+      .select(`
+        id,
+        language!inner (lang)
+      `, {count: 'exact', head: true})
+      .eq('is_draft', false)
+      .eq('language.lang', lang),
+    supabase.rpc('get_article_count_by_year', {lang_name: lang}),
+    supabase.rpc('get_article_count_by_category', {
+      lang_name: lang
+    })
+  ]);
 
-  // 指定语言article的数量，排除草稿
-  const {count} = await supabase
-  .from('article')
-  .select(`
-    id,
-    language!inner (lang)
-  `, {count: 'exact', head: true})
-  .eq('is_draft', false)
-  .eq('language.lang', lang);
-
-  const {data: countByYearData} = await supabase.rpc('get_article_count_by_year', {lang_name: lang});
-
-  const {data: countByCategoryData} = await supabase.rpc('get_article_count_by_category', {
-    lang_name: lang
-  });
+  const articleRows = articleRowsResult.data ?? [];
+  const count = articleCountResult.count ?? 0;
+  const countByYearData = countByYearResult.data ?? [];
+  const countByCategoryData = countByCategoryResult.data ?? [];
 
   const availableLangs = [lang];
 

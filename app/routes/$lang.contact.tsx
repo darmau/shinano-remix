@@ -1,21 +1,18 @@
 import Subnav from "~/components/Subnav";
 import {json} from "@remix-run/cloudflare";
-import {Form, useActionData, useLoaderData, Link, useOutletContext} from "@remix-run/react";
+import {Form, useActionData, Link, useOutletContext, useRouteLoaderData} from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs , MetaFunction} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
+import type {loader as rootLoader} from "~/root";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ContactText from "~/locales/contact";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
 
-export const loader = async ({ request, context }: LoaderFunctionArgs) => {
-  const { supabase } = createClient(request, context);
-  const { data: { session } } = await supabase.auth.getSession();
-
+export const loader = async ({ context }: LoaderFunctionArgs) => {
   const availableLangs = ["zh", "en", "jp"];
 
   return json({
-    session,
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs
   });
@@ -67,9 +64,10 @@ export const action = async ({ request, context }: ActionFunctionArgs) => {
 };
 
 export default function Contact() {
-  const { session } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const {lang} = useOutletContext<{lang: string}>();
+  const rootData = useRouteLoaderData<typeof rootLoader>("root");
+  const session = rootData?.session;
   const label = getLanguageLabel(ContactText, lang);
 
   return (

@@ -1,21 +1,12 @@
 // 本组件检测当前是否有登录，如果没有，显示登录按钮，如果有，显示用户信息
-import type { LoaderFunctionArgs} from "@remix-run/cloudflare";
-import {json} from "@remix-run/cloudflare";
-import {createClient} from "~/utils/supabase/server";
-import {Link, useLoaderData} from "@remix-run/react";
+import {Link, useRouteLoaderData} from "@remix-run/react";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ProfileText from "~/locales/profile";
-
-export const loader = async ({request, context}: LoaderFunctionArgs) => {
-  const { supabase } = createClient(request, context);
-  const { data: {session}} = await supabase.auth.getSession();
-  return json({
-    session
-  })
-}
+import type {loader as rootLoader} from "~/root";
 
 export default function Profile({lang}: {lang: string}) {
-  const { session } = useLoaderData<typeof loader>();
+  const rootData = useRouteLoaderData<typeof rootLoader>("root");
+  const session = rootData?.session;
   const label = getLanguageLabel(ProfileText, lang)
 
   if (!session) {

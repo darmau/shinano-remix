@@ -1,7 +1,7 @@
 import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
 import { json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
-import {Link, useActionData, useLoaderData, useLocation, useOutletContext} from "@remix-run/react";
+import {Link, useActionData, useLoaderData, useLocation, useOutletContext, useRouteLoaderData} from "@remix-run/react";
 import ResponsiveImage from "~/components/ResponsiveImage";
 import type {Image} from "~/types/Image";
 import getTime from "~/utils/getTime";
@@ -24,9 +24,12 @@ import type {SupabaseClient} from "@supabase/supabase-js";
 import {EyeIcon} from "@heroicons/react/24/solid";
 import {parseTurnstileOutcome} from "~/utils/turnstile";
 import {trackPageView} from "~/utils/trackPageView";
+import type {loader as rootLoader} from "~/root";
 
 export default function ArticleDetail() {
   const {lang, supabase} = useOutletContext<{ lang: string, supabase: SupabaseClient }>();
+  const rootData = useRouteLoaderData<typeof rootLoader>("root");
+  const session = rootData?.session ?? null;
   const {
     article,
     domain,
@@ -35,8 +38,7 @@ export default function ArticleDetail() {
     comments,
     page,
     limit,
-    totalPage,
-    session
+    totalPage
   } = useLoaderData<typeof loader>();
   const actionResponse = useActionData<typeof action>();
 
@@ -80,6 +82,8 @@ export default function ArticleDetail() {
   useEffect(() => {
     trackPageView('article', article.id, supabase, (newPageView) => {
       setPageView(newPageView);
+    }).catch((error) => {
+      console.error(error);
     });
   }, [article.id, supabase]);
 
@@ -187,7 +191,6 @@ export default function ArticleDetail() {
 
 export async function loader({request, context, params}: LoaderFunctionArgs) {
   const {supabase} = createClient(request, context);
-  const {data: {session}} = await supabase.auth.getSession();
   const lang = params.lang as string;
   const slug = params.slug as string;
   const url = new URL(request.url);
@@ -228,78 +231,84 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   }
 
   // 前一篇和后一篇文章
-  const {data: previousArticle} = await supabase
-  .from('article')
-  .select('title, slug, subtitle')
-  .eq('lang', articleContent.lang!)
-  .lt('published_at', articleContent.published_at)
-  .order('published_at', {ascending: false})
-  .limit(1)
-  .single();
+  const [
+    previousArticleResult,
+    nextArticleResult,
+    commentsResult,
+    commentCountResult,
+    availableArticleResult
+  ] = await Promise.all([
+    supabase
+      .from('article')
+      .select('title, slug, subtitle')
+      .eq('lang', articleContent.lang!)
+      .lt('published_at', articleContent.published_at)
+      .order('published_at', {ascending: false})
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('article')
+      .select('title, slug')
+      .eq('lang', articleContent.lang!)
+      .gt('published_at', articleContent.published_at)
+      .order('published_at', {ascending: true})
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('comment')
+      .select(`
+        id,
+        user_id,
+        name,
+        website,
+        content_text,
+        created_at,
+        is_anonymous,
+        users (id, name, role),
+        reply_to (id, content_text, is_anonymous, name, users (id, name))
+      `)
+      .eq('to_article', articleContent.id)
+      .eq('is_blocked', false)
+      .eq('is_public', true)
+      .order('created_at', {ascending: false})
+      .range((page - 1) * limit, page * limit - 1),
+    supabase
+      .from('comment')
+      .select('id', {count: 'exact'})
+      .eq('to_article', articleContent.id)
+      .eq('is_blocked', false)
+      .eq('is_public', true),
+    supabase
+      .from('article')
+      .select(`
+        language!inner (lang)
+      `)
+      .eq('slug', slug)
+  ]);
 
-  const {data: nextArticle} = await supabase
-  .from('article')
-  .select('title, slug')
-  .eq('lang', articleContent.lang!)
-  .gt('published_at', articleContent.published_at)
-  .order('published_at', {ascending: true})
-  .limit(1)
-  .single();
-
-  // 评论数据
-  const {data: comments} = await supabase
-  .from('comment')
-  .select(`
-      id,
-      user_id,
-      name,
-      website,
-      content_text,
-      created_at,
-      is_anonymous,
-      users (id, name, role),
-      reply_to (id, content_text, is_anonymous, name, users (id, name))
-    `)
-  .eq('to_article', articleContent.id)
-  .eq('is_blocked', false)
-  .eq('is_public', true)
-  .order('created_at', {ascending: false})
-  .range((page - 1) * limit, page * limit - 1);
-
-  // 评论总数
-  const {count} = await supabase
-  .from('comment')
-  .select('id', {count: 'exact'})
-  .eq('to_article', articleContent.id)
-  .eq('is_blocked', false)
-  .eq('is_public', true);
+  const previousArticle = previousArticleResult.data ?? null;
+  const nextArticle = nextArticleResult.data ?? null;
+  const comments = commentsResult.data ?? [];
+  const count = commentCountResult.count;
+  const availableArticle = availableArticleResult.data ?? [];
 
   // 总页数
   const totalPage = count ? Math.ceil(count / limit) : 1;
 
-  // 查询同样的slug是否有其他语言版本
-  const {data: availableArticle} = await supabase
-  .from('article')
-  .select(`
-    language!inner (lang)
-  `)
-  .eq('slug', slug)
-
   // 转换成lang的数组，如['zh', 'en']
-  const availableLangs = availableArticle!.map((item: { language: { lang: string | null } }) => {
+  const availableLangs = availableArticle.map((item: { language: { lang: string | null } }) => {
     return item.language.lang as string
   });
 
   return json({
     article: articleContent,
-    previousArticle: previousArticle ?? null,
-    nextArticle: nextArticle ?? null,
+    previousArticle,
+    nextArticle,
     domain: context.cloudflare.env.BASE_URL,
     comments,
     page,
     limit,
     totalPage,
-    session,
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs

@@ -1,14 +1,13 @@
 import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
 import { json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
-import {Link, useActionData, useLoaderData, useOutletContext} from "@remix-run/react";
+import {Link, useActionData, useLoaderData, useOutletContext, useRouteLoaderData} from "@remix-run/react";
 import type {Json} from "~/types/supabase";
 import ContentContainer from "~/components/ContentContainer";
 import getTime from "~/utils/getTime";
 import type {AlbumPhoto} from "~/components/GallerySlide";
 import GallerySlide from "~/components/GallerySlide";
 import {useEffect, useState, lazy, Suspense} from "react";
-import type {EXIF} from "~/components/Mapbox";
 import {MapPinIcon} from "@heroicons/react/20/solid";
 
 // 动态导入 Mapbox 组件以优化加载速度
@@ -25,6 +24,7 @@ import type {SupabaseClient} from "@supabase/supabase-js";
 import {EyeIcon} from "@heroicons/react/24/solid";
 import {parseTurnstileOutcome} from "~/utils/turnstile";
 import {trackPageView} from "~/utils/trackPageView";
+import type {loader as rootLoader} from "~/root";
 
 export default function AlbumDetail() {
   const {lang, supabase} = useOutletContext<{ lang: string, supabase: SupabaseClient }>();
@@ -35,9 +35,10 @@ export default function AlbumDetail() {
     comments,
     page,
     limit,
-    totalPage,
-    session
+    totalPage
   } = useLoaderData<typeof loader>();
+  const rootData = useRouteLoaderData<typeof rootLoader>("root");
+  const session = rootData?.session ?? null;
   const actionResponse = useActionData<typeof action>();
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -86,6 +87,8 @@ export default function AlbumDetail() {
   useEffect(() => {
     trackPageView('album', albumContent.id, supabase, (newPageView) => {
       setPageView(newPageView);
+    }).catch((error) => {
+      console.error(error);
     });
   }, [albumContent.id, supabase]);
 
@@ -184,7 +187,6 @@ export default function AlbumDetail() {
 
 export async function loader({request, context, params}: LoaderFunctionArgs) {
   const {supabase} = createClient(request, context);
-  const {data: {session}} = await supabase.auth.getSession();
   const lang = params.lang as string;
   const slug = params.slug as string;
   const url = new URL(request.url);
@@ -219,66 +221,72 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   }
 
   // 根据相册id去photo_image以及关联的image表查询图片详细信息
-  const {data: albumImages} = await supabase
-  .from('photo_image')
-  .select(`
-      order,
-      image (
-        alt, 
-        caption, 
-        height, 
-        width, 
-        storage_key, 
-        exif, 
-        location,
-        latitude,
-        longitude
-      )
-    `)
-  .eq('photo_id', albumContent.id)
-  .order('order', {ascending: true});
+  const [
+    albumImagesResult,
+    commentsResult,
+    commentCountResult,
+    availableAlbumsResult
+  ] = await Promise.all([
+    supabase
+      .from('photo_image')
+      .select(`
+        order,
+        image (
+          alt,
+          caption,
+          height,
+          width,
+          storage_key,
+          exif,
+          location,
+          latitude,
+          longitude
+        )
+      `)
+      .eq('photo_id', albumContent.id)
+      .order('order', {ascending: true}),
+    supabase
+      .from('comment')
+      .select(`
+        id,
+        user_id,
+        name,
+        website,
+        content_text,
+        created_at,
+        is_anonymous,
+        users (id, name, role),
+        reply_to (id, content_text, is_anonymous, name, users (id, name))
+      `)
+      .eq('to_photo', albumContent.id)
+      .eq('is_blocked', false)
+      .eq('is_public', true)
+      .order('created_at', {ascending: false})
+      .range((page - 1) * limit, page * limit - 1),
+    supabase
+      .from('comment')
+      .select('id', {count: 'exact'})
+      .eq('to_photo', albumContent.id)
+      .eq('is_blocked', false)
+      .eq('is_public', true),
+    supabase
+      .from('photo')
+      .select(`
+        language!inner (lang)
+      `)
+      .eq('slug', slug)
+  ]);
 
-  // 评论数据
-  const {data: comments} = await supabase
-  .from('comment')
-  .select(`
-      id,
-      user_id,
-      name,
-      website,
-      content_text,
-      created_at,
-      is_anonymous,
-      users (id, name, role),
-      reply_to (id, content_text, is_anonymous, name, users (id, name))
-    `)
-  .eq('to_photo', albumContent.id)
-  .eq('is_blocked', false)
-  .eq('is_public', true)
-  .order('created_at', {ascending: false})
-  .range((page - 1) * limit, page * limit - 1);
-
-  // 评论总数
-  const {count} = await supabase
-  .from('comment')
-  .select('id', {count: 'exact'})
-  .eq('to_photo', albumContent.id)
-  .eq('is_blocked', false)
-  .eq('is_public', true);
+  const albumImages = albumImagesResult.data ?? null;
+  const comments = commentsResult.data ?? [];
+  const count = commentCountResult.count;
+  const availableAlbums = availableAlbumsResult.data ?? [];
 
   // 总页数
   const totalPage = count ? Math.ceil(count / limit) : 1;
 
-  // 查询同样的slug是否有其他语言版本
-  const {data: availableAlbums} = await supabase
-  .from('photo')
-  .select(`
-    language!inner (lang)
-  `)
-  .eq('slug', slug)
-
   // 转换成lang的数组，如['zh', 'en']
-  const availableLangs = availableAlbums!.map((item: {language: {lang: string | null}}) => {
+  const availableLangs = availableAlbums.map((item: {language: {lang: string | null}}) => {
     return item.language.lang as string
   });
 
@@ -290,7 +298,6 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     page,
     limit,
     totalPage,
-    session,
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs

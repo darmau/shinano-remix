@@ -111,11 +111,10 @@ export default function Navbar({lang, items}: { lang: string, items: NavItem[] }
                     return (
                       <Link
                         key={option.code}
-                        reloadDocument
                         to={link}
                         className={`block p-4 w-32 transition ${
-                          isAvailable 
-                            ? 'hover:bg-zinc-50' 
+                          isAvailable
+                            ? 'hover:bg-zinc-50'
                             : 'opacity-60 hover:bg-zinc-50'
                         }`}
                         title={!isAvailable ? '该语言版本暂不可用' : undefined}
@@ -186,7 +185,6 @@ export default function Navbar({lang, items}: { lang: string, items: NavItem[] }
                   {items.map((item, index) => {
                     return (
                         <Link
-                            reloadDocument
                             to = {item.link}
                             key = {index}
                             className = "-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
@@ -216,11 +214,10 @@ export default function Navbar({lang, items}: { lang: string, items: NavItem[] }
                         return (
                           <Link
                             key={option.code}
-                            reloadDocument
                             to={link}
                             className={`block p-4 w-32 transition ${
-                              isAvailable 
-                                ? 'hover:bg-zinc-50' 
+                              isAvailable
+                                ? 'hover:bg-zinc-50'
                                 : 'opacity-60 hover:bg-zinc-50'
                             }`}
                             title={!isAvailable ? '该语言版本暂不可用' : undefined}
