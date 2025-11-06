@@ -170,8 +170,6 @@ export default function MapComponent({ mapboxToken, exifData, lang = 'en' }: Map
     const lat = Number(latitude);
     const lng = Number(longitude);
 
-    console.log('Processing GPS coordinates:', { lat, lng });
-
     // 确保坐标是有效数字
     if (isNaN(lat) || isNaN(lng)) {
       console.warn('Invalid GPS coordinates:', { latitude, longitude });
