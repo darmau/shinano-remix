@@ -1,5 +1,4 @@
 import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import { json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {useFetcher, useLoaderData, useOutletContext} from "@remix-run/react";
 import RateStars from "~/components/RateStars";
@@ -198,13 +197,13 @@ export async function loader({request, context}: LoaderFunctionArgs) {
 
   const availableLangs = ["zh", "en", "jp"];
 
-  return json<LoaderData>({
+  return {
     books: normalizeBooks(bookData),
     prefix: context.cloudflare.env.IMG_PREFIX,
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs,
     count: count ?? null,
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
@@ -274,7 +273,7 @@ export async function action({request, context}: ActionFunctionArgs) {
     throw new Error("获取更多读书数据失败");
   }
 
-  return json<LoadMoreResponse>({
+  return {
     books: normalizeBooks(data),
-  });
+  };
 }

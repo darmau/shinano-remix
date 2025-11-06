@@ -3,7 +3,6 @@ import {useLoaderData, useOutletContext} from "@remix-run/react";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import RSSText from "~/locales/rss";
 import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import {json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {useState} from "react";
 import i18nLinks from "~/utils/i18nLinks";
@@ -191,11 +190,11 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const availableLangs = ["zh", "en", "jp"];
 
-  return json({
+  return {
     articles,
     photos,
     thoughts,
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs
-  })
+  };
 }

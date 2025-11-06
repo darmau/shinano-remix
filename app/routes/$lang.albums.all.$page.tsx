@@ -1,6 +1,5 @@
 import Subnav from "~/components/Subnav";
 import type {LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import {json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import {Link, useLoaderData, useLocation, useOutletContext} from "@remix-run/react";
 import type {FeaturedPhoto} from "~/utils/generatePhotoAlbum";
@@ -236,12 +235,12 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   const availableLangs = [lang];
   const albums = normalizeAlbums(albumRows, lang);
 
-  return json<LoaderData>({
+  return {
     albums,
     count: count ?? 0,
     page: Number(page),
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs,
-  });
+  };
 }

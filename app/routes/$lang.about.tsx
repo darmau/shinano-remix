@@ -1,6 +1,5 @@
 import Subnav from "~/components/Subnav";
 import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import {json} from "@remix-run/cloudflare";
 import AboutText from "~/locales/about";
 import HomepageText from "~/locales/homepage";
 import {useLoaderData} from "@remix-run/react";
@@ -155,11 +154,11 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const availableLangs = ["zh", "en", "jp"];
 
-  return json({
+  return {
     content,
     profileImage,
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs
-  });
+  };
 }

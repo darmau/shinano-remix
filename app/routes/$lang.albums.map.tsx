@@ -1,5 +1,4 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
-import { json } from "@remix-run/cloudflare";
 import { useLoaderData, useOutletContext } from "@remix-run/react";
 import { lazy, Suspense } from "react";
 import { createClient } from "~/utils/supabase/server";
@@ -55,14 +54,14 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
 
   if (error) {
     console.error("Error fetching map data:", error);
-    return json({
+    return {
       imageCollection: { type: "FeatureCollection", features: [] } as MapImageCollection,
       MAPBOX: context.cloudflare.env.MAPBOX_TOKEN,
       imgPrefix: context.cloudflare.env.IMG_PREFIX,
       baseUrl: context.cloudflare.env.BASE_URL,
       availableLangs: ["zh", "en", "jp"],
       latestPhotoStorageKey: null,
-    });
+    };
   }
 
   // 获取最新相册的封面图片，用于 OpenGraph
@@ -84,14 +83,14 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
 
   const availableLangs = ["zh", "en", "jp"];
 
-  return json({
+  return {
     imageCollection,
     MAPBOX: context.cloudflare.env.MAPBOX_TOKEN,
     imgPrefix: context.cloudflare.env.IMG_PREFIX,
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs,
     latestPhotoStorageKey: latestPhoto?.cover?.storage_key || null,
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = ({ params, data }) => {

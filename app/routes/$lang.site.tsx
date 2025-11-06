@@ -1,6 +1,5 @@
 import Subnav from "~/components/Subnav";
 import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import {json} from "@remix-run/cloudflare";
 import SiteText from "~/locales/site";
 import {useLoaderData} from "@remix-run/react";
 import Supabase from '~/icons/Supabase.svg';
@@ -214,11 +213,11 @@ export async function loader({params, context}: LoaderFunctionArgs) {
 
   const availableLangs = ["zh", "en", "jp"];
 
-  return json({
+  return {
     content,
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs
-  })
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {

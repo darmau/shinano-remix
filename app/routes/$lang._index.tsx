@@ -1,5 +1,4 @@
 import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import {json} from "@remix-run/cloudflare";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import {createClient} from "~/utils/supabase/server";
@@ -165,11 +164,11 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const label = getLanguageLabel(HomepageText, lang);
 
-  return json({
+  return {
     articles: articleData,
     label,
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs
-  })
+  };
 }

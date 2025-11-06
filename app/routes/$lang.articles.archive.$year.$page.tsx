@@ -1,6 +1,5 @@
 import Subnav from "~/components/Subnav";
 import type {LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import {json} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
 import type {Article} from "~/types/Article";
 import NormalArticleCard from "~/components/NormalArticleCard";
@@ -248,7 +247,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const availableLangs = [lang];
 
-  return json<LoaderData>({
+  return {
     articles: normalizeArticles(articleRows),
     year: Number(year),
     countByYear: normalizeYearCounts(countByYearData),
@@ -258,5 +257,5 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs
-  });
+  };
 }

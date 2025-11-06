@@ -14,7 +14,6 @@ import {
 } from "@remix-run/react";
 import "./tailwind.css";
 import type { LoaderFunctionArgs} from "@remix-run/cloudflare";
-import {json} from "@remix-run/cloudflare";
 import {getLang} from "~/utils/getLang";
 import {createClient} from "~/utils/supabase/server";
 import {useEffect, useState} from "react";
@@ -46,7 +45,6 @@ export const loader = async ({request, context}: LoaderFunctionArgs) => {
     TURNSTILE_SITE_KEY: context.cloudflare.env.TURNSTILE_SITE_KEY,
   };
 
-  const response = new Response();
   const {supabase} = createClient(request, context);
 
   const {
@@ -62,15 +60,17 @@ export const loader = async ({request, context}: LoaderFunctionArgs) => {
   // 获取footer文案
   const footerItems = getFooterLabels(FooterText, lang);
 
-  return json({
+  return {
     lang,
     env,
     session,
     currentYear,
     navbarItems,
     footerItems
-  }, {headers: response.headers});
+  };
 };
+
+// Headers are handled automatically by Single Fetch
 
 
 export default function App() {

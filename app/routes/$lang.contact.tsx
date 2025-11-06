@@ -1,5 +1,4 @@
 import Subnav from "~/components/Subnav";
-import {json} from "@remix-run/cloudflare";
 import {Form, useActionData, Link, useOutletContext, useRouteLoaderData} from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs , MetaFunction} from "@remix-run/cloudflare";
 import {createClient} from "~/utils/supabase/server";
@@ -12,10 +11,10 @@ import i18nLinks from "~/utils/i18nLinks";
 export const loader = async ({ context }: LoaderFunctionArgs) => {
   const availableLangs = ["zh", "en", "jp"];
 
-  return json({
+  return {
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs
-  });
+  };
 };
 
 export const action = async ({ request, context }: ActionFunctionArgs) => {
@@ -24,7 +23,7 @@ export const action = async ({ request, context }: ActionFunctionArgs) => {
   const bark = context.cloudflare.env.BARK_SERVER;
 
   if (!session) {
-    return json({ error: "未登录用户无法提交信息", success: null }, { status: 401 });
+    return { error: "未登录用户无法提交信息", success: null };
   }
 
   const formData = await request.formData();
@@ -42,7 +41,7 @@ export const action = async ({ request, context }: ActionFunctionArgs) => {
     .single();
 
   if (userError) {
-    return json({ error: userError.message, success: null }, { status: 500 });
+    return { error: userError.message, success: null };
   }
 
   const { error } = await supabase
@@ -56,11 +55,11 @@ export const action = async ({ request, context }: ActionFunctionArgs) => {
   } as MessageInsert);
 
   if (error) {
-    return json({ error: error.message, success: null }, { status: 500 });
+    return { error: error.message, success: null };
   }
 
   await fetch(`${bark}/${user.name}给你发送了消息/${message}`);
-  return json({ success: "信息提交成功", error: null });
+  return { success: "信息提交成功", error: null };
 };
 
 export default function Contact() {
