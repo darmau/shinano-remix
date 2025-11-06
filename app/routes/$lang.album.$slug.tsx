@@ -135,6 +135,7 @@ export default function AlbumDetail() {
                     latitude: albumImages[currentIndex].image.latitude ?? null,
                     longitude: albumImages[currentIndex].image.longitude ?? null
                   }}
+                  lang = {lang}
                 />
               </Suspense>
             )}

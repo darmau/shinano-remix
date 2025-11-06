@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { setupMapboxLanguage } from "~/utils/mapbox";
 
 export interface EXIF {
   latitude?: number | null;
@@ -10,9 +11,10 @@ export interface EXIF {
 interface MapComponentProps {
   mapboxToken: string;
   exifData: EXIF | null;
+  lang?: string;
 }
 
-export default function MapComponent({ mapboxToken, exifData }: MapComponentProps) {
+export default function MapComponent({ mapboxToken, exifData, lang = 'en' }: MapComponentProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const marker = useRef<mapboxgl.Marker | null>(null);
@@ -40,6 +42,9 @@ export default function MapComponent({ mapboxToken, exifData }: MapComponentProp
 
     map.current = mapInstance;
     isMapLoaded.current = false;
+
+    // 添加语言控制插件
+    setupMapboxLanguage(mapInstance, lang);
 
     // 监听地图加载完成事件
     const handleMapLoad = () => {
@@ -106,7 +111,7 @@ export default function MapComponent({ mapboxToken, exifData }: MapComponentProp
       map.current = null;
       isMapLoaded.current = false;
     };
-  }, [mapboxToken]);
+  }, [mapboxToken, lang]);
 
   // 处理 exifData 变化
   useEffect(() => {
