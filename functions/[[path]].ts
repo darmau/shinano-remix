@@ -1,4 +1,4 @@
-import { createPagesFunctionHandler } from "@react-router/cloudflare-pages";
+import { createPagesFunctionHandler } from "@react-router/cloudflare";
 import type { ServerBuild } from "react-router";
 
 const loadBuild = async (): Promise<ServerBuild> => {
