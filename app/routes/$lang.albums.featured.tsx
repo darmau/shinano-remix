@@ -109,7 +109,7 @@ export default function AllFeaturedAlbums() {
                         to = {photo.href} className = "group m-1 md:m-2 relative rounded-md overflow-hidden"
                         key = {photo.key}
                     >
-                      <div className = "z-20 absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent">
+                      <div className = "z-20 absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 to-transparent">
                         <div
                             className = "transform translate-y-full transition-transform duration-300 group-hover:translate-y-0 p-4"
                         >

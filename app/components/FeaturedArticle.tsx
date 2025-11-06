@@ -20,7 +20,7 @@ export default function FeaturedArticle({article}: {
           {article.cover &&
               <ResponsiveImage
                   image = {article.cover} width = {480}
-                  classList = "aspect-[5/3] sm:aspect-[3/1] md:aspect-[3/2] w-full rounded-md overflow-hidden mb-4"
+                  classList = "aspect-5/3 sm:aspect-3/1 md:aspect-3/2 w-full rounded-md overflow-hidden mb-4"
               />}
           <div className = "flex flex-col gap-3">
             <div className = "text-zinc-400 text-sm">

@@ -125,7 +125,7 @@ export default function ArticleDetail() {
             {article.cover && (
                 <ResponsiveImage
                     image = {article.cover as unknown as Image} width = {960}
-                    classList = "w-full rounded-md overflow-hiden object-cover aspect-[3/2]"
+                    classList = "w-full rounded-md overflow-hiden object-cover aspect-3/2"
                 />
             )}
           </div>

@@ -144,7 +144,7 @@ export default function Book() {
                       <img
                           src = {`${loaderData.prefix}/cdn-cgi/image/format=auto,width=120/${book.cover.storage_key}`}
                           alt = {book.cover.alt ?? ''}
-                          className = "h-32 aspect-[3/4] object-cover shadow-lg"
+                          className = "h-32 aspect-3/4 object-cover shadow-lg"
                       />
                   )}
                   <div className = "w-full space-y-2 lg:space-y-3">

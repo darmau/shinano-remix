@@ -335,7 +335,7 @@ export default function MapGallery({
                 }}
                 className="cursor-pointer rounded-lg overflow-hidden bg-zinc-50 hover:bg-zinc-100 transition-colors border border-zinc-200 hover:border-violet-300"
               >
-                <div className="relative aspect-[4/3] overflow-hidden bg-zinc-100">
+                <div className="relative aspect-4/3 overflow-hidden bg-zinc-100">
                   <img
                     src={`${imgPrefix}/cdn-cgi/image/format=avif,width=640/${feature.properties.storageKey}`}
                     alt={feature.properties.alt || ""}
@@ -383,7 +383,7 @@ export default function MapGallery({
           
           <div className="p-4 space-y-4">
             {/* 图片 */}
-            <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-zinc-100">
+            <div className="relative aspect-4/3 rounded-lg overflow-hidden bg-zinc-100">
               <img
                 src={`${imgPrefix}/cdn-cgi/image/format=avif,width=640/${selectedImage.properties.storageKey}`}
                 alt={selectedImage.properties.alt || ""}

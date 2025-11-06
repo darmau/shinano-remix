@@ -73,8 +73,8 @@ export default function ArticlesByCategory() {
             )}
           </div>
           {category.cover && (
-              <div className = "relative overflow-hidden rounded-2xl w-full aspect-[3/2] md:aspect-[3/1]">
-                <div className = "absolute inset-0 bg-gradient-to-b from-transparent to-zinc-800/60"></div>
+              <div className = "relative overflow-hidden rounded-2xl w-full aspect-3/2 md:aspect-3/1">
+                <div className = "absolute inset-0 bg-linear-to-b from-transparent to-zinc-800/60"></div>
                 <ResponsiveImage
                     image = {category.cover}
                     width = {640}
