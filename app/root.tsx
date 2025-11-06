@@ -10,11 +10,10 @@ import {
   useLoaderData,
   useNavigation,
   useRevalidator,
-  useRouteError
-} from "@remix-run/react";
+  useRouteError,
+} from "react-router";
 import "./tailwind.css";
-import type { LoaderFunctionArgs} from "@remix-run/cloudflare";
-import {json} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs } from "react-router";
 import {getLang} from "~/utils/getLang";
 import {createClient} from "~/utils/supabase/server";
 import {useEffect, useState} from "react";
@@ -40,13 +39,12 @@ export const loader = async ({request, context}: LoaderFunctionArgs) => {
   }
 
   const env = {
-    SUPABASE_URL: context.cloudflare.env.SUPABASE_URL,
-    SUPABASE_ANON_KEY: context.cloudflare.env.SUPABASE_ANON_KEY,
-    PREFIX: context.cloudflare.env.IMG_PREFIX,
-    TURNSTILE_SITE_KEY: context.cloudflare.env.TURNSTILE_SITE_KEY,
+    SUPABASE_URL: context?.cloudflare?.env?.SUPABASE_URL || process.env.SUPABASE_URL,
+    SUPABASE_ANON_KEY: context?.cloudflare?.env?.SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
+    PREFIX: context?.cloudflare?.env?.IMG_PREFIX || process.env.IMG_PREFIX,
+    TURNSTILE_SITE_KEY: context?.cloudflare?.env?.TURNSTILE_SITE_KEY || process.env.TURNSTILE_SITE_KEY,
   };
 
-  const response = new Response();
   const {supabase} = createClient(request, context);
 
   const {
@@ -62,15 +60,17 @@ export const loader = async ({request, context}: LoaderFunctionArgs) => {
   // 获取footer文案
   const footerItems = getFooterLabels(FooterText, lang);
 
-  return json({
+  return {
     lang,
     env,
     session,
     currentYear,
     navbarItems,
     footerItems
-  }, {headers: response.headers});
+  };
 };
+
+// Headers are handled automatically by Single Fetch
 
 
 export default function App() {

@@ -1,6 +1,6 @@
 import {useState, useRef} from "react";
 import type { Image } from "~/types/Image";
-import { useOutletContext } from "@remix-run/react";
+import { useOutletContext } from "react-router";
 
 export default function ResponsiveImage({ image, width, classList }: { image: Image; width: number; classList: string }) {
   const { prefix } = useOutletContext<{ prefix: string }>();

@@ -1,5 +1,5 @@
 import type {Article} from "~/types/Article";
-import {Link, useOutletContext} from "@remix-run/react";
+import { Link, useOutletContext } from "react-router";
 import getTime from "~/utils/getTime";
 import ResponsiveImage from "~/components/ResponsiveImage";
 import {ChatBubbleOvalLeftIcon, EyeIcon} from "@heroicons/react/24/outline";
@@ -20,7 +20,7 @@ export default function FeaturedArticle({article}: {
           {article.cover &&
               <ResponsiveImage
                   image = {article.cover} width = {480}
-                  classList = "aspect-[5/3] sm:aspect-[3/1] md:aspect-[3/2] w-full rounded-md overflow-hidden mb-4"
+                  classList = "aspect-5/3 sm:aspect-3/1 md:aspect-3/2 w-full rounded-md overflow-hidden mb-4"
               />}
           <div className = "flex flex-col gap-3">
             <div className = "text-zinc-400 text-sm">

@@ -2,7 +2,7 @@ import TwitterIcon from "~/icons/Twitter";
 import GithubIcon from "~/icons/Github";
 import YoutubeIcon from "~/icons/Youtube";
 import InstagramIcon from "~/icons/Instagram";
-import {Link} from "@remix-run/react";
+import { Link } from "react-router";
 import RSSIcon from "~/icons/RSS";
 import type {footerLinks} from "~/utils/getFooterLabels";
 
@@ -34,7 +34,7 @@ const navigation = {
 export default function Footer({lang, currentYear, items}: {lang: string, currentYear: number, items: footerLinks[]}) {
 
   return (
-      <footer aria-labelledby = "footer-heading" className = "bg-white border-t">
+      <footer aria-labelledby = "footer-heading" className = "bg-white border-t border-gray-200">
         <h2 id = "footer-heading" className = "sr-only">
           Footer
         </h2>

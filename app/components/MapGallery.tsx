@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import MapboxLanguage from "@mapbox/mapbox-gl-language";
+import { setupMapboxLanguage } from "~/utils/mapbox";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import AlbumText from "~/locales/album";
@@ -36,13 +36,6 @@ export interface MapImageCollection {
 
 type MapAlbum = MapImageFeature["properties"]["albums"][number];
 
-// Mapbox 语言代码映射
-const mapboxLangMap: Record<string, string> = {
-  'zh': 'zh-Hans', // 简体中文
-  'en': 'en', // 英语
-  'jp': 'ja', // 日语
-};
-
 interface MapGalleryProps {
   mapboxToken: string;
   imageCollection: MapImageCollection;
@@ -62,13 +55,37 @@ export default function MapGallery({
   const [clusterImages, setClusterImages] = useState<MapImageFeature[]>([]);
   const hasFitToBounds = useRef(false);
   const imageCollectionRef = useRef(imageCollection);
+  const [shouldLoadMap, setShouldLoadMap] = useState(false);
   const label = getLanguageLabel(AlbumText, lang);
-  
-  // 获取 Mapbox 语言代码，默认为英语
-  const mapboxLang = mapboxLangMap[lang] || 'en';
+
+  // 使用 Intersection Observer 延迟加载地图，直到容器进入视口
+  useEffect(() => {
+    if (!mapContainer.current || map.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShouldLoadMap(true);
+            observer.disconnect(); // 一旦开始加载就断开观察
+          }
+        });
+      },
+      {
+        rootMargin: '50px', // 提前 50px 开始加载
+        threshold: 0.01, // 只要有一点进入视口就加载
+      }
+    );
+
+    observer.observe(mapContainer.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
-    if (!mapboxToken || !mapContainer.current || map.current) return;
+    if (!mapboxToken || !mapContainer.current || map.current || !shouldLoadMap) return;
 
     mapboxgl.accessToken = mapboxToken;
 
@@ -78,15 +95,20 @@ export default function MapGallery({
       style: "mapbox://styles/mapbox/outdoors-v12",
       center: [104.32, 30.23], // 默认中心
       zoom: 2,
+      scrollZoom: false, // 禁用滚轮缩放，让页面可以正常滚动
     });
 
     map.current = mapInstance;
 
-    // 添加语言控制插件
-    const language = new MapboxLanguage({
-      defaultLanguage: mapboxLang, // 根据网站语言设置默认语言
+    // 添加导航控件（缩放按钮）
+    const nav = new mapboxgl.NavigationControl({
+      showCompass: true, // 显示指南针
+      showZoom: true, // 显示缩放按钮
     });
-    mapInstance.addControl(language);
+    mapInstance.addControl(nav, 'top-left');
+
+    // 添加语言控制插件
+    setupMapboxLanguage(mapInstance, lang);
 
     mapInstance.on("load", () => {
       // 添加数据源
@@ -177,7 +199,7 @@ export default function MapGallery({
             Number.MAX_SAFE_INTEGER, // 获取所有图片
             0, // 偏移量
             (err, leaves) => {
-              if (err) return;
+              if (err || !leaves) return;
               
               // 从原始数据中查找对应的完整 feature
               const clusterFeatures: MapImageFeature[] = leaves
@@ -257,7 +279,7 @@ export default function MapGallery({
       map.current = null;
       hasFitToBounds.current = false;
     };
-  }, [mapboxToken, imageCollection]);
+  }, [mapboxToken, shouldLoadMap]); // 依赖 shouldLoadMap，延迟加载直到进入视口
 
   // 更新 imageCollection ref
   useEffect(() => {
@@ -299,13 +321,13 @@ export default function MapGallery({
   }, [imageCollection]);
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full max-w-7xl mx-auto h-[75vh] rounded-lg overflow-hidden shadow-lg">
       <div ref={mapContainer} className="w-full h-full" />
       
       {/* 聚合图片列表面板 */}
       {clusterImages.length > 0 && (
-        <div className="absolute top-4 right-4 w-96 max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl z-10">
-          <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+        <div className="absolute top-2 md:top-4 w-[90%] md:w-96 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-4 max-h-[800px] overflow-y-auto bg-white rounded-lg shadow-xl z-10">
+          <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center z-10">
             <h3 className="text-lg font-semibold text-zinc-800">
               {label.map_title} ({clusterImages.length})
             </h3>
@@ -335,7 +357,7 @@ export default function MapGallery({
                 }}
                 className="cursor-pointer rounded-lg overflow-hidden bg-zinc-50 hover:bg-zinc-100 transition-colors border border-zinc-200 hover:border-violet-300"
               >
-                <div className="relative aspect-[4/3] overflow-hidden bg-zinc-100">
+                <div className="relative aspect-4/3 overflow-hidden bg-zinc-100">
                   <img
                     src={`${imgPrefix}/cdn-cgi/image/format=avif,width=640/${feature.properties.storageKey}`}
                     alt={feature.properties.alt || ""}
@@ -368,7 +390,7 @@ export default function MapGallery({
       
       {/* 图片详情面板 */}
       {selectedImage && (
-        <div className="absolute top-4 right-4 w-96 max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl z-10">
+        <div className="absolute top-2 md:top-4 w-[90%] md:w-96 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-4 max-h-[500px] overflow-y-auto bg-white rounded-lg shadow-xl z-10">
           <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-zinc-800">
               {selectedImage.properties.location || label.map_title}
@@ -383,7 +405,7 @@ export default function MapGallery({
           
           <div className="p-4 space-y-4">
             {/* 图片 */}
-            <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-zinc-100">
+            <div className="relative aspect-4/3 rounded-lg overflow-hidden bg-zinc-100">
               <img
                 src={`${imgPrefix}/cdn-cgi/image/format=avif,width=640/${selectedImage.properties.storageKey}`}
                 alt={selectedImage.properties.alt || ""}

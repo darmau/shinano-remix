@@ -1,7 +1,6 @@
-import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import { json} from "@remix-run/cloudflare";
+import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
-import {Link, useActionData, useLoaderData, useOutletContext, useRouteLoaderData} from "@remix-run/react";
+import { Link, useActionData, useLoaderData, useOutletContext, useRouteLoaderData } from "react-router";
 import type {Json} from "~/types/supabase";
 import ContentContainer from "~/components/ContentContainer";
 import getTime from "~/utils/getTime";
@@ -44,18 +43,6 @@ export default function AlbumDetail() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const label = getLanguageLabel(AlbumText, lang);
-
-  // 调试：输出GPS数据
-  useEffect(() => {
-    if (albumImages && albumImages[currentIndex]) {
-      console.log('Current image GPS data:', {
-        latitude: albumImages[currentIndex].image.latitude,
-        longitude: albumImages[currentIndex].image.longitude,
-        latitude_type: typeof albumImages[currentIndex].image.latitude,
-        longitude_type: typeof albumImages[currentIndex].image.longitude
-      });
-    }
-  }, [currentIndex, albumImages]);
 
   const breadcrumbPages: BreadcrumbProps[] = [
     {
@@ -136,6 +123,7 @@ export default function AlbumDetail() {
                     latitude: albumImages[currentIndex].image.latitude ?? null,
                     longitude: albumImages[currentIndex].image.longitude ?? null
                   }}
+                  lang = {lang}
                 />
               </Suspense>
             )}
@@ -148,7 +136,7 @@ export default function AlbumDetail() {
                 replyingTo = {replyingTo}
                 onCancelReply = {handleCancelReply}
             />
-            <div className = "flex flex-col gap-4 divide-y">
+          <div className= "flex flex-col gap-4 divide-y divide-none">
               {actionResponse?.error && <p className = "mt-2 text-sm text-red-500">{actionResponse.error}</p>}
               {actionResponse?.success && <p className = "mt-2 text-sm text-green-500">{actionResponse.success}</p>}
               {comments && comments.map((comment) => (
@@ -217,7 +205,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     throw new Response(null, {
       status: 404,
       statusText: 'Album not exists'
-    })
+    });
   }
 
   // 根据相册id去photo_image以及关联的image表查询图片详细信息
@@ -290,7 +278,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     return item.language.lang as string
   });
 
-  return json({
+  return {
     albumContent,
     albumImages,
     MAPBOX: context.cloudflare.env.MAPBOX_TOKEN,
@@ -301,7 +289,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
@@ -394,11 +382,11 @@ export async function action({request, context}: ActionFunctionArgs) {
 
     const outcome = parseTurnstileOutcome(await turnstileResponse.json());
     if (!outcome.success) {
-      return json({
+      return {
         success: false,
         error: '验证失败,请重试。',
         comment: null
-      });
+      };
     }
 
     const name = formData.get('name') as string;
@@ -427,20 +415,20 @@ export async function action({request, context}: ActionFunctionArgs) {
     .single();
 
     if (error) {
-      return json({
+      return {
         success: false,
         error: error.message,
         comment: null
-      })
+      }
     }
 
     await fetch(`${bark}/${name}评论了摄影/${content_text}`)
 
-    return json({
+    return {
       success: '提交成功，请等待审核。Please wait for review.',
       error: null,
       comment: newComment
-    })
+    };
   }
 
   const {data: userProfile} = await supabase
@@ -450,11 +438,11 @@ export async function action({request, context}: ActionFunctionArgs) {
   .single();
 
   if (!userProfile) {
-    return json({
+    return {
       success: false,
       error: 'User not exists',
       comment: null
-    })
+    }
   }
 
   const {data: newComment} = await supabase
@@ -479,9 +467,9 @@ export async function action({request, context}: ActionFunctionArgs) {
 
   await fetch(`${bark}/${userProfile.name}评论了摄影/${content_text}`)
 
-  return json({
+  return {
     success: '评论成功。Comment success.',
     error: null,
     comment: newComment
-  })
+  }
 }

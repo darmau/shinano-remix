@@ -1,9 +1,8 @@
 import Subnav from "~/components/Subnav";
-import {useLoaderData, useOutletContext} from "@remix-run/react";
+import { useLoaderData, useOutletContext } from "react-router";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import RSSText from "~/locales/rss";
-import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import {json} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import {useState} from "react";
 import i18nLinks from "~/utils/i18nLinks";
@@ -49,8 +48,8 @@ export default function RSS() {
           </header>
 
           <div className = "grid grid-cols-1 gap-8 lg:grid-cols-3">
-            <section className = "rounded-2xl border shadow-lg">
-              <div className="p-4 lg:p-8 border-b space-y-4">
+            <section className = "rounded-2xl border border-gray-200 shadow-lg">
+              <div className="p-4 lg:p-8 border-b border-gray-200 space-y-4">
                 <h3 className = "font-medium text-lg text-zinc-700">{label.article}</h3>
                 <code className = "text-sm block font-mono text-zinc-600">{`https://darmau.co/${lang}/article/rss.xml`}</code>
                 <button
@@ -71,8 +70,8 @@ export default function RSS() {
                 ))}
               </ol>}
             </section>
-            <section className = "rounded-2xl border shadow-lg">
-              <div className = "p-4 lg:p-8 border-b space-y-4">
+            <section className = "rounded-2xl border border-gray-200 shadow-lg">
+              <div className = "p-4 lg:p-8 border-b border-gray-200 space-y-4">
                 <h3 className = "font-medium text-lg text-zinc-700">{label.photography}</h3>
                 <code className = "text-sm block font-mono text-zinc-600">{`https://darmau.co/${lang}/album/rss.xml`}</code>
                 <button
@@ -99,8 +98,8 @@ export default function RSS() {
                 ))}
               </div>
             </section>
-            <section className = "rounded-2xl border shadow-lg">
-              <div className = "p-4 lg:p-8 border-b space-y-4">
+            <section className = "rounded-2xl border border-gray-200 shadow-lg">
+              <div className = "p-4 lg:p-8 border-b border-gray-200 space-y-4">
                 <h3 className = "font-medium text-lg text-zinc-700">{label.thought}</h3>
                 <code className = "text-sm block font-mono text-zinc-600">{`https://darmau.co/${lang}/thought/rss.xml`}</code>
                 <button
@@ -191,11 +190,11 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const availableLangs = ["zh", "en", "jp"];
 
-  return json({
+  return {
     articles,
     photos,
     thoughts,
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs
-  })
+  };
 }

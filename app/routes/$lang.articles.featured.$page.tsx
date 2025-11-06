@@ -1,9 +1,8 @@
 import Subnav from "~/components/Subnav";
-import type {LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import {json} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import type {Article} from "~/types/Article";
-import {useLoaderData, useLocation} from "@remix-run/react";
+import { useLoaderData, useLocation } from "react-router";
 import Pagination from "~/components/Pagination";
 import FeaturedArticle from "~/components/FeaturedArticle";
 import getLanguageLabel from "~/utils/getLanguageLabel";
@@ -169,13 +168,13 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const availableLangs = ['zh', 'en', 'jp'];
 
-  return json<LoaderData>({
+  return {
     articles: normalizeArticles(data),
     articleCount: count ?? 0,
     page: Number(page),
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs
-  });
+  };
 
 }

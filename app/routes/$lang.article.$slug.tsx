@@ -1,7 +1,13 @@
-import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import { json} from "@remix-run/cloudflare";
+import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
-import {Link, useActionData, useLoaderData, useLocation, useOutletContext, useRouteLoaderData} from "@remix-run/react";
+import {
+  Link,
+  useActionData,
+  useLoaderData,
+  useLocation,
+  useOutletContext,
+  useRouteLoaderData,
+} from "react-router";
 import ResponsiveImage from "~/components/ResponsiveImage";
 import type {Image} from "~/types/Image";
 import getTime from "~/utils/getTime";
@@ -119,7 +125,7 @@ export default function ArticleDetail() {
             {article.cover && (
                 <ResponsiveImage
                     image = {article.cover as unknown as Image} width = {960}
-                    classList = "w-full rounded-md overflow-hiden object-cover aspect-[3/2]"
+                    classList = "w-full rounded-md overflow-hiden object-cover aspect-3/2"
                 />
             )}
           </div>
@@ -142,7 +148,7 @@ export default function ArticleDetail() {
                     replyingTo = {replyingTo}
                     onCancelReply = {handleCancelReply}
                 />
-                <div className = "flex flex-col gap-4 divide-y">
+              <div className= "flex flex-col gap-4 divide-y divide-none">
                   {actionResponse?.error && <p className = "mt-2 text-sm text-red-500">{actionResponse.error}</p>}
                   {actionResponse?.success && <p className = "mt-2 text-sm text-green-500">{actionResponse.success}</p>}
                   {comments && comments.map((comment) => (
@@ -300,7 +306,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     return item.language.lang as string
   });
 
-  return json({
+  return {
     article: articleContent,
     previousArticle,
     nextArticle,
@@ -312,7 +318,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs
-  })
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
@@ -409,11 +415,11 @@ export async function action({request, context}: ActionFunctionArgs) {
 
     const outcome = parseTurnstileOutcome(await turnstileResponse.json());
     if (!outcome.success) {
-      return json({
+      return {
         success: false,
         error: '验证失败,请重试。',
         comment: null
-      });
+      };
     }
 
     const name = formData.get('name') as string;
@@ -442,20 +448,20 @@ export async function action({request, context}: ActionFunctionArgs) {
       .single();
 
     if (error) {
-      return json({
+      return {
         success: false,
         error: error.message,
         comment: null
-      })
+      };
     }
 
     await fetch(`${bark}/${name}评论了文章/${content_text}`)
 
-    return json({
+    return {
       success: '提交成功，请等待审核。Please wait for review.',
       error: null,
       comment: newComment
-    })
+    };
   }
 
   const {data: userProfile} = await supabase
@@ -465,11 +471,11 @@ export async function action({request, context}: ActionFunctionArgs) {
   .single();
 
   if (!userProfile) {
-    return json({
+    return {
       success: false,
       error: 'User not exists',
       comment: null
-    })
+    };
   }
 
   const {data: newComment} = await supabase
@@ -494,9 +500,9 @@ export async function action({request, context}: ActionFunctionArgs) {
 
   await fetch(`${bark}/${userProfile.name}评论了文章/${content_text}`)
 
-  return json({
+  return {
     success: '评论成功。Comment success.',
     error: null,
     comment: newComment
-  })
+  };
 }

@@ -1,7 +1,6 @@
-import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import { json} from "@remix-run/cloudflare";
+import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
-import {useFetcher, useLoaderData, useOutletContext} from "@remix-run/react";
+import { useFetcher, useLoaderData, useOutletContext } from "react-router";
 import {startTransition, useEffect, useState} from "react";
 import ThoughtCard from "~/components/ThoughtCard";
 import getLanguageLabel from "~/utils/getLanguageLabel";
@@ -170,11 +169,11 @@ export async function loader({request, context}: LoaderFunctionArgs) {
 
   const availableLangs = ["zh", "en", "jp"];
 
-  return json<LoaderData>({
+  return {
     thoughts: normalizeThoughts(thoughts),
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs,
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
@@ -253,7 +252,7 @@ export async function action({request, context}: ActionFunctionArgs) {
     throw new Error("获取更多思想数据失败", {cause: error});
   }
 
-  return json<LoadMoreResponse>({thoughts: normalizeThoughts(data)});
+  return {thoughts: normalizeThoughts(data)};
 }
 
 export default function Thoughts() {

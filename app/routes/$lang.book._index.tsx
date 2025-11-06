@@ -1,7 +1,6 @@
-import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import { json} from "@remix-run/cloudflare";
+import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
-import {useFetcher, useLoaderData, useOutletContext} from "@remix-run/react";
+import { useFetcher, useLoaderData, useOutletContext } from "react-router";
 import RateStars from "~/components/RateStars";
 import getDate from "~/utils/getDate";
 import {LinkIcon} from "@heroicons/react/24/solid";
@@ -145,7 +144,7 @@ export default function Book() {
                       <img
                           src = {`${loaderData.prefix}/cdn-cgi/image/format=auto,width=120/${book.cover.storage_key}`}
                           alt = {book.cover.alt ?? ''}
-                          className = "h-32 aspect-[3/4] object-cover shadow-lg"
+                          className = "h-32 aspect-3/4 object-cover shadow-lg"
                       />
                   )}
                   <div className = "w-full space-y-2 lg:space-y-3">
@@ -198,13 +197,13 @@ export async function loader({request, context}: LoaderFunctionArgs) {
 
   const availableLangs = ["zh", "en", "jp"];
 
-  return json<LoaderData>({
+  return {
     books: normalizeBooks(bookData),
     prefix: context.cloudflare.env.IMG_PREFIX,
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs,
     count: count ?? null,
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
@@ -274,7 +273,7 @@ export async function action({request, context}: ActionFunctionArgs) {
     throw new Error("获取更多读书数据失败");
   }
 
-  return json<LoadMoreResponse>({
+  return {
     books: normalizeBooks(data),
-  });
+  };
 }

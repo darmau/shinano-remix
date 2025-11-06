@@ -1,4 +1,4 @@
-import {Link, useOutletContext} from "@remix-run/react";
+import { Link, useOutletContext } from "react-router";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ArticleText from '~/locales/article';
 
@@ -15,7 +15,7 @@ export default function NextAndPrev({type, next, prev}: {
   const {lang} = useOutletContext<{ lang: string }>();
   const label = getLanguageLabel(ArticleText, lang);
   return (
-      <div className = "flex justify-between items-center flex-wrap border-y py-8 mt-12">
+      <div className = "flex justify-between items-center flex-wrap border-y border-gray-200 py-8 mt-12">
         {prev && (
             <div className="flex flex-col gap-2">
               <h3 className = "font-medium text-violet-900 text-sm">{label.previous}</h3>

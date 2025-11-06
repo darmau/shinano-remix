@@ -1,5 +1,5 @@
 import {useRef, useState} from "react";
-import {useOutletContext} from "@remix-run/react";
+import { useOutletContext } from "react-router";
 import type {ImageAttrs} from "~/components/ContentContainer";
 import { InformationCircleIcon} from "@heroicons/react/20/solid";
 

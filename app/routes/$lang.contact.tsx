@@ -1,7 +1,6 @@
 import Subnav from "~/components/Subnav";
-import {json} from "@remix-run/cloudflare";
-import {Form, useActionData, Link, useOutletContext, useRouteLoaderData} from "@remix-run/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs , MetaFunction} from "@remix-run/cloudflare";
+import { Form, useActionData, Link, useOutletContext, useRouteLoaderData } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import type {loader as rootLoader} from "~/root";
 import getLanguageLabel from "~/utils/getLanguageLabel";
@@ -12,10 +11,10 @@ import i18nLinks from "~/utils/i18nLinks";
 export const loader = async ({ context }: LoaderFunctionArgs) => {
   const availableLangs = ["zh", "en", "jp"];
 
-  return json({
+  return {
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs
-  });
+  };
 };
 
 export const action = async ({ request, context }: ActionFunctionArgs) => {
@@ -24,15 +23,13 @@ export const action = async ({ request, context }: ActionFunctionArgs) => {
   const bark = context.cloudflare.env.BARK_SERVER;
 
   if (!session) {
-    return json({ error: "未登录用户无法提交信息", success: null }, { status: 401 });
+    return { error: "未登录用户无法提交信息", success: null };
   }
 
   const formData = await request.formData();
   const contactType = formData.get("contact_type");
   const contact = formData.get("contact");
   const message = formData.get("message");
-
-  console.log(session.user.id)
 
   // 去public.users表中查找当前用户的id
   const { data: user, error: userError } = await supabase
@@ -42,7 +39,7 @@ export const action = async ({ request, context }: ActionFunctionArgs) => {
     .single();
 
   if (userError) {
-    return json({ error: userError.message, success: null }, { status: 500 });
+    return { error: userError.message, success: null };
   }
 
   const { error } = await supabase
@@ -56,11 +53,11 @@ export const action = async ({ request, context }: ActionFunctionArgs) => {
   } as MessageInsert);
 
   if (error) {
-    return json({ error: error.message, success: null }, { status: 500 });
+    return { error: error.message, success: null };
   }
 
   await fetch(`${bark}/${user.name}给你发送了消息/${message}`);
-  return json({ success: "信息提交成功", error: null });
+  return { success: "信息提交成功", error: null };
 };
 
 export default function Contact() {
@@ -87,7 +84,7 @@ export default function Contact() {
               <select
                   id = "contact_type"
                   name = "contact_type"
-                  className = "block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-violet-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200 sm:text-sm sm:leading-6"
+                  className = "block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-violet-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200 sm:text-sm sm:leading-6"
                   required
                   disabled = {!session}
               >
@@ -105,7 +102,7 @@ export default function Contact() {
                   id = "contact"
                   name = "contact"
                   type = "text"
-                  className = "block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-violet-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200 sm:text-sm sm:leading-6"
+                  className = "block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-violet-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200 sm:text-sm sm:leading-6"
                   required
                   disabled = {!session}
               />
@@ -118,7 +115,7 @@ export default function Contact() {
                   id = "message"
                   name = "message"
                   rows = {4}
-                  className = "block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-violet-600 sm:text-sm sm:leading-6 disabled:cursor-not-allowed disabled:bg-gray-50"
+                  className = "block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-violet-600 sm:text-sm sm:leading-6 disabled:cursor-not-allowed disabled:bg-gray-50"
                   required
                   disabled = {!session}
               />

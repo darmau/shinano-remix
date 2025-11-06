@@ -1,10 +1,9 @@
 import type {BreadcrumbProps} from "~/components/Breadcrumb";
 import Breadcrumb from "~/components/Breadcrumb";
-import {Link, useActionData, useLoaderData, useOutletContext, useRouteLoaderData} from "@remix-run/react";
+import { Link, useActionData, useLoaderData, useOutletContext, useRouteLoaderData } from "react-router";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ThoughtText from "~/locales/thought";
-import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import { json} from "@remix-run/cloudflare";
+import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import type {Json} from "~/types/supabase";
 import ContentContainer from "~/components/ContentContainer";
@@ -111,7 +110,7 @@ export default function ThoughtDetail() {
                 replyingTo = {replyingTo}
                 onCancelReply = {handleCancelReply}
             />
-            <div className = "flex flex-col gap-4 divide-y">
+          <div className= "flex flex-col gap-4 divide-y divide-none">
               {actionResponse?.error && <p className = "mt-2 text-sm text-red-500">{actionResponse.error}</p>}
               {actionResponse?.success && <p className = "mt-2 text-sm text-green-500">{actionResponse.success}</p>}
               {comments && comments.map((comment) => (
@@ -176,7 +175,7 @@ export async function loader({
     throw new Response(null, {
       status: 404,
       statusText: 'Thought not exists'
-    })
+    });
   }
 
   const [
@@ -230,7 +229,7 @@ export async function loader({
   // 如果实际数据库结构不同，需要根据实际情况调整
   const availableLangs = ["zh", "en", "jp"];
 
-  return json({
+  return {
     thoughtData,
     thoughtImages,
     comments,
@@ -239,7 +238,7 @@ export async function loader({
     totalPage,
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs
-  })
+  }
 }
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
@@ -313,11 +312,11 @@ export async function action({request, context}: ActionFunctionArgs) {
 
     const outcome = parseTurnstileOutcome(await turnstileResponse.json());
     if (!outcome.success) {
-      return json({
+      return {
         success: false,
         error: '验证失败,请重试。',
         comment: null
-      });
+      };
     }
 
     const name = formData.get('name') as string;
@@ -346,20 +345,20 @@ export async function action({request, context}: ActionFunctionArgs) {
     .single();
 
     if (error) {
-      return json({
+      return {
         success: false,
         error: error.message,
         comment: null
-      })
+      }
     }
 
     await fetch(`${bark}/${name}评论了想法/${content_text}`)
 
-    return json({
+    return {
       success: '提交成功，请等待审核。Please wait for review.',
       error: null,
       comment: newComment
-    })
+    }
   }
 
   const {data: userProfile} = await supabase
@@ -369,11 +368,11 @@ export async function action({request, context}: ActionFunctionArgs) {
   .single();
 
   if (!userProfile) {
-    return json({
+    return {
       success: false,
       error: 'User not exists',
       comment: null
-    })
+    }
   }
 
   const {data: newComment} = await supabase
@@ -397,9 +396,9 @@ export async function action({request, context}: ActionFunctionArgs) {
 
   await fetch(`${bark}/${userProfile.name}评论了想法/${content_text}`)
 
-  return json({
+  return {
     success: true,
     error: null,
     comment: newComment
-  })
+  }
 }

@@ -1,9 +1,8 @@
-import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import {json} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import {createClient} from "~/utils/supabase/server";
-import {useLoaderData} from "@remix-run/react";
+import { useLoaderData } from "react-router";
 import type {Article} from "~/types/Article";
 import Subnav from "~/components/Subnav";
 import NormalArticleCard from "~/components/NormalArticleCard";
@@ -100,7 +99,7 @@ export default function Index() {
         <Subnav active = "article"/>
         <h1 className="sr-only">积薪</h1>
         <div className = "w-full max-w-8xl mx-auto px-4 space-y-8 lg:space-y-12 mb-8 lg:mb-16">
-          <div className = "flex flex-col gap-8 mt-4 border-b pb-8 lg:pb-12 lg:mt-8 lg:grid lg:grid-cols-2">
+          <div className = "flex flex-col gap-8 mt-4 border-b border-gray-200 pb-8 lg:pb-12 lg:mt-8 lg:grid lg:grid-cols-2">
             <HomeTopArticle isTop = {true} article = {articles[0] as Article} classList = "group"/>
             <div className = "flex flex-col gap-8 md:grid md:grid-cols-3 lg:flex lg:flex-col">
               {articles.slice(1, 4).map((article) => (
@@ -165,11 +164,11 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const label = getLanguageLabel(HomepageText, lang);
 
-  return json({
+  return {
     articles: articleData,
     label,
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs
-  })
+  };
 }

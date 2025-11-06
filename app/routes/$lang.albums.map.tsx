@@ -1,6 +1,5 @@
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
-import { json } from "@remix-run/cloudflare";
-import { useLoaderData, useOutletContext } from "@remix-run/react";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useLoaderData, useOutletContext } from "react-router";
 import { lazy, Suspense } from "react";
 import { createClient } from "~/utils/supabase/server";
 import type { MapImageCollection } from "~/components/MapGallery";
@@ -19,23 +18,25 @@ export default function AlbumsMap() {
   return (
     <>
       <Subnav active="photography" />
-      <h1 className="sr-only">Albums Map</h1>
-      <Suspense
-        fallback={
-          <div className="w-full h-screen bg-gray-100 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-lg text-gray-600">加载地图中...</div>
+      <div className="w-full max-w-8xl mx-auto p-4 md:py-8">
+        <h1 className="sr-only">Albums Map</h1>
+        <Suspense
+          fallback={
+            <div className="w-full h-[600px] bg-gray-100 rounded-lg flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-lg text-gray-600">加载地图中...</div>
+              </div>
             </div>
-          </div>
-        }
-      >
-        <MapGallery
-          mapboxToken={MAPBOX}
-          imageCollection={imageCollection}
-          imgPrefix={imgPrefix}
-          lang={lang}
-        />
-      </Suspense>
+          }
+        >
+          <MapGallery
+            mapboxToken={MAPBOX}
+            imageCollection={imageCollection}
+            imgPrefix={imgPrefix}
+            lang={lang}
+          />
+        </Suspense>
+      </div>
     </>
   );
 }
@@ -44,7 +45,6 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
   const { supabase } = createClient(request, context);
   const lang = params.lang as string;
 
-  console.log(`[Map Loader - Function] Fetching data for lang: ${lang}`);
   const startTime = Date.now();
 
   // 🚀 一行调用数据库函数，直接获取完整的 GeoJSON！
@@ -55,14 +55,14 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
 
   if (error) {
     console.error("Error fetching map data:", error);
-    return json({
+    return {
       imageCollection: { type: "FeatureCollection", features: [] } as MapImageCollection,
       MAPBOX: context.cloudflare.env.MAPBOX_TOKEN,
       imgPrefix: context.cloudflare.env.IMG_PREFIX,
       baseUrl: context.cloudflare.env.BASE_URL,
       availableLangs: ["zh", "en", "jp"],
       latestPhotoStorageKey: null,
-    });
+    };
   }
 
   // 获取最新相册的封面图片，用于 OpenGraph
@@ -80,18 +80,17 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
   const elapsed = Date.now() - startTime;
   const imageCollection = (geojson || { type: "FeatureCollection", features: [] }) as MapImageCollection;
   const featureCount = imageCollection.features?.length || 0;
-  console.log(`[Map Loader - Function] ✅ Loaded ${featureCount} images in ${elapsed}ms`);
 
   const availableLangs = ["zh", "en", "jp"];
 
-  return json({
+  return {
     imageCollection,
     MAPBOX: context.cloudflare.env.MAPBOX_TOKEN,
     imgPrefix: context.cloudflare.env.IMG_PREFIX,
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs,
     latestPhotoStorageKey: latestPhoto?.cover?.storage_key || null,
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = ({ params, data }) => {

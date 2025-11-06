@@ -1,5 +1,5 @@
 import "yet-another-react-lightbox/styles.css";
-import {useOutletContext} from "@remix-run/react";
+import { useOutletContext } from "react-router";
 import Lightbox from "yet-another-react-lightbox";
 import {useEffect, useMemo, useState} from "react";
 import {Captions, Inline, Thumbnails} from "yet-another-react-lightbox/plugins";
@@ -77,7 +77,7 @@ export default function GallerySlide({albumImages, onIndexChange}: { albumImages
                 <ChevronRightIcon aria-hidden = "true" className = "h-5 w-5 text-black"/>
               </div>,
               slideFooter: () => (
-                  <div className="hidden md:block p-4 absolute w-full bottom-0 bg-gradient-to-t from-black/60 to-transparent text-white">
+                  <div className="hidden md:block p-4 absolute w-full bottom-0 bg-linear-to-t from-black/60 to-transparent text-white">
                     {albumImages[index].image.caption &&
                         <p className="mb-4">
                           {albumImages[index].image.caption}

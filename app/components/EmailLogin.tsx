@@ -1,6 +1,6 @@
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import SignupText from '~/locales/signup'
-import {useOutletContext} from "@remix-run/react";
+import { useOutletContext } from "react-router";
 
 export default function EmailLogin ({disabled = false}: {disabled?: boolean}) {
   const {lang} = useOutletContext<{lang: string}>();

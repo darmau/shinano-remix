@@ -1,4 +1,4 @@
-import {Form, useOutletContext} from "@remix-run/react";
+import { Form, useOutletContext } from "react-router";
 import CommentText from '~/locales/comment';
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import type {Session} from "@supabase/supabase-js";
@@ -17,10 +17,10 @@ export default function CommentEditor({contentTable, contentId, session, replyin
 
   if (!session) {
     return (
-        <Form method = "post" id = "comment-editor" className = "border rounded-md">
+        <Form method = "post" id = "comment-editor" className = "border border-gray-200 rounded-md">
           <input name = {contentTable} type = "hidden" value = {contentId}/>
 
-          <div className = "p-4 border-b">
+          <div className = "p-4 border-b border-gray-200">
             <input name = "reply_to" type = "hidden" value = {replyingTo ? replyingTo.id : ''}/>
 
             <div className = "flex gap-4">
@@ -88,7 +88,7 @@ export default function CommentEditor({contentTable, contentId, session, replyin
     )
   } else {
     return (
-        <Form method = "post" id = "comment-editor" className = "border rounded-md">
+        <Form method = "post" id = "comment-editor" className = "border border-gray-200 rounded-md">
           <input name = {contentTable} type = "hidden" value = {contentId}/>
           <input name = "reply_to" type = "hidden" value = {replyingTo ? replyingTo.id : ''}/>
           <div className = "p-4 border-b border-gray-200">
@@ -104,7 +104,7 @@ export default function CommentEditor({contentTable, contentId, session, replyin
                 rows = {5}
                 name = "content_text"
                 placeholder = {label.add_comment}
-                className = "block w-full resize-y border-0 border-b border-transparent p-0 pb-2 text-gray-900 placeholder:text-gray-400 focus:border-violet-600 focus:ring-0 sm:text-sm sm:leading-6"
+                className = "block w-full resize-y border-0 border-b border-transparent p-2 text-gray-900 placeholder:text-gray-400 focus:border-violet-600 focus:ring-0 sm:text-sm sm:leading-6"
             />
           </div>
 

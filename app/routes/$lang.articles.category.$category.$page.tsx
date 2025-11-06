@@ -1,9 +1,8 @@
 import Subnav from "~/components/Subnav";
-import type {LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import {json} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import type {Article} from "~/types/Article";
-import {Link, useLoaderData, useLocation, useOutletContext} from "@remix-run/react";
+import { Link, useLoaderData, useLocation, useOutletContext } from "react-router";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ArticlesText from "~/locales/articles";
 import NormalArticleCard from "~/components/NormalArticleCard";
@@ -74,8 +73,8 @@ export default function ArticlesByCategory() {
             )}
           </div>
           {category.cover && (
-              <div className = "relative overflow-hidden rounded-2xl w-full aspect-[3/2] md:aspect-[3/1]">
-                <div className = "absolute inset-0 bg-gradient-to-b from-transparent to-zinc-800/60"></div>
+              <div className = "relative overflow-hidden rounded-2xl w-full aspect-3/2 md:aspect-3/1">
+                <div className = "absolute inset-0 bg-linear-to-b from-transparent to-zinc-800/60"></div>
                 <ResponsiveImage
                     image = {category.cover}
                     width = {640}
@@ -271,7 +270,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const availableLangs = [lang];
 
-  return json<LoaderData>({
+  return {
     articles: normalizeArticles(articleRows),
     category: normalizeCategorySummary(categoryData),
     countByYear: normalizeYearCounts(countByYearData),
@@ -281,5 +280,5 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs
-  });
+  };
 }

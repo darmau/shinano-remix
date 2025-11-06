@@ -1,4 +1,4 @@
-import {useOutletContext} from "@remix-run/react";
+import { useOutletContext } from "react-router";
 import HomepageText from "~/locales/homepage";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 
@@ -33,7 +33,7 @@ export default function CTA() {
             <svg
                 viewBox = "0 0 1024 1024"
                 aria-hidden = "true"
-                className = "absolute left-1/2 top-1/2 -z-10 h-[64rem] w-[64rem] -translate-x-1/2"
+                className = "absolute left-1/2 top-1/2 -z-10 h-256 w-5xl -translate-x-1/2"
             >
               <circle
                   r = {512} cx = {512} cy = {512} fill = "url(#759c1415-0410-454c-8f7c-9a820de03641)"

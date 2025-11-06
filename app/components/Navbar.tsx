@@ -3,7 +3,7 @@ import {Dialog, DialogPanel, Popover, PopoverButton, PopoverPanel} from "@headle
 import {Bars3Icon, XMarkIcon} from "@heroicons/react/24/outline";
 import throttle from "lodash/throttle";
 import type {NavItem} from "~/locales/navbar";
-import {Link, useLocation, useMatches} from "@remix-run/react";
+import { Link, useLocation, useMatches } from "react-router";
 import Profile from "~/components/Profile";
 import TranslateIcon from "~/icons/Translate";
 import {getLanguageSwitcherLinks} from "~/utils/getLanguageSwitcherLinks";
@@ -85,7 +85,7 @@ export default function Navbar({lang, items}: { lang: string, items: NavItem[] }
 
   return (
       <header id = "navbar" className = "bg-white isolate z-40 fixed top-0 w-full transition-all duration-300">
-        <nav aria-label = "Global" className = "border-b">
+        <nav aria-label = "Global" className = "border-b border-gray-200">
           <div className = "max-w-8xl mx-auto flex items-center justify-between p-5 lg:px-8">
             <div className = "hidden lg:flex lg:gap-2 lg:items-center">
               <Link to = {`/${lang}`} className = "-m-1.5 p-1.5 flex items-center gap-2">
@@ -93,14 +93,14 @@ export default function Navbar({lang, items}: { lang: string, items: NavItem[] }
                 <header className="font-medium font-serif text-lg">积薪</header>
               </Link>
               <Popover>
-                <PopoverButton className = "flex border items-center rounded text-sm ml-2 px-1.5 gap-1 py-1 data-[hover]:bg-zinc-50">
+                <PopoverButton className = "flex border border-gray-200 items-center rounded text-sm ml-2 px-1.5 gap-1 py-1 data-hover:bg-zinc-50">
                   <TranslateIcon className = "size-4 text-gray-900"/>
                   {langMap.get(lang)}
                 </PopoverButton>
                 <PopoverPanel
                     transition
                     anchor = "bottom"
-                    className = "z-50 shadow-2xl divide-y divide-zinc-100 rounded-md bg-white text-sm transition duration-200 ease-in-out [--anchor-gap:var(--spacing-5)] data-[closed]:-translate-y-1 data-[closed]:opacity-0"
+                    className = "z-50 shadow-2xl divide-y divide-zinc-100 rounded-md bg-white text-sm transition duration-200 ease-in-out [--anchor-gap:var(--spacing-5)] data-closed:-translate-y-1 data-closed:opacity-0"
                 >
                   {languageOptions.map((option) => {
                     const link = languageLinks.get(option.code) || `/${option.code}`;
@@ -196,14 +196,14 @@ export default function Navbar({lang, items}: { lang: string, items: NavItem[] }
                 </div>
                 <div className = "pt-8 flex justify-between items-center">
                   <Popover>
-                    <PopoverButton className = "flex border items-center rounded text-sm px-1.5 gap-1 py-1 data-[hover]:bg-zinc-50">
+                    <PopoverButton className = "flex border items-center rounded text-sm px-1.5 gap-1 py-1 data-hover:bg-zinc-50">
                       <TranslateIcon className = "size-4 text-gray-900"/>
                       {langMap.get(lang)}
                     </PopoverButton>
                     <PopoverPanel
                         transition
                         anchor = "bottom"
-                        className = "z-[60] shadow-2xl divide-y divide-zinc-100 rounded-md bg-white text-sm transition duration-200 ease-in-out [--anchor-gap:var(--spacing-5)] data-[closed]:-translate-y-1 data-[closed]:opacity-0"
+                        className = "z-60 shadow-2xl divide-y divide-zinc-100 rounded-md bg-white text-sm transition duration-200 ease-in-out [--anchor-gap:var(--spacing-5)] data-closed:-translate-y-1 data-closed:opacity-0"
                     >
                       {languageOptions.map((option) => {
                         const link = languageLinks.get(option.code) || `/${option.code}`;

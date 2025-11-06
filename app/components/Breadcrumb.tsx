@@ -1,5 +1,5 @@
 import {HomeIcon} from "@heroicons/react/24/solid";
-import {Link, useOutletContext} from "@remix-run/react";
+import { Link, useOutletContext } from "react-router";
 
 export interface BreadcrumbProps {
   name: string;
@@ -16,7 +16,7 @@ export default function Breadcrumb({pages}: {pages: BreadcrumbProps[]}) {
           <li>
             <div>
               <Link to={`/${lang}`} className="text-gray-400 hover:text-gray-500" aria-label={homeLabel}>
-                <HomeIcon aria-hidden="true" className="h-5 w-5 flex-shrink-0" />
+                <HomeIcon aria-hidden="true" className="h-5 w-5 shrink-0" />
               </Link>
             </div>
           </li>
@@ -27,7 +27,7 @@ export default function Breadcrumb({pages}: {pages: BreadcrumbProps[]}) {
                       fill="currentColor"
                       viewBox="0 0 20 20"
                       aria-hidden="true"
-                      className="h-5 w-5 flex-shrink-0 text-gray-300"
+                      className="h-5 w-5 shrink-0 text-gray-300"
                   >
                     <path d="M5.555 17.776l8-16 .894.448-8 16-.894-.448z" />
                   </svg>

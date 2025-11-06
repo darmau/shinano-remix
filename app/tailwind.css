@@ -1,7 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-h2, h3, h4 {
-  scroll-margin-top: 96px;
+@theme {
+  --max-width-8xl: 1440px;
+}
+
+@layer base {
+  h2, h3, h4 {
+    scroll-margin-top: 96px;
+  }
 }

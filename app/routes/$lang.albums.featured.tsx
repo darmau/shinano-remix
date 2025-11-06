@@ -1,8 +1,7 @@
 import Subnav from "~/components/Subnav";
-import type { LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import {json} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
-import {Link, useLoaderData, useOutletContext} from "@remix-run/react";
+import { Link, useLoaderData, useOutletContext } from "react-router";
 import {ServerPhotoAlbum} from "~/components/ServerPhotoAlbum";
 import "react-photo-album/masonry.css";
 import type {FeaturedPhoto} from "~/utils/generatePhotoAlbum";
@@ -110,7 +109,7 @@ export default function AllFeaturedAlbums() {
                         to = {photo.href} className = "group m-1 md:m-2 relative rounded-md overflow-hidden"
                         key = {photo.key}
                     >
-                      <div className = "z-20 absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent">
+                      <div className = "z-20 absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 to-transparent">
                         <div
                             className = "transform translate-y-full transition-transform duration-300 group-hover:translate-y-0 p-4"
                         >
@@ -209,10 +208,10 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const availableLangs = ["zh", "en", "jp"];
 
-  return json<LoaderData>({
+  return {
     featuredPhotos: normalizeFeatured(rawFeaturedPhotos, lang),
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs,
-  });
+  };
 }

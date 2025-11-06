@@ -1,5 +1,5 @@
 import type {Article} from "~/types/Article";
-import {Link, useOutletContext} from "@remix-run/react";
+import { Link, useOutletContext } from "react-router";
 import getTime from "~/utils/getTime";
 import ResponsiveImage from "~/components/ResponsiveImage";
 import {ChatBubbleOvalLeftIcon, EyeIcon} from "@heroicons/react/24/outline";
@@ -26,12 +26,12 @@ export default function HomeTopArticle({article, isTop, classList}: {
               isTop ? (
                   <ResponsiveImage
                       image = {article.cover} width = {640}
-                      classList = "aspect-[5/3] sm:aspect-[3/1] w-full rounded-md overflow-hidden"
+                      classList = "aspect-5/3 sm:aspect-3/1 w-full rounded-md overflow-hidden"
                   />
               ) : (
                   <ResponsiveImage
                       image = {article.cover} width = {640}
-                      classList = "aspect-[5/3] sm:aspect-[3/1] w-full rounded-md overflow-hidden md:aspect-[3/2] lg:grow-0 lg:max-w-48"
+                      classList = "aspect-5/3 sm:aspect-3/1 w-full rounded-md overflow-hidden md:aspect-3/2 lg:grow-0 lg:max-w-48"
                   />
               )
           )

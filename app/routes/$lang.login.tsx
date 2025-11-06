@@ -1,6 +1,6 @@
-import {Form, useActionData, useLoaderData, useNavigation, useOutletContext} from "@remix-run/react";
-import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
-import { json, redirect} from "@remix-run/cloudflare";
+import { Form, useActionData, useLoaderData, useNavigation, useOutletContext } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
+import { redirect } from "react-router";
 import GithubLogin from "~/components/GithubLogin";
 import EmailLogin from "~/components/EmailLogin";
 import SignupText from '~/locales/signup'
@@ -14,12 +14,12 @@ export async function loader({request, context}: LoaderFunctionArgs) {
 
   const availableLangs = ["zh", "en", "jp"];
 
-  return json({
+  return {
     origin,
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs,
     error: requestUrl.searchParams.get("error"),
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader> = ({params, data}) => {
@@ -88,7 +88,7 @@ export async function action({request, context}: ActionFunctionArgs) {
   const formData = await request.formData()
   const intent = formData.get("intent") as string;
 
-  const {supabase, headers} = createClient(request, context)
+  const {supabase, headers} = createClient(request, context);
 
   if (intent === 'email') {
     const email = (formData.get("email") as string | null)?.trim();
@@ -97,7 +97,7 @@ export async function action({request, context}: ActionFunctionArgs) {
     const labels = SignupText[lang as keyof typeof SignupText] ?? SignupText.zh;
 
     if (!email) {
-      return json({success: false, error: labels.email_required}, {headers});
+      return {success: false, error: labels.email_required};
     }
 
     const origin = new URL(request.url).origin;
@@ -112,10 +112,10 @@ export async function action({request, context}: ActionFunctionArgs) {
 
     if (error) {
       console.error(error);
-      return json({success: false, error: error.message}, {headers});
+      return {success: false, error: error.message};
     }
 
-    return json({success: true, error: null}, {headers});
+    return {success: true, error: null};
   } else if (intent === 'github') {
     const {data, error} = await supabase.auth.signInWithOAuth({
       provider: "github",
@@ -126,11 +126,13 @@ export async function action({request, context}: ActionFunctionArgs) {
 
     if (error) {
       console.error(error);
-      return json({success: false, error: error.message}, {headers});
+      return {success: false, error: error.message};
     }
 
     if (data.url) {
-      return redirect(data.url, {headers});
+      // In Single Fetch, headers are handled differently
+      // For redirect with headers, we need to set them via headers export
+      return redirect(data.url);
     }
   }
 
