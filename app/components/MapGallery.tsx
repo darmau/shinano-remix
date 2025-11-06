@@ -55,10 +55,37 @@ export default function MapGallery({
   const [clusterImages, setClusterImages] = useState<MapImageFeature[]>([]);
   const hasFitToBounds = useRef(false);
   const imageCollectionRef = useRef(imageCollection);
+  const [shouldLoadMap, setShouldLoadMap] = useState(false);
   const label = getLanguageLabel(AlbumText, lang);
 
+  // 使用 Intersection Observer 延迟加载地图，直到容器进入视口
   useEffect(() => {
-    if (!mapboxToken || !mapContainer.current || map.current) return;
+    if (!mapContainer.current || map.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShouldLoadMap(true);
+            observer.disconnect(); // 一旦开始加载就断开观察
+          }
+        });
+      },
+      {
+        rootMargin: '50px', // 提前 50px 开始加载
+        threshold: 0.01, // 只要有一点进入视口就加载
+      }
+    );
+
+    observer.observe(mapContainer.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mapboxToken || !mapContainer.current || map.current || !shouldLoadMap) return;
 
     mapboxgl.accessToken = mapboxToken;
 
@@ -252,7 +279,7 @@ export default function MapGallery({
       map.current = null;
       hasFitToBounds.current = false;
     };
-  }, [mapboxToken, imageCollection]);
+  }, [mapboxToken, shouldLoadMap]); // 依赖 shouldLoadMap，延迟加载直到进入视口
 
   // 更新 imageCollection ref
   useEffect(() => {

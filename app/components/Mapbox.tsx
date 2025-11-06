@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { setupMapboxLanguage } from "~/utils/mapbox";
@@ -20,15 +20,43 @@ export default function MapComponent({ mapboxToken, exifData, lang = 'en' }: Map
   const marker = useRef<mapboxgl.Marker | null>(null);
   const isMapLoaded = useRef(false);
   const exifDataRef = useRef(exifData);
+  const languageControlRef = useRef<ReturnType<typeof setupMapboxLanguage> | null>(null);
+  const [shouldLoadMap, setShouldLoadMap] = useState(false);
   
   // 保持 exifData ref 最新
   useEffect(() => {
     exifDataRef.current = exifData;
   }, [exifData]);
 
-  // 初始化地图
+  // 使用 Intersection Observer 延迟加载地图，直到容器进入视口
   useEffect(() => {
-    if (!mapboxToken || !mapContainer.current) {
+    if (!mapContainer.current || map.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShouldLoadMap(true);
+            observer.disconnect(); // 一旦开始加载就断开观察
+          }
+        });
+      },
+      {
+        rootMargin: '50px', // 提前 50px 开始加载
+        threshold: 0.01, // 只要有一点进入视口就加载
+      }
+    );
+
+    observer.observe(mapContainer.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  // 初始化地图（只依赖 mapboxToken，不依赖 lang）
+  useEffect(() => {
+    if (!mapboxToken || !mapContainer.current || map.current || !shouldLoadMap) {
       return;
     }
 
@@ -49,11 +77,9 @@ export default function MapComponent({ mapboxToken, exifData, lang = 'en' }: Map
     // 监听地图加载完成事件
     const handleMapLoad = () => {
       isMapLoaded.current = true;
-      console.log('Mapbox loaded, checking for GPS data...');
       
       // 如果地图加载完成时已经有 exifData，立即应用
       const currentExif = exifDataRef.current;
-      console.log('Initial exifData on map load:', currentExif);
       
       if (!currentExif) {
         console.log('No exifData available yet');
@@ -81,7 +107,7 @@ export default function MapComponent({ mapboxToken, exifData, lang = 'en' }: Map
         return;
       }
       
-      console.log('Setting map position to:', { lat, lng });
+
       const target: [number, number] = [lng, lat];
       
       mapInstance.flyTo({
@@ -110,8 +136,13 @@ export default function MapComponent({ mapboxToken, exifData, lang = 'en' }: Map
       mapInstance.remove();
       map.current = null;
       isMapLoaded.current = false;
+      languageControlRef.current = null;
     };
-  }, [mapboxToken, lang]);
+  }, [mapboxToken, shouldLoadMap]); // 依赖 shouldLoadMap，延迟加载直到进入视口
+
+  // 注意：语言变化时不重新创建地图，避免额外的 map load
+  // MapboxLanguage 控件在初始化时已设置，动态更新需要重新加载样式，会产生新的 map load
+  // 为了节省成本，我们接受地图保持初始语言，这是合理的权衡
 
   // 处理 exifData 变化
   useEffect(() => {
