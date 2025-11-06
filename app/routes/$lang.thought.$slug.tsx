@@ -1,6 +1,6 @@
 import type {BreadcrumbProps} from "~/components/Breadcrumb";
 import Breadcrumb from "~/components/Breadcrumb";
-import {Link, useActionData, useLoaderData, useOutletContext} from "@remix-run/react";
+import {Link, useActionData, useLoaderData, useOutletContext, useRouteLoaderData} from "@remix-run/react";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ThoughtText from "~/locales/thought";
 import type {ActionFunctionArgs, LoaderFunctionArgs, MetaFunction} from "@remix-run/cloudflare";
@@ -22,10 +22,13 @@ import type {SupabaseClient} from "@supabase/supabase-js";
 import {useEffect, useState} from "react";
 import {parseTurnstileOutcome} from "~/utils/turnstile";
 import {trackPageView} from "~/utils/trackPageView";
+import type {loader as rootLoader} from "~/root";
 
 export default function ThoughtDetail() {
   const {lang, supabase} = useOutletContext<{ lang: string, supabase: SupabaseClient }>();
   const label = getLanguageLabel(ThoughtText, lang);
+  const rootData = useRouteLoaderData<typeof rootLoader>("root");
+  const session = rootData?.session ?? null;
 
   const {
     thoughtData,
@@ -33,8 +36,7 @@ export default function ThoughtDetail() {
     comments,
     page,
     limit,
-    totalPage,
-    session
+    totalPage
   } = useLoaderData<typeof loader>();
   const actionResponse = useActionData<typeof action>();
 
@@ -68,6 +70,8 @@ export default function ThoughtDetail() {
   useEffect(() => {
     trackPageView('thought', thoughtData.id, supabase, (newPageView) => {
       setPageView(newPageView);
+    }).catch((error) => {
+      console.error(error);
     });
   }, [thoughtData.id, supabase]);
 
@@ -149,7 +153,6 @@ export async function loader({
                                request, context, params
                              }: LoaderFunctionArgs) {
   const {supabase} = createClient(request, context);
-  const {data: {session}} = await supabase.auth.getSession();
   const slug = params.slug as string;
   const url = new URL(request.url);
   const page = url.searchParams.get('page') ? parseInt(url.searchParams.get('page')!) : 1;
@@ -176,42 +179,48 @@ export async function loader({
     })
   }
 
-  const {data: thoughtImages} = await supabase
-  .from('thought_image')
-  .select(`
-      order,
-      image (id, alt, storage_key, width, height, caption)
-    `)
-  .eq('thought_id', thoughtData.id)
-  .order('order', {ascending: true});
+  const [
+    thoughtImagesResult,
+    commentsResult,
+    commentCountResult
+  ] = await Promise.all([
+    supabase
+      .from('thought_image')
+      .select(`
+        order,
+        image (id, alt, storage_key, width, height, caption)
+      `)
+      .eq('thought_id', thoughtData.id)
+      .order('order', {ascending: true}),
+    supabase
+      .from('comment')
+      .select(`
+        id,
+        user_id,
+        name,
+        website,
+        content_text,
+        created_at,
+        is_anonymous,
+        users (id, name, role),
+        reply_to (id, content_text, is_anonymous, name, users (id, name))
+      `)
+      .eq('to_thought', thoughtData.id)
+      .eq('is_blocked', false)
+      .eq('is_public', true)
+      .order('created_at', {ascending: false})
+      .range((page - 1) * limit, page * limit - 1),
+    supabase
+      .from('comment')
+      .select('id', {count: 'exact'})
+      .eq('to_thought', thoughtData.id)
+      .eq('is_blocked', false)
+      .eq('is_public', true)
+  ]);
 
-  // 评论数据
-  const {data: comments} = await supabase
-  .from('comment')
-  .select(`
-      id,
-      user_id,
-      name,
-      website,
-      content_text,
-      created_at,
-      is_anonymous,
-      users (id, name, role),
-      reply_to (id, content_text, is_anonymous, name, users (id, name))
-    `)
-  .eq('to_thought', thoughtData.id)
-  .eq('is_blocked', false)
-  .eq('is_public', true)
-  .order('created_at', {ascending: false})
-  .range((page - 1) * limit, page * limit - 1);
-
-  // 评论总数
-  const {count} = await supabase
-  .from('comment')
-  .select('id', {count: 'exact'})
-  .eq('to_thought', thoughtData.id)
-  .eq('is_blocked', false)
-  .eq('is_public', true);
+  const thoughtImages = thoughtImagesResult.data ?? null;
+  const comments = commentsResult.data ?? [];
+  const count = commentCountResult.count;
 
   // 总页数
   const totalPage = count ? Math.ceil(count / limit) : 1;
@@ -228,7 +237,6 @@ export async function loader({
     page,
     limit,
     totalPage,
-    session,
     baseUrl: context.cloudflare.env.BASE_URL,
     availableLangs
   })
