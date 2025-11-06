@@ -68,9 +68,17 @@ export default function MapGallery({
       style: "mapbox://styles/mapbox/outdoors-v12",
       center: [104.32, 30.23], // 默认中心
       zoom: 2,
+      scrollZoom: false, // 禁用滚轮缩放，让页面可以正常滚动
     });
 
     map.current = mapInstance;
+
+    // 添加导航控件（缩放按钮）
+    const nav = new mapboxgl.NavigationControl({
+      showCompass: true, // 显示指南针
+      showZoom: true, // 显示缩放按钮
+    });
+    mapInstance.addControl(nav, 'top-left');
 
     // 添加语言控制插件
     setupMapboxLanguage(mapInstance, lang);
@@ -286,12 +294,12 @@ export default function MapGallery({
   }, [imageCollection]);
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full max-w-7xl mx-auto h-[75vh] rounded-lg overflow-hidden shadow-lg">
       <div ref={mapContainer} className="w-full h-full" />
       
       {/* 聚合图片列表面板 */}
       {clusterImages.length > 0 && (
-        <div className="absolute top-4 right-4 w-96 max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl z-10">
+        <div className="absolute top-2 md:top-4 w-[90%] md:w-96 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-4 max-h-[500px] overflow-y-auto bg-white rounded-lg shadow-xl z-10">
           <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center z-10">
             <h3 className="text-lg font-semibold text-zinc-800">
               {label.map_title} ({clusterImages.length})
@@ -355,7 +363,7 @@ export default function MapGallery({
       
       {/* 图片详情面板 */}
       {selectedImage && (
-        <div className="absolute top-4 right-4 w-96 max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl z-10">
+        <div className="absolute top-2 md:top-4 w-[90%] md:w-96 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-4 max-h-[500px] overflow-y-auto bg-white rounded-lg shadow-xl z-10">
           <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-zinc-800">
               {selectedImage.properties.location || label.map_title}

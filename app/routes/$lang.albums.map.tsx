@@ -18,23 +18,25 @@ export default function AlbumsMap() {
   return (
     <>
       <Subnav active="photography" />
-      <h1 className="sr-only">Albums Map</h1>
-      <Suspense
-        fallback={
-          <div className="w-full h-screen bg-gray-100 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-lg text-gray-600">加载地图中...</div>
+      <div className="w-full max-w-8xl mx-auto p-4 md:py-8">
+        <h1 className="sr-only">Albums Map</h1>
+        <Suspense
+          fallback={
+            <div className="w-full h-[600px] bg-gray-100 rounded-lg flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-lg text-gray-600">加载地图中...</div>
+              </div>
             </div>
-          </div>
-        }
-      >
-        <MapGallery
-          mapboxToken={MAPBOX}
-          imageCollection={imageCollection}
-          imgPrefix={imgPrefix}
-          lang={lang}
-        />
-      </Suspense>
+          }
+        >
+          <MapGallery
+            mapboxToken={MAPBOX}
+            imageCollection={imageCollection}
+            imgPrefix={imgPrefix}
+            lang={lang}
+          />
+        </Suspense>
+      </div>
     </>
   );
 }
