@@ -7,6 +7,8 @@ export default {
     "login_comment": "请登录后发表评论",
     "signup": "注册",
     "login": "登录",
+    "moderation_notice": "未登录用户的评论需要审核通过后才会显示。",
+    "moderation_cta": "后再评论以便立即显示。",
     "author": "作者",
     "reply": "回复",
     "cancel_reply": "取消回复"
@@ -19,6 +21,8 @@ export default {
     "login_comment": "Please login to comment",
     "signup": "Sign up",
     "login": "Log in",
+    "moderation_notice": "Guest comments are held for review before appearing.",
+    "moderation_cta": " to publish instantly.",
     "author": "Author",
     "reply": "Reply",
     "cancel_reply": "Cancel reply"
@@ -31,6 +35,8 @@ export default {
     "login_comment": "コメントするにはログインして",
     "signup": "サインアップ",
     "login": "ログイン",
+    "moderation_notice": "未ログインのコメントは承認後に表示されます。",
+    "moderation_cta": "するとすぐに表示されます。",
     "author": "著者",
     "reply": "返信",
     "cancel_reply": "返信をキャンセル"

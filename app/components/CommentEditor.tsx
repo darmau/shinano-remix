@@ -1,4 +1,4 @@
-import { Form, useOutletContext } from "react-router";
+import { Form, Link, useOutletContext } from "react-router";
 import CommentText from '~/locales/comment';
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import type {Session} from "@supabase/supabase-js";
@@ -63,6 +63,16 @@ export default function CommentEditor({contentTable, contentId, session, replyin
           </div>
 
           <div className = "flex flex-col gap-4 justify-start p-4">
+            <p className = "text-sm text-zinc-500">
+              {label.moderation_notice}{" "}
+              <Link
+                  to = {`/${lang}/login`}
+                  className = "font-medium text-violet-600 hover:text-violet-500"
+              >
+                {label.login}
+              </Link>
+              {label.moderation_cta}
+            </p>
             <Turnstile
                 siteKey={turnstileSiteKey}
             />
