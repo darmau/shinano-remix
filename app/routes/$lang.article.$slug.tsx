@@ -107,9 +107,6 @@ export default function ArticleDetail() {
                 <time className = "text-zinc-600 text-sm">{getTime(article.published_at!, lang)}</time>
               </div>
               <div className = "flex items-center gap-3 text-zinc-800">
-                {isPremiumArticle && (
-                  <LockClosedIcon className = "h-7 w-7 text-violet-600"/>
-                )}
                 <h1 className = "font-medium leading-normal text-4xl lg:text-5xl">{article.title}</h1>
               </div>
               <h2 className = "text-zinc-600 text-lg lg:text-xl">{article.subtitle}</h2>
@@ -142,16 +139,20 @@ export default function ArticleDetail() {
             <div className = "col-span-1 md:col-span-2 selection:bg-violet-800/60 selection:text-white">
               <div className = "flex flex-col gap-12">
                 {canViewContent ? (
-                  <ContentContainer content = {article.content_json as Json}/>
+                  article.content_json ? (
+                    <ContentContainer content = {article.content_json as Json}/>
+                  ) : null
                 ) : (
-                  <div className = "relative rounded-lg border border-violet-200 bg-white/80 p-4 md:p-6">
+                  <div className = "relative overflow-hidden rounded-lg border border-violet-200 bg-white/80 p-4 md:p-6">
                     <div
                       className = "pointer-events-none select-none blur-sm"
                       aria-hidden = "true"
                     >
-                      <ContentContainer content = {article.content_json as Json}/>
+                      <div className = "space-y-3 text-left text-lg font-semibold leading-8 text-gray-300">
+                        <p>我们认为下面这些真理是不证自明的：人人生而平等，造物主赋予他们若干不可剥夺的权利，其中包括生命权、自由权和追求幸福的权利。为了保障这些权利，人们才在他们之间建立政府，而政府之正当权力，则来自被统治者的同意。任何形式的政府，只要破坏上述目的，人民就有权利改变或废除它，并建立新政府；新政府赖以奠基的原则，得以组织权力的方式，都要最大可能地增进民众的安全和幸福。的确，从慎重考虑，不应当由于轻微和短暂的原因而改变成立多年的政府。过去的一切经验也都说明，任何苦难，只要尚能忍受，人类都宁愿容忍，而无意废除他们久已习惯了的政府来恢复自身的权益。但是，当政府一贯滥用职权、强取豪夺，一成不变地追逐这一目标，足以证明它旨在把人民置于绝对专制统治之下时，那么，人民就有权利，也有义务推翻这个政府，并为他们未来的安全建立新的保障。</p>
+                      </div>
                     </div>
-                    <div className = "absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-lg bg-white/90 px-6 py-8 text-center backdrop-blur-sm">
+                    <div className = "absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-lg px-6 py-8 text-center">
                       <LockClosedIcon className = "h-10 w-10 text-violet-600"/>
                       <p className = "text-base text-zinc-600 md:text-lg">{label.premium_content_locked}</p>
                       <Link
@@ -210,7 +211,7 @@ export default function ArticleDetail() {
                 </div>
               </div>
             </div>
-            {canViewContent && (
+            {canViewContent && article.content_json && (
               <aside className = "hidden md:flex md:col-span-1 md:h-full">
                 <Catalog
                     content = {article.content_json as Json}
@@ -233,6 +234,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const page = url.searchParams.get('page') ? parseInt(url.searchParams.get('page')!) : 1;
   const limit = url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : 20;
+  const {data: {session}} = await supabase.auth.getSession();
 
   // 文章详情
   const {data: articleContent} = await supabase
@@ -331,6 +333,10 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   // 总页数
   const totalPage = count ? Math.ceil(count / limit) : 1;
+
+  if (articleContent.is_premium && !session) {
+    articleContent.content_json = null;
+  }
 
   // 转换成lang的数组，如['zh', 'en']
   const availableLangs = availableArticle.map((item: { language: { lang: string | null } }) => {
