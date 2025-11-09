@@ -1,6 +1,7 @@
 import {Resend} from "resend";
 import type {SupabaseClient} from "@supabase/supabase-js";
 import type {Database} from "~/types/supabase";
+import {generateUnsubscribeToken} from "~/utils/unsubscribeToken.server";
 
 type CommentRow = Database["public"]["Tables"]["comment"]["Row"];
 
@@ -93,6 +94,10 @@ export async function sendCommentReplyNotification({
 
   const {title, url} = await buildContentMetadata(supabase, env, content, replyToId);
 
+  // 生成取消订阅 token
+  const unsubscribeToken = await generateUnsubscribeToken(replyToId, env.RESEND_KEY);
+  const unsubscribeUrl = `${env.BASE_URL}/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
+
   const subject = `你的评论收到了新的回复：${title}`;
   const html = renderHtmlEmail({
     recipientName,
@@ -100,7 +105,8 @@ export async function sendCommentReplyNotification({
     contentUrl: url,
     originalComment: parentComment.content_text ?? "",
     replyAuthorName: newCommentAuthorName,
-    replyContent: newCommentContent
+    replyContent: newCommentContent,
+    unsubscribeUrl
   });
   const text = renderTextEmail({
     recipientName,
@@ -108,7 +114,8 @@ export async function sendCommentReplyNotification({
     contentUrl: url,
     originalComment: parentComment.content_text ?? "",
     replyAuthorName: newCommentAuthorName,
-    replyContent: newCommentContent
+    replyContent: newCommentContent,
+    unsubscribeUrl
   });
 
   const resend = new Resend(env.RESEND_KEY);
@@ -210,6 +217,7 @@ function renderHtmlEmail(args: {
   originalComment: string;
   replyAuthorName: string;
   replyContent: string;
+  unsubscribeUrl: string;
 }): string {
   const greetingName = args.recipientName ? escapeHtml(args.recipientName) : "朋友";
   const replyAuthor = escapeHtml(args.replyAuthorName || "访客");
@@ -217,9 +225,10 @@ function renderHtmlEmail(args: {
   const replyContent = formatCommentHtml(args.replyContent);
   const safeTitle = escapeHtml(args.contentTitle);
   const safeUrl = escapeHtml(args.contentUrl);
+  const safeUnsubscribeUrl = escapeHtml(args.unsubscribeUrl);
 
   return [
-    `<div style="font-family: Arial, 'Helvetica Neue', sans-serif; line-height: 1.6; color: #1f2937;">`,
+    `<div style="font-family: Arial, 'Helvetica Neue', sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto;">`,
     `<p>你好，${greetingName}。</p>`,
     `<p>你在《<strong>${safeTitle}</strong>》下的评论收到了新的回复。</p>`,
     `<p style="margin-top: 16px; margin-bottom: 8px; color: #6b7280;">你的评论</p>`,
@@ -227,7 +236,10 @@ function renderHtmlEmail(args: {
     `<p style="margin-top: 16px; margin-bottom: 8px; color: #6b7280;">来自 ${replyAuthor} 的回复</p>`,
     `<blockquote style="border-left: 4px solid #d1d5db; margin: 0; padding-left: 12px;">${replyContent}</blockquote>`,
     `<p style="margin-top: 16px;">点击查看完整讨论：<a href="${safeUrl}" style="color: #7c3aed; text-decoration: underline;">${safeUrl}</a></p>`,
-    `<p style="margin-top: 24px; font-size: 0.875rem; color: #9ca3af;">如果不想再收到类似提醒，请在评论时取消勾选“有人回复通知我”。</p>`,
+    `<hr style="margin: 32px 0; border: none; border-top: 1px solid #e5e7eb;" />`,
+    `<p style="font-size: 0.875rem; color: #9ca3af; margin-bottom: 8px;">如果不想再收到类似提醒，你可以：</p>`,
+    `<p style="font-size: 0.875rem; margin-bottom: 16px;"><a href="${safeUnsubscribeUrl}" style="color: #7c3aed; text-decoration: underline;">点击此处取消订阅</a></p>`,
+    `<p style="font-size: 0.75rem; color: #d1d5db;">积薪 Darmau - 分享我的所见所想</p>`,
     `</div>`
   ].join("");
 }
@@ -239,6 +251,7 @@ function renderTextEmail(args: {
   originalComment: string;
   replyAuthorName: string;
   replyContent: string;
+  unsubscribeUrl: string;
 }): string {
   const greetingName = args.recipientName ? args.recipientName : "朋友";
 
@@ -255,7 +268,12 @@ function renderTextEmail(args: {
     ``,
     `查看完整讨论：${args.contentUrl}`,
     ``,
-    `如果你不想再收到类似提醒，请在评论时取消勾选“有人回复通知我”。`
+    `---`,
+    ``,
+    `如果不想再收到类似提醒，请访问以下链接取消订阅：`,
+    `${args.unsubscribeUrl}`,
+    ``,
+    `积薪 Darmau - 分享我的所见所想`
   ].join("\n");
 }
 
