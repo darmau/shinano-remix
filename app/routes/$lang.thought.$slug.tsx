@@ -359,26 +359,6 @@ export async function action({request, context, params}: ActionFunctionArgs) {
 
     await fetch(`${bark}/${name}评论了想法/${content_text}`)
 
-    if (reply_to) {
-      try {
-        await sendCommentReplyNotification({
-          supabase,
-          env: context.cloudflare.env,
-          replyToId: reply_to,
-          newCommentAuthorName: name,
-          newCommentContent: content_text,
-          content: {
-            type: "thought",
-            id: to_thought,
-            lang,
-            slug
-          }
-        });
-      } catch (error) {
-        console.error("Failed to send thought comment notification:", error);
-      }
-    }
-
     return {
       success: '提交成功，请等待审核。Please wait for review.',
       error: null,
