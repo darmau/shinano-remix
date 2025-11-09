@@ -1,4 +1,4 @@
-import { Form, useActionData, useLoaderData, useNavigation, useOutletContext } from "react-router";
+import { Form, Link, useActionData, useLoaderData, useNavigation, useOutletContext } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import { redirect } from "react-router";
 import GithubLogin from "~/components/GithubLogin";
@@ -79,6 +79,9 @@ export default function Login() {
 
             <GithubLogin/>
           </Form>
+        <div className="mt-6 text-center text-sm text-zinc-500">
+          <Link to={`/${lang}/terms-of-use`} className="text-sm text-zinc-500">Terms of Use</Link>
+        </div>
         </div>
       </div>
   )
