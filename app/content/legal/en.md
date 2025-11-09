@@ -56,9 +56,10 @@ The Site is independently operated by an individual for the purpose of publishin
    - The Site may send a notification email to their provided address when their comment receives a reply.  
    - The Site may temporarily store the necessary email data for this purpose.  
 
-4. Users must comply with applicable laws and public ethics when posting comments. The following content is prohibited:  
-   - Anything violating laws or regulations  
-   - Insults, defamation, discrimination, privacy violations, or intellectual property infringement  
+4. Users must comply with community standards when posting comments. The following content is prohibited:  
+   - Incitement to violence, hate speech, or discrimination against specific groups  
+   - Insults, defamation, harassment, or privacy violations  
+   - Intellectual property infringement  
    - Advertising, spam, or irrelevant content  
 
    Violating comments may be deleted, and offending accounts may be permanently banned.
