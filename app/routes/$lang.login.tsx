@@ -1,12 +1,27 @@
-import { Form, Link, useActionData, useLoaderData, useNavigation, useOutletContext } from "react-router";
+import { Form, Link, redirect, useActionData, useLoaderData, useNavigation, useOutletContext } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
-import { redirect } from "react-router";
 import GithubLogin from "~/components/GithubLogin";
 import EmailLogin from "~/components/EmailLogin";
 import SignupText from '~/locales/signup'
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import { createClient } from "~/utils/supabase/server";
 import i18nLinks from "~/utils/i18nLinks";
+
+type ActionData = {
+  success: boolean;
+  error: string | null;
+};
+
+function jsonWithHeaders(data: ActionData, headers: Headers, status = 200) {
+  const responseHeaders = new Headers(headers);
+  if (!responseHeaders.has("Content-Type")) {
+    responseHeaders.set("Content-Type", "application/json; charset=utf-8");
+  }
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: responseHeaders,
+  });
+}
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const requestUrl = new URL(request.url);
@@ -45,7 +60,7 @@ export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
 export default function Login() {
   const { lang } = useOutletContext<{ lang: string }>();
   const label = getLanguageLabel(SignupText, lang);
-  const actionResponse = useActionData<typeof action>();
+  const actionResponse = useActionData<ActionData>();
   const loaderData = useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const isEmailSubmitting = navigation.state === "submitting" && navigation.formData?.get("intent") === "email";
@@ -76,6 +91,8 @@ export default function Login() {
               <p className="text-sm text-red-600">{errorMessage}</p>
             </div>
           )}
+
+      <GithubLogin />
         </Form>
         <div className="mt-6 text-center text-sm text-zinc-500">
           <Link to={`/${lang}/terms-of-use`} className="text-sm text-zinc-500">Terms of Use</Link>
@@ -101,7 +118,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     const labels = SignupText[lang as keyof typeof SignupText] ?? SignupText.zh;
 
     if (!email) {
-      return { success: false, error: labels.email_required };
+      return jsonWithHeaders({ success: false, error: labels.email_required }, headers, 400);
     }
 
     const emailRedirectTo = `${requestUrl.origin}/auth/callback?next=${encodeURIComponent(next)}`;
@@ -115,10 +132,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
     if (error) {
       console.error(error);
-      return { success: false, error: error.message };
+      return jsonWithHeaders({ success: false, error: error.message }, headers, 400);
     }
 
-    return { success: true, error: null };
+    return jsonWithHeaders({ success: true, error: null }, headers);
   } else if (intent === 'github') {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "github",
@@ -129,13 +146,13 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
     if (error) {
       console.error(error);
-      return { success: false, error: error.message };
+      return jsonWithHeaders({ success: false, error: error.message }, headers, 400);
     }
 
     if (data.url) {
       // In Single Fetch, headers are handled differently
       // For redirect with headers, we need to set them via headers export
-      return redirect(data.url);
+      return redirect(data.url, { headers });
     }
   }
 
