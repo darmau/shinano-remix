@@ -23,7 +23,6 @@ export default function EmailLogin ({disabled = false}: {disabled?: boolean}) {
                 disabled = {disabled}
             />
           </div>
-          <p className = "mt-2 text-sm text-gray-500">{label.magic_link_hint}</p>
         </div>
         <input type="hidden" value={lang} name="lang"/>
 

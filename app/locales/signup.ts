@@ -3,7 +3,7 @@ export default {
     sign_up_title: "注册账号",
     sign_up_description: "本站采用邮件一次性登录链接，无需设置密码。",
     log_in_title: "登录",
-    log_in_description: "输入邮箱地址，无论新老用户都会收到一次性登录链接。",
+    log_in_description: "输入邮箱地址，接收一次性登录链接。",
     email: "邮箱",
     oauth: "其他方式登录",
     send_link: "发送登录链接",

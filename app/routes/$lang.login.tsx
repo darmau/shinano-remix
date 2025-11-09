@@ -23,11 +23,22 @@ function jsonWithHeaders(data: ActionData, headers: Headers, status = 200) {
   });
 }
 
-export async function loader({ request, context }: LoaderFunctionArgs) {
+export async function loader({ request, context, params }: LoaderFunctionArgs) {
   const requestUrl = new URL(request.url);
   const origin = requestUrl.origin;
+  const lang = params.lang || "zh";
+  const next = requestUrl.searchParams.get("next") ?? `/${lang}`;
 
   const availableLangs = ["zh", "en", "jp"];
+
+  // 检查用户是否已登录
+  const { supabase } = createClient(request, context);
+  const { data: { session } } = await supabase.auth.getSession();
+
+  // 如果已登录，重定向到目标页面或首页
+  if (session?.user) {
+    return redirect(next);
+  }
 
   return {
     origin,
