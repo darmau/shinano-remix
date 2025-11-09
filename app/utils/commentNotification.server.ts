@@ -35,7 +35,7 @@ type CommentWithUser = CommentRow & {
   } | null;
 };
 
-const FROM_ADDRESS = "积薪评论通知 <no_reply@darmau.co>";
+const FROM_ADDRESS = "积薪评论通知 <no_reply@auth.darmau.co>";
 
 export async function sendCommentReplyNotification({
   supabase,
