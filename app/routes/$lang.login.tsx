@@ -5,10 +5,10 @@ import GithubLogin from "~/components/GithubLogin";
 import EmailLogin from "~/components/EmailLogin";
 import SignupText from '~/locales/signup'
 import getLanguageLabel from "~/utils/getLanguageLabel";
-import {createClient} from "~/utils/supabase/server";
+import { createClient } from "~/utils/supabase/server";
 import i18nLinks from "~/utils/i18nLinks";
 
-export async function loader({request, context}: LoaderFunctionArgs) {
+export async function loader({ request, context }: LoaderFunctionArgs) {
   const requestUrl = new URL(request.url);
   const origin = requestUrl.origin;
 
@@ -22,18 +22,18 @@ export async function loader({request, context}: LoaderFunctionArgs) {
   };
 }
 
-export const meta: MetaFunction<typeof loader> = ({params, data}) => {
+export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(SignupText, lang);
   const baseUrl = data!.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
-      lang,
-      data!.availableLangs,
-      "login"
+    lang,
+    data!.availableLangs,
+    "login"
   );
 
   return [
-    {title: label.log_in_title},
+    { title: label.log_in_title },
     {
       name: "description",
       content: label.log_in_description,
@@ -43,7 +43,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
 };
 
 export default function Login() {
-  const {lang} = useOutletContext<{lang: string}>();
+  const { lang } = useOutletContext<{ lang: string }>();
   const label = getLanguageLabel(SignupText, lang);
   const actionResponse = useActionData<typeof action>();
   const loaderData = useLoaderData<typeof loader>();
@@ -53,41 +53,39 @@ export default function Login() {
   const errorMessage = actionResponse?.error ?? queryError;
 
   return (
-      <div className = "h-full bg-zinc-50 flex flex-col justify-center py-16 sm:px-6 lg:px-8">
-        <div className = "sm:mx-auto sm:w-full sm:max-w-md">
-          <h2 className = "mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-zinc-900">
-            {label.log_in_title}
-          </h2>
-          <p className = "mt-6 text-center text-base text-zinc-500">{label.log_in_description}</p>
-        </div>
+    <div className="h-full bg-zinc-50 flex flex-col justify-center py-16 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <h2 className="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-zinc-900">
+          {label.log_in_title}
+        </h2>
+        <p className="mt-6 text-center text-base text-zinc-500">{label.log_in_description}</p>
+      </div>
 
-        <div className = "mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
-          <Form method = "POST" className = "bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
-            {actionResponse?.success ? (
-                <div className = "rounded-md bg-green-50 p-4 text-sm text-green-700">
-                  {label.email_check}
-                </div>
-            ) : (
-                <EmailLogin disabled = {isEmailSubmitting}/>
-            )}
+      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
+        <Form method="POST" className="bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
+          {actionResponse?.success ? (
+            <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">
+              {label.email_check}
+            </div>
+          ) : (
+            <EmailLogin disabled={isEmailSubmitting} />
+          )}
 
-            {errorMessage && (
-                <div className = "mt-6">
-                  <p className = "text-sm text-red-600">{errorMessage}</p>
-                </div>
-            )}
-
-            <GithubLogin/>
-          </Form>
+          {errorMessage && (
+            <div className="mt-6">
+              <p className="text-sm text-red-600">{errorMessage}</p>
+            </div>
+          )}
+        </Form>
         <div className="mt-6 text-center text-sm text-zinc-500">
           <Link to={`/${lang}/terms-of-use`} className="text-sm text-zinc-500">Terms of Use</Link>
         </div>
-        </div>
       </div>
+    </div>
   )
 }
 
-export async function action({request, context}: ActionFunctionArgs) {
+export async function action({ request, context }: ActionFunctionArgs) {
   const formData = await request.formData()
   const intent = formData.get("intent") as string;
   const requestUrl = new URL(request.url);
@@ -96,19 +94,19 @@ export async function action({request, context}: ActionFunctionArgs) {
   const lang = rawLang?.length ? rawLang : (pathLang?.length ? pathLang : "zh");
   const next = requestUrl.searchParams.get("next") ?? `/${lang}`;
 
-  const {supabase, headers} = createClient(request, context);
+  const { supabase, headers } = createClient(request, context);
 
   if (intent === 'email') {
     const email = (formData.get("email") as string | null)?.trim();
     const labels = SignupText[lang as keyof typeof SignupText] ?? SignupText.zh;
 
     if (!email) {
-      return {success: false, error: labels.email_required};
+      return { success: false, error: labels.email_required };
     }
 
     const emailRedirectTo = `${requestUrl.origin}/auth/callback?next=${encodeURIComponent(next)}`;
 
-    const {error} = await supabase.auth.signInWithOtp({
+    const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         emailRedirectTo,
@@ -117,12 +115,12 @@ export async function action({request, context}: ActionFunctionArgs) {
 
     if (error) {
       console.error(error);
-      return {success: false, error: error.message};
+      return { success: false, error: error.message };
     }
 
-    return {success: true, error: null};
+    return { success: true, error: null };
   } else if (intent === 'github') {
-    const {data, error} = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
         redirectTo: `${requestUrl.origin}/auth/callback?next=${encodeURIComponent(next)}`,
@@ -131,7 +129,7 @@ export async function action({request, context}: ActionFunctionArgs) {
 
     if (error) {
       console.error(error);
-      return {success: false, error: error.message};
+      return { success: false, error: error.message };
     }
 
     if (data.url) {
