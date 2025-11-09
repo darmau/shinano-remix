@@ -209,11 +209,22 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const redirectTarget = formData.get("redirect");
   const lang = deriveLang(formData.get("lang") as string | null);
 
+  // Initialize Supabase client to ensure cookies are handled
+  const { headers } = createClient(request, context);
+
   if (!redirectTarget || typeof redirectTarget !== "string") {
-    return {
-      error: "missing",
-      lang,
-    } satisfies ActionData;
+    const responseHeaders = new Headers(headers);
+    responseHeaders.set("Content-Type", "application/json; charset=utf-8");
+    return new Response(
+      JSON.stringify({
+        error: "missing",
+        lang,
+      } satisfies ActionData),
+      {
+        status: 400,
+        headers: responseHeaders,
+      }
+    );
   }
 
   const requestUrl = new URL(request.url);
@@ -226,13 +237,21 @@ export async function action({ request, context }: ActionFunctionArgs) {
   );
 
   if (!parsedRedirect) {
-    return {
-      error: "invalid",
-      lang,
-    } satisfies ActionData;
+    const responseHeaders = new Headers(headers);
+    responseHeaders.set("Content-Type", "application/json; charset=utf-8");
+    return new Response(
+      JSON.stringify({
+        error: "invalid",
+        lang,
+      } satisfies ActionData),
+      {
+        status: 400,
+        headers: responseHeaders,
+      }
+    );
   }
 
-  return redirect(parsedRedirect.toString());
+  return redirect(parsedRedirect.toString(), { headers });
 }
 
 export default function ConfirmPage() {
@@ -295,11 +314,6 @@ export default function ConfirmPage() {
               {labels.button}
             </button>
           </Form>
-          <div className="mt-4 text-center">
-            <Link to={loginPath} className="text-sm text-violet-600 hover:text-violet-500">
-              {labels.back_to_login}
-            </Link>
-          </div>
         </div>
       </div>
   );
