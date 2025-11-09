@@ -23,10 +23,10 @@ export default function Profile({lang}: {lang: string}) {
   } else {
     return (
         <div className = "flex gap-4 justify-end items-center">
-          <div className = "lg:py-0 flex flex-col items-end">
+          <Link to = {`${lang}/profile/${session.user.id}`} className = "lg:py-0 flex flex-col items-end">
             <h3 className = "text-sm font-medium text-zinc-700">{session.user.user_metadata.name}</h3>
             <p className = "text-xs text-zinc-400">{session.user.user_metadata.email}</p>
-          </div>
+          </Link>
         </div>
     )
   }

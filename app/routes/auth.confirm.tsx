@@ -207,10 +207,11 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
 export async function action({ request, context }: ActionFunctionArgs) {
   const formData = await request.formData();
   const redirectTarget = formData.get("redirect");
+  const nextPath = formData.get("next") as string | null;
   const lang = deriveLang(formData.get("lang") as string | null);
 
   // Initialize Supabase client to ensure cookies are handled
-  const { headers } = createClient(request, context);
+  const { supabase, headers } = createClient(request, context);
 
   if (!redirectTarget || typeof redirectTarget !== "string") {
     const responseHeaders = new Headers(headers);
@@ -230,13 +231,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const requestUrl = new URL(request.url);
   const supabaseUrl = context.cloudflare?.env?.SUPABASE_URL as string | undefined;
   const allowedOrigins = getAllowedOrigins(requestUrl.origin, supabaseUrl);
-  const parsedRedirect = buildRedirectUrl(
-      redirectTarget,
-      allowedOrigins,
-      new URLSearchParams()
-  );
-
-  if (!parsedRedirect) {
+  
+  // Parse the redirect URL to extract token and type
+  let parsedRedirect: URL;
+  try {
+    parsedRedirect = new URL(redirectTarget);
+  } catch {
     const responseHeaders = new Headers(headers);
     responseHeaders.set("Content-Type", "application/json; charset=utf-8");
     return new Response(
@@ -251,7 +251,61 @@ export async function action({ request, context }: ActionFunctionArgs) {
     );
   }
 
-  return redirect(parsedRedirect.toString(), { headers });
+  // Check if this is a Supabase verify URL with a token
+  if (parsedRedirect.pathname.includes("/auth/v1/verify")) {
+    const token = parsedRedirect.searchParams.get("token");
+    const type = parsedRedirect.searchParams.get("type") as EmailOtpType | null;
+    
+    if (token && type && token.startsWith("pkce_")) {
+      // This is a PKCE token, we need to verify it directly
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: token,
+        type,
+      });
+
+      if (!error) {
+        const finalNext = nextPath ?? `/${lang}`;
+        return redirect(finalNext, { headers });
+      }
+
+      const responseHeaders = new Headers(headers);
+      responseHeaders.set("Content-Type", "application/json; charset=utf-8");
+      return new Response(
+        JSON.stringify({
+          error: "invalid",
+          lang,
+        } satisfies ActionData),
+        {
+          status: 400,
+          headers: responseHeaders,
+        }
+      );
+    }
+  }
+
+  // For other URLs, validate and redirect
+  const validatedRedirect = buildRedirectUrl(
+      redirectTarget,
+      allowedOrigins,
+      new URLSearchParams()
+  );
+
+  if (!validatedRedirect) {
+    const responseHeaders = new Headers(headers);
+    responseHeaders.set("Content-Type", "application/json; charset=utf-8");
+    return new Response(
+      JSON.stringify({
+        error: "invalid",
+        lang,
+      } satisfies ActionData),
+      {
+        status: 400,
+        headers: responseHeaders,
+      }
+    );
+  }
+
+  return redirect(validatedRedirect.toString(), { headers });
 }
 
 export default function ConfirmPage() {
@@ -305,6 +359,7 @@ export default function ConfirmPage() {
           )}
           <Form method="POST" className="mt-8 space-y-4">
             <input type="hidden" name="redirect" value={data.redirectUrl}/>
+            <input type="hidden" name="next" value={data.next}/>
             <input type="hidden" name="lang" value={data.lang}/>
             <button
                 type="submit"
