@@ -52,38 +52,85 @@ function deriveLang(input?: string | null): SupportedLang {
   return "zh";
 }
 
+function getAllowedOrigins(siteOrigin: string, supabaseUrl?: string | null): string[] {
+  const origins = new Set<string>([siteOrigin]);
+  if (supabaseUrl) {
+    try {
+      origins.add(new URL(supabaseUrl).origin);
+    } catch {
+      // ignore invalid supabase url
+    }
+  }
+  return Array.from(origins);
+}
+
 function buildRedirectUrl(
     rawRedirect: string,
-    origin: string,
+    allowedOrigins: string[],
     extraParams: URLSearchParams
 ): URL | null {
-  let parsed: URL;
+  let parsed: URL | null = null;
 
   try {
     parsed = new URL(rawRedirect);
   } catch {
-    try {
-      parsed = new URL(rawRedirect, origin);
-    } catch {
-      return null;
+    for (const baseOrigin of allowedOrigins) {
+      try {
+        parsed = new URL(rawRedirect, baseOrigin);
+        break;
+      } catch {
+        continue;
+      }
     }
   }
 
-  if (parsed.origin !== origin) {
+  if (!parsed) {
+    return null;
+  }
+
+  if (!allowedOrigins.includes(parsed.origin)) {
     return null;
   }
 
   extraParams.forEach((value, key) => {
-    if (!parsed.searchParams.has(key)) {
-      parsed.searchParams.append(key, value);
+    if (!parsed!.searchParams.has(key)) {
+      parsed!.searchParams.append(key, value);
     }
   });
 
-  return parsed;
+  return parsed!;
+}
+
+function extractNext(
+    redirectUrl: URL,
+    fallback: string
+): string {
+  const directNext = redirectUrl.searchParams.get("next");
+  if (directNext) {
+    return directNext;
+  }
+
+  const redirectTo = redirectUrl.searchParams.get("redirect_to");
+  if (redirectTo) {
+    try {
+      const nested = new URL(redirectTo);
+      const nestedNext = nested.searchParams.get("next");
+      if (nestedNext) {
+        return nestedNext;
+      }
+      return nested.pathname || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  return fallback;
 }
 
 export async function loader({ request, context }: LoaderFunctionArgs): Promise<LoaderData | Response> {
   const requestUrl = new URL(request.url);
+  const supabaseUrl = context.cloudflare?.env?.SUPABASE_URL as string | undefined;
+  const allowedOrigins = getAllowedOrigins(requestUrl.origin, supabaseUrl);
   const searchParams = new URLSearchParams(requestUrl.search);
   const redirectParam = searchParams.get("redirect");
   const nextQuery = searchParams.get("next") ?? "/";
@@ -94,7 +141,7 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
   if (redirectParam) {
     const extraParams = new URLSearchParams(searchParams);
     extraParams.delete("redirect");
-    const redirectUrl = buildRedirectUrl(redirectParam, requestUrl.origin, extraParams);
+    const redirectUrl = buildRedirectUrl(redirectParam, allowedOrigins, extraParams);
 
     if (!redirectUrl) {
       const lang = deriveLang(nextQuery);
@@ -106,7 +153,7 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
       };
     }
 
-    const next = redirectUrl.searchParams.get("next") ?? nextQuery;
+    const next = extractNext(redirectUrl, nextQuery);
     const lang = deriveLang(next);
 
     return {
@@ -157,7 +204,7 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request, context }: ActionFunctionArgs) {
   const formData = await request.formData();
   const redirectTarget = formData.get("redirect");
   const lang = deriveLang(formData.get("lang") as string | null);
@@ -170,9 +217,11 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const requestUrl = new URL(request.url);
+  const supabaseUrl = context.cloudflare?.env?.SUPABASE_URL as string | undefined;
+  const allowedOrigins = getAllowedOrigins(requestUrl.origin, supabaseUrl);
   const parsedRedirect = buildRedirectUrl(
       redirectTarget,
-      requestUrl.origin,
+      allowedOrigins,
       new URLSearchParams()
   );
 
