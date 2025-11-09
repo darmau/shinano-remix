@@ -2,8 +2,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from '~/locales/homepage';
-import {contentToHtml} from "~/components/RSSContainer";
-import type {Json} from "~/types/supabase";
 
 export type RssEntry = {
   title: string | null;
@@ -101,24 +99,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     language: lang,
     link: `https://darmau.co/${lang}`,
     entries: posts ? posts.map((post) => {
-      // 生成完整的HTML内容
-      let fullContent = "";
-      if (post.content_json) {
-        fullContent = contentToHtml(post.content_json as Json, prefix);
-      } else if (post.abstract) {
-        // 如果没有content_json，使用摘要作为后备
-        fullContent = `<p>${post.abstract}</p>`;
-      }
-      
-      // 如果有封面图片，添加到内容开头
-      if (post.cover) {
-        const altText = post.cover.alt 
-          ? post.cover.alt.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
-          : "";
-        const coverImage = `<figure style="margin: 1rem 0;"><img src="${prefix}/cdn-cgi/image/format=jpeg,width=960/${post.cover.storage_key}" alt="${altText}" style="max-width: 100%; height: auto; border-radius: 0.375rem;" /></figure>`;
-        fullContent = coverImage + fullContent;
-      }
-      
+      const summary = post.abstract ?? post.subtitle ?? "";
       return {
         description: post.subtitle,
         pubDate: post.published_at,
@@ -127,7 +108,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
         category: post.category!.title,
         link: `https://darmau.co/${lang}/article/${post.slug}`,
         guid: post.id,
-        content: fullContent,
+        content: summary ? `<p>${summary}</p>` : "",
         enclosure: post.cover ? {
           url: `${prefix}/cdn-cgi/image/format=jpeg,width=960/${post.cover.storage_key}`,
           type: 'image/jpeg' as const,

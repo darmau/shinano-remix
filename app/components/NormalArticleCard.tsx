@@ -1,7 +1,7 @@
 import type {Article} from "~/types/Article";
 import { Link, useOutletContext } from "react-router";
 import getTime from "~/utils/getTime";
-import {ChatBubbleOvalLeftIcon, EyeIcon} from "@heroicons/react/24/outline";
+import {ChatBubbleOvalLeftIcon, EyeIcon, LockClosedIcon} from "@heroicons/react/24/outline";
 
 export default function NormalArticleCard({article, showAbstract}: {
   article: Article
@@ -24,7 +24,12 @@ export default function NormalArticleCard({article, showAbstract}: {
             &nbsp;·&nbsp;
             <span>{getTime(article.published_at, lang)}</span>
           </div>
-          <h3 className = "text-2xl font-medium text-zinc-800 group-hover:text-violet-900">{article.title}</h3>
+          <div className = "flex items-center gap-2 text-zinc-800 group-hover:text-violet-900">
+            {article.is_premium && (
+              <LockClosedIcon className = "h-5 w-5 text-violet-600 mt-0.5"/>
+            )}
+            <h3 className = "text-2xl font-medium">{article.title}</h3>
+          </div>
           <h4 className = "text-base text-zinc-500 leading-7">{article.subtitle}</h4>
           {article.topic && (
               <div className = "flex flex-wrap gap-2 pt-2">
