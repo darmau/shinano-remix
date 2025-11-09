@@ -73,22 +73,11 @@ export default function CommentEditor({ contentTable, contentId, session, replyi
             >
               {label.login}
             </Link>
-            {label.moderation_cta}
           </p>
           <Turnstile
             siteKey={turnstileSiteKey}
           />
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <label className="inline-flex items-center gap-2 text-sm text-zinc-600">
-              <input
-                type="checkbox"
-                name="receive_notification"
-                value="true"
-                defaultChecked
-                className="rounded border-gray-300 text-violet-600 focus:ring-violet-600"
-              />
-              {label.receive_notification}
-            </label>
             <div className="flex items-center gap-4">
               <button
                 type="submit"

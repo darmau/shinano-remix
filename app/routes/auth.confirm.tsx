@@ -16,6 +16,8 @@ type LoaderData =
   redirectUrl: string;
   lang: SupportedLang;
   next: string;
+  needsUsername: boolean;
+  userEmail: string | null;
 }
     | {
   status: "error";
@@ -25,7 +27,7 @@ type LoaderData =
 };
 
 type ActionData = {
-  error: "missing" | "invalid";
+  error: "missing" | "invalid" | "username_required" | "update_failed";
   lang: SupportedLang;
 };
 
@@ -156,11 +158,43 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
     const next = extractNext(redirectUrl, nextQuery);
     const lang = deriveLang(next);
 
+    // Extract token from the redirect URL to verify and get user info
+    const { supabase, headers } = createClient(request, context);
+    const redirectUrlObj = new URL(redirectUrl.toString());
+    const tokenFromRedirect = redirectUrlObj.searchParams.get("token_hash");
+    const typeFromRedirect = redirectUrlObj.searchParams.get("type") as EmailOtpType | null;
+    const codeFromRedirect = redirectUrlObj.searchParams.get("code");
+
+    let needsUsername = false;
+    let userEmail: string | null = null;
+
+    // Try to verify token to get user info (but don't redirect yet)
+    if (codeFromRedirect) {
+      const { error } = await supabase.auth.exchangeCodeForSession(codeFromRedirect);
+      if (!error) {
+        const { data: { session } } = await supabase.auth.getSession();
+        needsUsername = session?.user ? !session.user.user_metadata?.name : false;
+        userEmail = session?.user?.email || null;
+      }
+    } else if (tokenFromRedirect && typeFromRedirect) {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: tokenFromRedirect,
+        type: typeFromRedirect,
+      });
+      if (!error) {
+        const { data: { session } } = await supabase.auth.getSession();
+        needsUsername = session?.user ? !session.user.user_metadata?.name : false;
+        userEmail = session?.user?.email || null;
+      }
+    }
+
     return {
       status: "prompt",
       redirectUrl: redirectUrl.toString(),
       lang,
       next,
+      needsUsername,
+      userEmail,
     };
   }
 
@@ -176,6 +210,26 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
       const { error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (!error) {
+        // Check if user needs to set username
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const hasUsername = session.user.user_metadata?.name;
+          if (!hasUsername) {
+            // New user needs to set username - show the prompt page
+            const confirmUrl = new URL(request.url);
+            confirmUrl.searchParams.delete('code');
+            confirmUrl.searchParams.set('redirect', confirmUrl.toString());
+            
+            return {
+              status: "prompt" as const,
+              redirectUrl: confirmUrl.toString(),
+              lang: fallbackLang,
+              next: nextQuery,
+              needsUsername: true,
+              userEmail: session.user.email || null,
+            };
+          }
+        }
         return redirect(nextQuery, { headers });
       }
     }
@@ -187,6 +241,27 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
       });
 
       if (!error) {
+        // Check if user needs to set username
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const hasUsername = session.user.user_metadata?.name;
+          if (!hasUsername) {
+            // New user needs to set username - show the prompt page
+            const confirmUrl = new URL(request.url);
+            confirmUrl.searchParams.delete('token_hash');
+            confirmUrl.searchParams.delete('type');
+            confirmUrl.searchParams.set('redirect', confirmUrl.toString());
+            
+            return {
+              status: "prompt" as const,
+              redirectUrl: confirmUrl.toString(),
+              lang: fallbackLang,
+              next: nextQuery,
+              needsUsername: true,
+              userEmail: session.user.email || null,
+            };
+          }
+        }
         return redirect(nextQuery, { headers });
       }
     }
@@ -206,37 +281,17 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const formData = await request.formData();
-  const redirectTarget = formData.get("redirect");
   const nextPath = formData.get("next") as string | null;
   const lang = deriveLang(formData.get("lang") as string | null);
+  const username = (formData.get("username") as string | null)?.trim();
 
   // Initialize Supabase client to ensure cookies are handled
   const { supabase, headers } = createClient(request, context);
 
-  if (!redirectTarget || typeof redirectTarget !== "string") {
-    const responseHeaders = new Headers(headers);
-    responseHeaders.set("Content-Type", "application/json; charset=utf-8");
-    return new Response(
-      JSON.stringify({
-        error: "missing",
-        lang,
-      } satisfies ActionData),
-      {
-        status: 400,
-        headers: responseHeaders,
-      }
-    );
-  }
-
-  const requestUrl = new URL(request.url);
-  const supabaseUrl = context.cloudflare?.env?.SUPABASE_URL as string | undefined;
-  const allowedOrigins = getAllowedOrigins(requestUrl.origin, supabaseUrl);
+  // Get current session
+  const { data: { session } } = await supabase.auth.getSession();
   
-  // Parse the redirect URL to extract token and type
-  let parsedRedirect: URL;
-  try {
-    parsedRedirect = new URL(redirectTarget);
-  } catch {
+  if (!session?.user) {
     const responseHeaders = new Headers(headers);
     responseHeaders.set("Content-Type", "application/json; charset=utf-8");
     return new Response(
@@ -245,67 +300,93 @@ export async function action({ request, context }: ActionFunctionArgs) {
         lang,
       } satisfies ActionData),
       {
+        status: 401,
+        headers: responseHeaders,
+      }
+    );
+  }
+
+  // Check if user needs to set username
+  const hasUsername = session.user.user_metadata?.name;
+  
+  // If user doesn't have a username and didn't provide one, return error
+  if (!hasUsername && !username) {
+    const responseHeaders = new Headers(headers);
+    responseHeaders.set("Content-Type", "application/json; charset=utf-8");
+    return new Response(
+      JSON.stringify({
+        error: "username_required",
+        lang,
+      } satisfies ActionData),
+      {
         status: 400,
         headers: responseHeaders,
       }
     );
   }
 
-  // Check if this is a Supabase verify URL with a token
-  if (parsedRedirect.pathname.includes("/auth/v1/verify")) {
-    const token = parsedRedirect.searchParams.get("token");
-    const type = parsedRedirect.searchParams.get("type") as EmailOtpType | null;
-    
-    if (token && type && token.startsWith("pkce_")) {
-      // This is a PKCE token, we need to verify it directly
-      const { error } = await supabase.auth.verifyOtp({
-        token_hash: token,
-        type,
-      });
-
-      if (!error) {
-        const finalNext = nextPath ?? `/${lang}`;
-        return redirect(finalNext, { headers });
+  // If username is provided, update user metadata and public.users table
+  if (username) {
+    // Update auth.users user_metadata
+    const { error: updateError } = await supabase.auth.updateUser({
+      data: { 
+        name: username,
+        email: session.user.email
       }
+    });
 
+    if (updateError) {
+      console.error("Failed to update user metadata:", updateError);
       const responseHeaders = new Headers(headers);
       responseHeaders.set("Content-Type", "application/json; charset=utf-8");
       return new Response(
         JSON.stringify({
-          error: "invalid",
+          error: "update_failed",
           lang,
         } satisfies ActionData),
         {
-          status: 400,
+          status: 500,
           headers: responseHeaders,
         }
       );
     }
-  }
 
-  // For other URLs, validate and redirect
-  const validatedRedirect = buildRedirectUrl(
-      redirectTarget,
-      allowedOrigins,
-      new URLSearchParams()
-  );
+    // Check if user exists in public.users table
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
 
-  if (!validatedRedirect) {
-    const responseHeaders = new Headers(headers);
-    responseHeaders.set("Content-Type", "application/json; charset=utf-8");
-    return new Response(
-      JSON.stringify({
-        error: "invalid",
-        lang,
-      } satisfies ActionData),
-      {
-        status: 400,
-        headers: responseHeaders,
+    if (existingUser) {
+      // Update existing record
+      const { error: tableUpdateError } = await supabase
+        .from("users")
+        .update({ name: username })
+        .eq("user_id", session.user.id);
+
+      if (tableUpdateError) {
+        console.error("Failed to update public.users table:", tableUpdateError);
       }
-    );
+    } else {
+      // Insert new record
+      const { error: tableInsertError } = await supabase
+        .from("users")
+        .insert({
+          user_id: session.user.id,
+          name: username,
+        });
+
+      if (tableInsertError) {
+        console.error("Failed to insert into public.users table:", tableInsertError);
+      }
+    }
   }
 
-  return redirect(validatedRedirect.toString(), { headers });
+  // Token has already been verified in the loader, so we just need to redirect
+  // to the next page after saving username (if provided)
+  const finalNext = nextPath ?? `/${lang}`;
+  return redirect(finalNext, { headers });
 }
 
 export default function ConfirmPage() {
@@ -324,7 +405,11 @@ export default function ConfirmPage() {
           ? labels.invalid
           : errorKey === "missing"
               ? labels.missing
-              : null;
+              : errorKey === "username_required"
+                  ? labels.username_required
+                  : errorKey === "update_failed"
+                      ? labels.invalid
+                      : null;
 
   if (data.status !== "prompt") {
     return (
@@ -347,20 +432,47 @@ export default function ConfirmPage() {
     );
   }
 
+  const needsUsername = data.needsUsername;
+  const userEmail = data.userEmail;
+
   return (
       <div className="min-h-screen bg-zinc-50 flex flex-col justify-center px-4 py-16">
         <div className="mx-auto w-full max-w-md bg-white p-10 shadow sm:rounded-lg">
           <h1 className="text-2xl font-semibold text-zinc-900 text-center">{labels.title}</h1>
-          <p className="mt-4 text-sm text-zinc-600 text-center">{labels.description}</p>
+          <p className="mt-4 text-sm text-zinc-600 text-center">
+            {needsUsername ? labels.new_user_description : labels.description}
+          </p>
           {errorMessage && (
               <div className="mt-6 rounded-md bg-red-50 p-4 text-sm text-red-600 text-center">
                 {errorMessage}
               </div>
           )}
           <Form method="POST" className="mt-8 space-y-4">
-            <input type="hidden" name="redirect" value={data.redirectUrl}/>
             <input type="hidden" name="next" value={data.next}/>
             <input type="hidden" name="lang" value={data.lang}/>
+            
+            {needsUsername && (
+                <div className="space-y-2">
+                  <label htmlFor="username" className="block text-sm font-medium text-zinc-700">
+                    {labels.username_label}
+                  </label>
+                  <input
+                      type="text"
+                      id="username"
+                      name="username"
+                      required
+                      placeholder={labels.username_placeholder}
+                      className="block w-full rounded-md border-0 p-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-violet-600 sm:text-sm sm:leading-6"
+                      disabled={isSubmitting}
+                  />
+                  {userEmail && (
+                      <p className="text-xs text-zinc-500">
+                        Email: {userEmail}
+                      </p>
+                  )}
+                </div>
+            )}
+            
             <button
                 type="submit"
                 className="flex w-full justify-center rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 disabled:cursor-not-allowed disabled:opacity-70"
