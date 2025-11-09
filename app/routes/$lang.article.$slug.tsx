@@ -137,7 +137,7 @@ export default function ArticleDetail() {
           {/*正文*/}
           <div className = {`relative grid grid-cols-1 ${canViewContent ? "md:grid-cols-3" : "md:grid-cols-2"} md:gap-24`}>
             <div className = "col-span-1 md:col-span-2 selection:bg-violet-800/60 selection:text-white">
-              <div className = "flex flex-col gap-12">
+              <div className = "flex flex-col">
                 {canViewContent ? (
                   article.content_json ? (
                     <ContentContainer content = {article.content_json as Json}/>
