@@ -167,14 +167,16 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
 
     let needsUsername = false;
     let userEmail: string | null = null;
+    let verified = false;
 
-    // Try to verify token to get user info (but don't redirect yet)
+    // Try to verify token to get user info
     if (codeFromRedirect) {
       const { error } = await supabase.auth.exchangeCodeForSession(codeFromRedirect);
       if (!error) {
         const { data: { session } } = await supabase.auth.getSession();
         needsUsername = session?.user ? !session.user.user_metadata?.name : false;
         userEmail = session?.user?.email || null;
+        verified = true;
       }
     } else if (tokenFromRedirect && typeFromRedirect) {
       const { error } = await supabase.auth.verifyOtp({
@@ -185,17 +187,36 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
         const { data: { session } } = await supabase.auth.getSession();
         needsUsername = session?.user ? !session.user.user_metadata?.name : false;
         userEmail = session?.user?.email || null;
+        verified = true;
       }
     }
 
-    return {
-      status: "prompt",
-      redirectUrl: redirectUrl.toString(),
-      lang,
-      next,
-      needsUsername,
-      userEmail,
-    };
+    // If token verification failed, return error
+    if (!verified) {
+      return {
+        status: "error",
+        lang,
+        reason: "invalid",
+        next: nextQuery,
+      };
+    }
+
+    // Return with headers to set session cookies
+    const responseHeaders = new Headers(headers);
+    responseHeaders.set("Content-Type", "application/json; charset=utf-8");
+    return new Response(
+      JSON.stringify({
+        status: "prompt",
+        redirectUrl: redirectUrl.toString(),
+        lang,
+        next,
+        needsUsername,
+        userEmail,
+      } satisfies LoaderData),
+      {
+        headers: responseHeaders,
+      }
+    );
   }
 
   if (code || (token_hash && type)) {
