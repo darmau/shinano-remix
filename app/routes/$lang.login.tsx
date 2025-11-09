@@ -106,7 +106,7 @@ export async function action({request, context}: ActionFunctionArgs) {
       return {success: false, error: labels.email_required};
     }
 
-    const emailRedirectTo = `${requestUrl.origin}/auth/confirm?next=${encodeURIComponent(next)}`;
+    const emailRedirectTo = `${requestUrl.origin}/auth/callback?next=${encodeURIComponent(next)}`;
 
     const {error} = await supabase.auth.signInWithOtp({
       email,

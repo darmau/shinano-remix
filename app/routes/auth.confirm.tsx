@@ -1,38 +1,257 @@
-import { redirect } from 'react-router';
-import type { LoaderFunctionArgs } from 'react-router';
-import type {EmailOtpType} from '@supabase/supabase-js';
-import {createClient} from "~/utils/supabase/server";
+import { Form, Link, useActionData, useLoaderData, useNavigation } from "react-router";
+import { redirect } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type { EmailOtpType } from "@supabase/supabase-js";
+import ConfirmText from "~/locales/confirm";
+import getLanguageLabel from "~/utils/getLanguageLabel";
+import { createClient } from "~/utils/supabase/server";
 
-export async function loader({request, context}: LoaderFunctionArgs) {
-  const requestUrl = new URL(request.url)
-  const token_hash = requestUrl.searchParams.get('token_hash')
-  const type = requestUrl.searchParams.get('type') as EmailOtpType | null
-  const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get("next") ?? "/";
-  const {supabase, headers} = createClient(request, context);
-  const segments = next.split('/').filter(Boolean);
-  const fallbackLang = segments[0] ?? 'zh';
+const SUPPORTED_LANGS = ["zh", "en", "jp"] as const;
 
-  if (code) {
-    const {error} = await supabase.auth.exchangeCodeForSession(code)
+type SupportedLang = (typeof SUPPORTED_LANGS)[number];
 
-    if (!error) {
-      return redirect(next, {headers})
+type LoaderData =
+    | {
+  status: "prompt";
+  redirectUrl: string;
+  lang: SupportedLang;
+  next: string;
+}
+    | {
+  status: "error";
+  lang: SupportedLang;
+  reason: "missing" | "invalid";
+  next: string;
+};
+
+type ActionData = {
+  error: "missing" | "invalid";
+  lang: SupportedLang;
+};
+
+function deriveLang(input?: string | null): SupportedLang {
+  if (!input) {
+    return "zh";
+  }
+
+  try {
+    const url = new URL(input, "http://placeholder");
+    const segments = url.pathname.split("/").filter(Boolean);
+    const candidate = segments[0];
+    if (candidate && SUPPORTED_LANGS.includes(candidate as SupportedLang)) {
+      return candidate as SupportedLang;
+    }
+  } catch {
+    const segments = input.split("/").filter(Boolean);
+    const candidate = segments[0];
+    if (candidate && SUPPORTED_LANGS.includes(candidate as SupportedLang)) {
+      return candidate as SupportedLang;
     }
   }
 
-  if (token_hash && type) {
+  return "zh";
+}
 
-    const {error} = await supabase.auth.verifyOtp({
-      token_hash,
-      type,
-    })
+function buildRedirectUrl(
+    rawRedirect: string,
+    origin: string,
+    extraParams: URLSearchParams
+): URL | null {
+  let parsed: URL;
 
-    if (!error) {
-      return redirect(next, {headers})
+  try {
+    parsed = new URL(rawRedirect);
+  } catch {
+    try {
+      parsed = new URL(rawRedirect, origin);
+    } catch {
+      return null;
     }
   }
 
-  // return the user to an error page with instructions
-  return redirect(`/${fallbackLang}/login?error=magic_link`, {headers})
+  if (parsed.origin !== origin) {
+    return null;
+  }
+
+  extraParams.forEach((value, key) => {
+    if (!parsed.searchParams.has(key)) {
+      parsed.searchParams.append(key, value);
+    }
+  });
+
+  return parsed;
+}
+
+export async function loader({ request, context }: LoaderFunctionArgs): Promise<LoaderData | Response> {
+  const requestUrl = new URL(request.url);
+  const searchParams = new URLSearchParams(requestUrl.search);
+  const redirectParam = searchParams.get("redirect");
+  const nextQuery = searchParams.get("next") ?? "/";
+  const token_hash = searchParams.get("token_hash");
+  const type = searchParams.get("type") as EmailOtpType | null;
+  const code = searchParams.get("code");
+
+  if (redirectParam) {
+    const extraParams = new URLSearchParams(searchParams);
+    extraParams.delete("redirect");
+    const redirectUrl = buildRedirectUrl(redirectParam, requestUrl.origin, extraParams);
+
+    if (!redirectUrl) {
+      const lang = deriveLang(nextQuery);
+      return {
+        status: "error",
+        lang,
+        reason: "invalid",
+        next: nextQuery,
+      };
+    }
+
+    const next = redirectUrl.searchParams.get("next") ?? nextQuery;
+    const lang = deriveLang(next);
+
+    return {
+      status: "prompt",
+      redirectUrl: redirectUrl.toString(),
+      lang,
+      next,
+    };
+  }
+
+  if (code || (token_hash && type)) {
+    const { supabase, headers } = createClient(request, context);
+    const segments = nextQuery.split("/").filter(Boolean);
+    const fallbackLang =
+        SUPPORTED_LANGS.includes((segments[0] as SupportedLang) ?? "zh")
+            ? (segments[0] as SupportedLang)
+            : "zh";
+
+    if (code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+      if (!error) {
+        return redirect(nextQuery, { headers });
+      }
+    }
+
+    if (token_hash && type) {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash,
+        type,
+      });
+
+      if (!error) {
+        return redirect(nextQuery, { headers });
+      }
+    }
+
+    return redirect(`/${fallbackLang}/login?error=magic_link`, { headers });
+  }
+
+  const lang = deriveLang(nextQuery);
+
+  return {
+    status: "error",
+    lang,
+    reason: "missing",
+    next: nextQuery,
+  };
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  const redirectTarget = formData.get("redirect");
+  const lang = deriveLang(formData.get("lang") as string | null);
+
+  if (!redirectTarget || typeof redirectTarget !== "string") {
+    return {
+      error: "missing",
+      lang,
+    } satisfies ActionData;
+  }
+
+  const requestUrl = new URL(request.url);
+  const parsedRedirect = buildRedirectUrl(
+      redirectTarget,
+      requestUrl.origin,
+      new URLSearchParams()
+  );
+
+  if (!parsedRedirect) {
+    return {
+      error: "invalid",
+      lang,
+    } satisfies ActionData;
+  }
+
+  return redirect(parsedRedirect.toString());
+}
+
+export default function ConfirmPage() {
+  const data = useLoaderData<typeof loader>();
+  const actionData = useActionData<ActionData>();
+  const navigation = useNavigation();
+
+  const lang = data.status === "prompt" ? data.lang : data.lang;
+  const labels = getLanguageLabel(ConfirmText, lang);
+  const isSubmitting = navigation.state === "submitting";
+  const loginPath = `/${lang}/login`;
+
+  const errorKey = actionData?.error ?? (data.status === "error" ? data.reason : null);
+  const errorMessage =
+      errorKey === "invalid"
+          ? labels.invalid
+          : errorKey === "missing"
+              ? labels.missing
+              : null;
+
+  if (data.status !== "prompt") {
+    return (
+        <div className="min-h-screen bg-zinc-50 flex flex-col justify-center px-4 py-16">
+          <div className="mx-auto w-full max-w-md bg-white p-10 shadow sm:rounded-lg">
+            <h1 className="text-2xl font-semibold text-zinc-900 text-center">{labels.title}</h1>
+            <p className="mt-4 text-sm text-zinc-600 text-center">
+              {errorMessage ?? labels.missing}
+            </p>
+            <div className="mt-8">
+              <Link
+                  to={loginPath}
+                  className="block w-full text-center rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+              >
+                {labels.back_to_login}
+              </Link>
+            </div>
+          </div>
+        </div>
+    );
+  }
+
+  return (
+      <div className="min-h-screen bg-zinc-50 flex flex-col justify-center px-4 py-16">
+        <div className="mx-auto w-full max-w-md bg-white p-10 shadow sm:rounded-lg">
+          <h1 className="text-2xl font-semibold text-zinc-900 text-center">{labels.title}</h1>
+          <p className="mt-4 text-sm text-zinc-600 text-center">{labels.description}</p>
+          {errorMessage && (
+              <div className="mt-6 rounded-md bg-red-50 p-4 text-sm text-red-600 text-center">
+                {errorMessage}
+              </div>
+          )}
+          <Form method="POST" className="mt-8 space-y-4">
+            <input type="hidden" name="redirect" value={data.redirectUrl}/>
+            <input type="hidden" name="lang" value={data.lang}/>
+            <button
+                type="submit"
+                className="flex w-full justify-center rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 disabled:cursor-not-allowed disabled:opacity-70"
+                disabled={isSubmitting}
+            >
+              {labels.button}
+            </button>
+          </Form>
+          <div className="mt-4 text-center">
+            <Link to={loginPath} className="text-sm text-violet-600 hover:text-violet-500">
+              {labels.back_to_login}
+            </Link>
+          </div>
+        </div>
+      </div>
+  );
 }
