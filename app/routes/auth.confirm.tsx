@@ -44,8 +44,41 @@ function deriveLang(input?: string | null): SupportedLang {
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const requestUrl = new URL(request.url);
   const redirectParam = requestUrl.searchParams.get("redirect");
+  const needsUsernameParam = requestUrl.searchParams.get("needs_username");
+  const emailParam = requestUrl.searchParams.get("email");
   const nextQuery = requestUrl.searchParams.get("next") ?? "/zh";
   const lang = deriveLang(nextQuery);
+
+  console.log("=== Confirm Loader ===");
+  console.log("Full URL:", requestUrl.toString());
+  console.log("redirect param:", redirectParam);
+  console.log("needs_username param:", needsUsernameParam);
+
+  // 如果是重定向后的用户名表单页面（已验证过 token）
+  if (needsUsernameParam === "true") {
+    const { supabase, headers } = createClient(request, context);
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    // 确保有 session
+    if (!session?.user) {
+      console.log("No session found, redirecting to login");
+      return redirect(`/${lang}/login?error=magic_link`);
+    }
+
+    console.log("Showing username form for existing session");
+    const responseHeaders = new Headers(headers);
+    responseHeaders.set("Content-Type", "application/json; charset=utf-8");
+    
+    return new Response(
+      JSON.stringify({
+        needsUsername: true,
+        userEmail: emailParam || session.user.email || null,
+        lang,
+        next: nextQuery,
+      } satisfies LoaderData),
+      { headers: responseHeaders }
+    );
+  }
 
   // 如果有 redirect 参数（来自 magic link）
   if (redirectParam) {
@@ -53,20 +86,45 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       const { supabase, headers } = createClient(request, context);
       const redirectUrl = new URL(redirectParam);
       
-      // 提取 token
-      const token_hash = redirectUrl.searchParams.get("token_hash");
+      console.log("Redirect URL:", redirectUrl.toString());
+      
+      // 提取 token（注意：参数名是 token 不是 token_hash）
+      const token = redirectUrl.searchParams.get("token");
       const type = redirectUrl.searchParams.get("type") as EmailOtpType | null;
       const code = redirectUrl.searchParams.get("code");
 
+      console.log("Extracted tokens:", { token: token?.substring(0, 10) + "...", type, code: code?.substring(0, 10) + "..." });
+
       let verifyError = null;
+      let tokenFound = false;
 
       // 验证 token
       if (code) {
+        console.log("Using code to exchange for session");
+        tokenFound = true;
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         verifyError = error;
-      } else if (token_hash && type) {
-        const { error } = await supabase.auth.verifyOtp({ token_hash, type });
+        if (error) {
+          console.error("Code exchange failed:", error);
+        }
+      } else if (token && type) {
+        console.log("Using token to verify OTP");
+        tokenFound = true;
+        // verifyOtp 的参数名是 token_hash
+        const { error } = await supabase.auth.verifyOtp({ 
+          token_hash: token, 
+          type 
+        });
         verifyError = error;
+        if (error) {
+          console.error("OTP verification failed:", error);
+        }
+      }
+
+      // 没有找到任何 token
+      if (!tokenFound) {
+        console.error("No token found in redirect URL");
+        return redirect(`/${lang}/login?error=magic_link`, { headers });
       }
 
       // 验证失败
@@ -76,33 +134,29 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       }
 
       // 验证成功，获取用户信息
+      console.log("Token verified successfully, getting session");
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.user) {
+        console.error("No session after verification");
         return redirect(`/${lang}/login?error=magic_link`, { headers });
       }
 
+      console.log("Session found for user:", session.user.email);
       const hasUsername = !!session.user.user_metadata?.name;
+      console.log("Has username:", hasUsername, session.user.user_metadata?.name);
 
       // 如果已有用户名，同步到 public.users 并重定向
       if (hasUsername) {
+        console.log("User has username, syncing and redirecting");
         await syncUserToPublicTable(supabase, session.user.id, session.user.user_metadata.name);
         return redirect(nextQuery, { headers });
       }
 
-      // 新用户需要设置用户名，返回表单数据（带 headers 设置 cookies）
-      const responseHeaders = new Headers(headers);
-      responseHeaders.set("Content-Type", "application/json; charset=utf-8");
-      
-      return new Response(
-        JSON.stringify({
-          needsUsername: true,
-          userEmail: session.user.email || null,
-          lang,
-          next: nextQuery,
-        } satisfies LoaderData),
-        { headers: responseHeaders }
-      );
+      // 新用户需要设置用户名，重定向到不含 token 的 clean URL
+      // 这样页面刷新时不会重复验证已失效的 token
+      console.log("New user needs username, redirecting to clean URL");
+      return redirect(`/auth/confirm?needs_username=true&email=${encodeURIComponent(session.user.email || '')}&next=${encodeURIComponent(nextQuery)}`, { headers });
       
     } catch (error) {
       console.error("Loader error:", error);
@@ -111,6 +165,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   }
 
   // 没有 redirect 参数，返回错误
+  console.log("No redirect parameter found");
   return redirect(`/${lang}/login?error=magic_link`);
 }
 
