@@ -5,7 +5,12 @@ export default {
     button: "登录",
     invalid: "登录链接无效或已过期。",
     missing: "未找到登录链接，请重新请求一次性登录邮件。",
-    back_to_login: "返回登录页面"
+    back_to_login: "返回登录页面",
+    username_label: "用户名",
+    username_placeholder: "请输入用户名",
+    username_required: "请输入用户名",
+    username_hint: "这是你首次登录，请设置一个用户名",
+    new_user_description: "欢迎！请设置你的用户名后点击下方按钮完成注册。"
   },
 
   en: {
@@ -14,7 +19,12 @@ export default {
     button: "Sign in",
     invalid: "The login link is invalid or has expired.",
     missing: "No login link found. Please request a new magic link.",
-    back_to_login: "Back to sign-in"
+    back_to_login: "Back to sign-in",
+    username_label: "Username",
+    username_placeholder: "Enter your username",
+    username_required: "Username is required",
+    username_hint: "This is your first login, please set a username",
+    new_user_description: "Welcome! Please set your username and click the button below to complete registration."
   },
 
   jp: {
@@ -23,7 +33,12 @@ export default {
     button: "ログイン",
     invalid: "ログインリンクが無効、または有効期限切れです。",
     missing: "ログインリンクが見つかりません。もう一度メールをリクエストしてください。",
-    back_to_login: "ログインページへ戻る"
+    back_to_login: "ログインページへ戻る",
+    username_label: "ユーザー名",
+    username_placeholder: "ユーザー名を入力してください",
+    username_required: "ユーザー名を入力してください",
+    username_hint: "初めてのログインです。ユーザー名を設定してください",
+    new_user_description: "ようこそ！ユーザー名を設定して、下のボタンをクリックして登録を完了してください。"
   },
 }
 
