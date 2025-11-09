@@ -5,7 +5,6 @@ import getLanguageLabel from "~/utils/getLanguageLabel";
 import ProfileText from "~/locales/profile";
 import getTime from "~/utils/getTime";
 import { TrashIcon, BellIcon, BellSlashIcon, XCircleIcon } from "@heroicons/react/24/outline";
-import { UserCircleIcon } from "@heroicons/react/24/solid";
 import { useState } from "react";
 
 type CommentWithContent = {
@@ -80,13 +79,11 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
     throw new Response("User not found", { status: 404 });
   }
 
-  // 从 auth.users 获取邮箱
-  const { data: authUser } = await supabase.auth.admin.getUserById(userId);
-  
+  // 从 session 中获取邮箱（用户已登录且只能查看自己的资料）
   const userProfile = {
     id: publicUser.id,
     name: publicUser.name,
-    email: authUser?.user?.email || null,
+    email: session.user.email || null,
     created_at: publicUser.created_at,
   };
 
@@ -355,13 +352,6 @@ export default function ProfilePage() {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm border border-zinc-200 p-6 sticky top-8">
               <h2 className="text-xl font-bold text-zinc-900 mb-6">{label.user_info}</h2>
-              
-              {/* 头像占位符 */}
-              <div className="flex justify-center mb-6">
-                <div className="w-24 h-24 rounded-full bg-violet-100 flex items-center justify-center">
-                  <UserCircleIcon className="w-20 h-20 text-violet-600" />
-                </div>
-              </div>
 
               {/* 用户信息 */}
               <div className="space-y-4">
