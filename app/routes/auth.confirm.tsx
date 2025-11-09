@@ -216,6 +216,12 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
         needsUsername = session?.user ? !session.user.user_metadata?.name : false;
         userEmail = session?.user?.email || null;
         verified = true;
+        
+        // 验证成功后，如果已有用户名，同步到 public.users 并直接重定向
+        if (!needsUsername) {
+          await syncUserToPublicTable(supabase);
+          return redirect(next, { headers });
+        }
       }
     } else if (tokenFromRedirect && typeFromRedirect) {
       const { error } = await supabase.auth.verifyOtp({
@@ -227,6 +233,12 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
         needsUsername = session?.user ? !session.user.user_metadata?.name : false;
         userEmail = session?.user?.email || null;
         verified = true;
+        
+        // 验证成功后，如果已有用户名，同步到 public.users 并直接重定向
+        if (!needsUsername) {
+          await syncUserToPublicTable(supabase);
+          return redirect(next, { headers });
+        }
       }
     }
 
@@ -240,6 +252,7 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
       };
     }
 
+    // 如果执行到这里，说明需要用户名（旧逻辑，现在应该不会用到）
     // Return with headers to set session cookies
     const responseHeaders = new Headers(headers);
     responseHeaders.set("Content-Type", "application/json; charset=utf-8");
