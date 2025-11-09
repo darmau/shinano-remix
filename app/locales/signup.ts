@@ -12,7 +12,13 @@ export default {
     email_required: "请填写邮箱地址。",
     magic_link_error: "登录链接无效或已过期，请重新发送。",
     username: "用户名",
-    username_placeholder: "我们应该如何称呼你？"
+    username_placeholder: "我们应该如何称呼你？",
+    username_required: "请输入用户名。",
+    have_account: "已有账户？",
+    go_to_login: "立即登录",
+    no_account: "还没有账户？",
+    go_to_signup: "立即注册",
+    user_not_found: "用户不存在，请先注册。"
   },
 
   en: {
@@ -28,7 +34,13 @@ export default {
     email_required: "Email is required.",
     magic_link_error: "The login link is invalid or has expired. Please request a new one.",
     username: "Name",
-    username_placeholder: "What should we call you?"
+    username_placeholder: "What should we call you?",
+    username_required: "Username is required.",
+    have_account: "Already have an account?",
+    go_to_login: "Sign In",
+    no_account: "Don't have an account?",
+    go_to_signup: "Sign Up",
+    user_not_found: "User not found. Please sign up first."
   },
 
   jp: {
@@ -44,6 +56,12 @@ export default {
     email_required: "メールアドレスを入力してください。",
     magic_link_error: "ログインリンクが無効か期限切れです。もう一度送信してください。",
     username: "ユーザー名",
-    username_placeholder: "どのようにお呼びすれば良いですか？"
+    username_placeholder: "どのようにお呼びすれば良いですか？",
+    username_required: "ユーザー名を入力してください。",
+    have_account: "すでにアカウントをお持ちですか？",
+    go_to_login: "ログイン",
+    no_account: "アカウントをお持ちでないですか？",
+    go_to_signup: "登録",
+    user_not_found: "ユーザーが見つかりません。先に登録してください。"
   },
 }

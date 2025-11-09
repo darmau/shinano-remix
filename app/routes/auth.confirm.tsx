@@ -2,9 +2,48 @@ import { Form, Link, useActionData, useLoaderData, useNavigation } from "react-r
 import { redirect } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import type { EmailOtpType } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import ConfirmText from "~/locales/confirm";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import { createClient } from "~/utils/supabase/server";
+
+// 同步用户信息到 public.users 表
+async function syncUserToPublicTable(supabase: SupabaseClient) {
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session?.user) {
+    return;
+  }
+
+  const username = session.user.user_metadata?.name;
+  
+  if (!username) {
+    return; // 没有用户名，无需同步
+  }
+
+  // 检查 public.users 表是否已存在该用户
+  const { data: existingUser } = await supabase
+    .from("users")
+    .select("id")
+    .eq("user_id", session.user.id)
+    .maybeSingle();
+
+  if (existingUser) {
+    // 更新现有记录
+    await supabase
+      .from("users")
+      .update({ name: username })
+      .eq("user_id", session.user.id);
+  } else {
+    // 插入新记录
+    await supabase
+      .from("users")
+      .insert({
+        user_id: session.user.id,
+        name: username,
+      });
+  }
+}
 
 const SUPPORTED_LANGS = ["zh", "en", "jp"] as const;
 
@@ -231,26 +270,8 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
       const { error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (!error) {
-        // Check if user needs to set username
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const hasUsername = session.user.user_metadata?.name;
-          if (!hasUsername) {
-            // New user needs to set username - show the prompt page
-            const confirmUrl = new URL(request.url);
-            confirmUrl.searchParams.delete('code');
-            confirmUrl.searchParams.set('redirect', confirmUrl.toString());
-            
-            return {
-              status: "prompt" as const,
-              redirectUrl: confirmUrl.toString(),
-              lang: fallbackLang,
-              next: nextQuery,
-              needsUsername: true,
-              userEmail: session.user.email || null,
-            };
-          }
-        }
+        // 同步用户信息到 public.users 表
+        await syncUserToPublicTable(supabase);
         return redirect(nextQuery, { headers });
       }
     }
@@ -262,27 +283,8 @@ export async function loader({ request, context }: LoaderFunctionArgs): Promise<
       });
 
       if (!error) {
-        // Check if user needs to set username
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const hasUsername = session.user.user_metadata?.name;
-          if (!hasUsername) {
-            // New user needs to set username - show the prompt page
-            const confirmUrl = new URL(request.url);
-            confirmUrl.searchParams.delete('token_hash');
-            confirmUrl.searchParams.delete('type');
-            confirmUrl.searchParams.set('redirect', confirmUrl.toString());
-            
-            return {
-              status: "prompt" as const,
-              redirectUrl: confirmUrl.toString(),
-              lang: fallbackLang,
-              next: nextQuery,
-              needsUsername: true,
-              userEmail: session.user.email || null,
-            };
-          }
-        }
+        // 同步用户信息到 public.users 表
+        await syncUserToPublicTable(supabase);
         return redirect(nextQuery, { headers });
       }
     }
