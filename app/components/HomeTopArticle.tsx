@@ -2,7 +2,7 @@ import type {Article} from "~/types/Article";
 import { Link, useOutletContext } from "react-router";
 import getTime from "~/utils/getTime";
 import ResponsiveImage from "~/components/ResponsiveImage";
-import {ChatBubbleOvalLeftIcon, EyeIcon} from "@heroicons/react/24/outline";
+import {ChatBubbleOvalLeftIcon, EyeIcon, LockClosedIcon} from "@heroicons/react/24/outline";
 
 export default function HomeTopArticle({article, isTop, classList}: {
   article: Article,
@@ -42,7 +42,12 @@ export default function HomeTopArticle({article, isTop, classList}: {
               &nbsp;·&nbsp;
               <span>{getTime(article.published_at, lang)}</span>
             </div>
-            <h2 className = {`font-medium text-zinc-800 group-hover:text-violet-900 ${isTop ? 'text-3xl' : 'text-2xl'}`}>{article.title}</h2>
+            <div className = "flex items-center gap-2 text-zinc-800 group-hover:text-violet-900">
+              {article.is_premium && (
+                <LockClosedIcon className = {`h-5 w-5 text-violet-600 ${isTop ? '' : 'mt-0.5'}`}/>
+              )}
+              <h2 className = {`font-medium ${isTop ? 'text-3xl' : 'text-2xl'}`}>{article.title}</h2>
+            </div>
             <h3 className = "text-base text-zinc-500 leading-7">{article.subtitle}</h3>
             {article.topic && (
                 <div className = "flex flex-wrap gap-2">
