@@ -93,40 +93,45 @@ export default function Navbar({lang, items}: { lang: string, items: NavItem[] }
                 <header className="font-medium font-serif text-lg">积薪</header>
               </Link>
               <Popover>
-                <PopoverButton className = "flex border border-gray-200 items-center rounded text-sm ml-2 px-1.5 gap-1 py-1 data-hover:bg-zinc-50">
-                  <TranslateIcon className = "size-4 text-gray-900"/>
-                  {langMap.get(lang)}
-                </PopoverButton>
-                <PopoverPanel
-                    transition
-                    anchor = "bottom"
-                    className = "z-50 shadow-2xl divide-y divide-zinc-100 rounded-md bg-white text-sm transition duration-200 ease-in-out [--anchor-gap:var(--spacing-5)] data-closed:-translate-y-1 data-closed:opacity-0"
-                >
-                  {languageOptions.map((option) => {
-                    const link = languageLinks.get(option.code) || `/${option.code}`;
-                    const isAvailable = availableLangs 
-                      ? availableLangs.includes(option.code)
-                      : true;
-                    
-                    return (
-                      <Link
-                        key={option.code}
-                        to={link}
-                        className={`block p-4 w-32 transition ${
-                          isAvailable
-                            ? 'hover:bg-zinc-50'
-                            : 'opacity-60 hover:bg-zinc-50'
-                        }`}
-                        title={!isAvailable ? '该语言版本暂不可用' : undefined}
-                      >
-                        {option.label}
-                        {!isAvailable && availableLangs && (
-                          <span className="ml-2 text-xs text-zinc-400">(首页)</span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </PopoverPanel>
+                {({ close }) => (
+                  <>
+                    <PopoverButton className = "flex border border-gray-200 items-center rounded text-sm ml-2 px-1.5 gap-1 py-1 data-hover:bg-zinc-50">
+                      <TranslateIcon className = "size-4 text-gray-900"/>
+                      {langMap.get(lang)}
+                    </PopoverButton>
+                    <PopoverPanel
+                        transition
+                        anchor = "bottom"
+                        className = "z-50 shadow-2xl divide-y divide-zinc-100 rounded-md bg-white text-sm transition duration-200 ease-in-out [--anchor-gap:var(--spacing-5)] data-closed:-translate-y-1 data-closed:opacity-0"
+                    >
+                      {languageOptions.map((option) => {
+                        const link = languageLinks.get(option.code) || `/${option.code}`;
+                        const isAvailable = availableLangs 
+                          ? availableLangs.includes(option.code)
+                          : true;
+                        
+                        return (
+                          <Link
+                            key={option.code}
+                            to={link}
+                            onClick={() => close()}
+                            className={`block p-4 w-32 transition ${
+                              isAvailable
+                                ? 'hover:bg-zinc-50'
+                                : 'opacity-60 hover:bg-zinc-50'
+                            }`}
+                            title={!isAvailable ? '该语言版本暂不可用' : undefined}
+                          >
+                            {option.label}
+                            {!isAvailable && availableLangs && (
+                              <span className="ml-2 text-xs text-zinc-400">(首页)</span>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </PopoverPanel>
+                  </>
+                )}
               </Popover>
             </div>
             <div className = "flex lg:hidden">
@@ -197,40 +202,45 @@ export default function Navbar({lang, items}: { lang: string, items: NavItem[] }
                 </div>
                 <div className = "pt-8 flex justify-between items-center">
                   <Popover>
-                    <PopoverButton className = "flex border items-center rounded text-sm px-1.5 gap-1 py-1 data-hover:bg-zinc-50">
-                      <TranslateIcon className = "size-4 text-gray-900"/>
-                      {langMap.get(lang)}
-                    </PopoverButton>
-                    <PopoverPanel
-                        transition
-                        anchor = "bottom"
-                        className = "z-60 shadow-2xl divide-y divide-zinc-100 rounded-md bg-white text-sm transition duration-200 ease-in-out [--anchor-gap:var(--spacing-5)] data-closed:-translate-y-1 data-closed:opacity-0"
-                    >
-                      {languageOptions.map((option) => {
-                        const link = languageLinks.get(option.code) || `/${option.code}`;
-                        const isAvailable = availableLangs 
-                          ? availableLangs.includes(option.code)
-                          : true;
-                        
-                        return (
-                          <Link
-                            key={option.code}
-                            to={link}
-                            className={`block p-4 w-32 transition ${
-                              isAvailable
-                                ? 'hover:bg-zinc-50'
-                                : 'opacity-60 hover:bg-zinc-50'
-                            }`}
-                            title={!isAvailable ? '该语言版本暂不可用' : undefined}
-                          >
-                            {option.label}
-                            {!isAvailable && availableLangs && (
-                              <span className="ml-2 text-xs text-zinc-400">(首页)</span>
-                            )}
-                          </Link>
-                        );
-                      })}
-                    </PopoverPanel>
+                    {({ close }) => (
+                      <>
+                        <PopoverButton className = "flex border items-center rounded text-sm px-1.5 gap-1 py-1 data-hover:bg-zinc-50">
+                          <TranslateIcon className = "size-4 text-gray-900"/>
+                          {langMap.get(lang)}
+                        </PopoverButton>
+                        <PopoverPanel
+                            transition
+                            anchor = "bottom"
+                            className = "z-60 shadow-2xl divide-y divide-zinc-100 rounded-md bg-white text-sm transition duration-200 ease-in-out [--anchor-gap:var(--spacing-5)] data-closed:-translate-y-1 data-closed:opacity-0"
+                        >
+                          {languageOptions.map((option) => {
+                            const link = languageLinks.get(option.code) || `/${option.code}`;
+                            const isAvailable = availableLangs 
+                              ? availableLangs.includes(option.code)
+                              : true;
+                            
+                            return (
+                              <Link
+                                key={option.code}
+                                to={link}
+                                onClick={() => close()}
+                                className={`block p-4 w-32 transition ${
+                                  isAvailable
+                                    ? 'hover:bg-zinc-50'
+                                    : 'opacity-60 hover:bg-zinc-50'
+                                }`}
+                                title={!isAvailable ? '该语言版本暂不可用' : undefined}
+                              >
+                                {option.label}
+                                {!isAvailable && availableLangs && (
+                                  <span className="ml-2 text-xs text-zinc-400">(首页)</span>
+                                )}
+                              </Link>
+                            );
+                          })}
+                        </PopoverPanel>
+                      </>
+                    )}
                   </Popover>
                   <Profile lang = {lang}/>
                 </div>
