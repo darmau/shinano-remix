@@ -60,12 +60,6 @@ export default function AuthCodeError() {
             >
               {labels.back_to_login}
             </Link>
-            <Link
-                to={next}
-                className="block w-full text-center rounded-md border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-600 hover:bg-zinc-100"
-            >
-              {next}
-            </Link>
           </div>
         </div>
       </div>
