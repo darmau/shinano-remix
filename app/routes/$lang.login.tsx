@@ -74,6 +74,7 @@ export default function Login() {
           {label.log_in_title}
         </h2>
         <p className="mt-6 text-center text-base text-zinc-500">{label.log_in_description}</p>
+        <p className="mt-2 text-center text-sm text-zinc-400">{label.magic_link_hint}</p>
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
@@ -94,14 +95,8 @@ export default function Login() {
 
       <GithubLogin />
         </Form>
-        <div className="mt-6 text-center text-sm space-y-2">
-          <div>
-            <span className="text-zinc-500">{label.no_account} </span>
-            <Link to={`/${lang}/signup`} className="text-violet-600 font-semibold hover:text-violet-500">
-              {label.go_to_signup}
-            </Link>
-          </div>
-          <Link to={`/${lang}/terms-of-use`} className="block text-zinc-500">Terms of Use</Link>
+        <div className="mt-6 text-center text-sm text-zinc-500">
+          <Link to={`/${lang}/terms-of-use`}>Terms of Use</Link>
         </div>
       </div>
     </div>
@@ -129,26 +124,18 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
     const emailRedirectTo = `${requestUrl.origin}/auth/callback?next=${encodeURIComponent(next)}`;
 
+    // 允许所有用户（新老用户）发送 magic link
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         emailRedirectTo,
-        shouldCreateUser: false,  // 禁止新用户在登录页创建账户
+        shouldCreateUser: true,  // 允许新用户创建账户
       },
     });
 
     if (error) {
       console.error(error);
-      // 如果用户不存在，返回友好的错误信息
-      const errorLower = error.message.toLowerCase();
-      const isUserNotFound = 
-        errorLower.includes("user not found") || 
-        errorLower.includes("not found") || 
-        errorLower.includes("signups not allowed") ||
-        errorLower.includes("signup") && errorLower.includes("not allowed");
-      
-      const errorMsg = isUserNotFound ? labels.user_not_found : error.message;
-      return jsonWithHeaders({ success: false, error: errorMsg }, headers, 400);
+      return jsonWithHeaders({ success: false, error: error.message }, headers, 400);
     }
 
     return jsonWithHeaders({ success: true, error: null }, headers);
