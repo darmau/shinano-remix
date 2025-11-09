@@ -27,7 +27,7 @@ import {CommentBlock} from "~/components/CommentBlock";
 import i18nLinks from "~/utils/i18nLinks";
 import {useEffect, useState} from "react";
 import type {SupabaseClient} from "@supabase/supabase-js";
-import {EyeIcon} from "@heroicons/react/24/solid";
+import {EyeIcon, LockClosedIcon} from "@heroicons/react/24/solid";
 import {parseTurnstileOutcome} from "~/utils/turnstile";
 import {trackPageView} from "~/utils/trackPageView";
 import type {loader as rootLoader} from "~/root";
@@ -50,6 +50,8 @@ export default function ArticleDetail() {
 
   const label = getLanguageLabel(ArticleText, lang);
   const {pathname} = useLocation();
+  const isPremiumArticle = article.is_premium === true;
+  const canViewContent = !isPremiumArticle || !!session;
 
   if (!article) {
     throw new Response(null, {
@@ -104,7 +106,12 @@ export default function ArticleDetail() {
                 <h3 className = "text-sm text-violet-700 font-medium">{article.category!.title}</h3>
                 <time className = "text-zinc-600 text-sm">{getTime(article.published_at!, lang)}</time>
               </div>
-              <h1 className = "font-medium text-zinc-800 leading-normal text-4xl lg:text-5xl">{article.title}</h1>
+              <div className = "flex items-center gap-3 text-zinc-800">
+                {isPremiumArticle && (
+                  <LockClosedIcon className = "h-7 w-7 text-violet-600"/>
+                )}
+                <h1 className = "font-medium leading-normal text-4xl lg:text-5xl">{article.title}</h1>
+              </div>
               <h2 className = "text-zinc-600 text-lg lg:text-xl">{article.subtitle}</h2>
               {article.abstract &&
                   <p className = "p-4 rounded-md bg-zinc-100 text-zinc-600 leading-normal text-sm lg:text-base">
@@ -131,64 +138,88 @@ export default function ArticleDetail() {
           </div>
 
           {/*正文*/}
-          <div className = "relative grid grid-cols-1 md:grid-cols-3 md:gap-24">
+          <div className = {`relative grid grid-cols-1 ${canViewContent ? "md:grid-cols-3" : "md:grid-cols-2"} md:gap-24`}>
             <div className = "col-span-1 md:col-span-2 selection:bg-violet-800/60 selection:text-white">
-              <ContentContainer content = {article.content_json as Json}/>
-              <NextAndPrev
-                  type = "article"
-                  next = {nextArticle as NeighboringPost}
-                  prev = {previousArticle as NeighboringPost}
-              />
-
-              <div className = "mt-16 col-span-1 lg:col-span-2">
-                <CommentEditor
-                    contentTable = {'to_article'}
-                    contentId = {article.id}
-                    session = {session}
-                    replyingTo = {replyingTo}
-                    onCancelReply = {handleCancelReply}
+              <div className = "flex flex-col gap-12">
+                {canViewContent ? (
+                  <ContentContainer content = {article.content_json as Json}/>
+                ) : (
+                  <div className = "relative rounded-lg border border-violet-200 bg-white/80 p-4 md:p-6">
+                    <div
+                      className = "pointer-events-none select-none blur-sm"
+                      aria-hidden = "true"
+                    >
+                      <ContentContainer content = {article.content_json as Json}/>
+                    </div>
+                    <div className = "absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-lg bg-white/90 px-6 py-8 text-center backdrop-blur-sm">
+                      <LockClosedIcon className = "h-10 w-10 text-violet-600"/>
+                      <p className = "text-base text-zinc-600 md:text-lg">{label.premium_content_locked}</p>
+                      <Link
+                        to = {`/${lang}/login`}
+                        className = "inline-flex items-center rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                      >
+                        {label.login_to_read}
+                      </Link>
+                    </div>
+                  </div>
+                )}
+                <NextAndPrev
+                    type = "article"
+                    next = {nextArticle as NeighboringPost}
+                    prev = {previousArticle as NeighboringPost}
                 />
-              <div className= "flex flex-col gap-4 divide-y divide-none">
-                  {actionResponse?.error && <p className = "mt-2 text-sm text-red-500">{actionResponse.error}</p>}
-                  {actionResponse?.success && <p className = "mt-2 text-sm text-green-500">{actionResponse.success}</p>}
-                  {comments && comments.map((comment) => (
-                      <CommentBlock
-                          key = {comment.id}
-                          comment = {comment as unknown as CommentProps}
-                          onReply = {handleReply}
-                      />
-                  ))}
-                </div>
-                <div className = "py-8 flex justify-between">
-                  {page > 1 && (
-                      <Link
-                          to = {{
-                            search: `?page=${page - 1}&limit=${limit}`,
-                            hash: '#comment-editor'
-                          }}
-                          className = "rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-                      >{label.previous}</Link>
-                  )}
-                  {page < totalPage && (
-                      <Link
-                          to = {{
-                            search: `?page=${page + 1}&limit=${limit}`,
-                            hash: '#comment-editor'
-                          }}
-                          className = "ml-auto rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-                      >{label.next}</Link>
-                  )}
+                <div className = "mt-16 col-span-1 lg:col-span-2">
+                  <CommentEditor
+                      contentTable = {'to_article'}
+                      contentId = {article.id}
+                      session = {session}
+                      replyingTo = {replyingTo}
+                      onCancelReply = {handleCancelReply}
+                  />
+                  <div className= "flex flex-col gap-4 divide-y divide-none">
+                    {actionResponse?.error && <p className = "mt-2 text-sm text-red-500">{actionResponse.error}</p>}
+                    {actionResponse?.success && <p className = "mt-2 text-sm text-green-500">{actionResponse.success}</p>}
+                    {comments && comments.map((comment) => (
+                        <CommentBlock
+                            key = {comment.id}
+                            comment = {comment as unknown as CommentProps}
+                            onReply = {handleReply}
+                        />
+                    ))}
+                  </div>
+                  <div className = "py-8 flex justify-between">
+                    {page > 1 && (
+                        <Link
+                            to = {{
+                              search: `?page=${page - 1}&limit=${limit}`,
+                              hash: '#comment-editor'
+                            }}
+                            className = "rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                        >{label.previous}</Link>
+                    )}
+                    {page < totalPage && (
+                        <Link
+                            to = {{
+                              search: `?page=${page + 1}&limit=${limit}`,
+                              hash: '#comment-editor'
+                            }}
+                            className = "ml-auto rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                        >{label.next}</Link>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-            <aside className = "hidden md:flex md:col-span-1 md:h-full">
-              <Catalog
-                  content = {article.content_json as Json}
-                  url = {`${domain}${pathname}`}
-                  title = {article.title!}
-                  lang = {lang}
-              />
-            </aside>
+            {canViewContent && (
+              <aside className = "hidden md:flex md:col-span-1 md:h-full">
+                <Catalog
+                    content = {article.content_json as Json}
+                    url = {`${domain}${pathname}`}
+                    title = {article.title!}
+                    lang = {lang}
+                />
+              </aside>
+            )}
           </div>
         </div>
       </div>
