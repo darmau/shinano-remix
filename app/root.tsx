@@ -12,6 +12,7 @@ import {
   useRevalidator,
   useRouteError,
 } from "react-router";
+import type { ErrorResponse } from "react-router";
 import "./tailwind.css";
 import type { LoaderFunctionArgs } from "react-router";
 import {getLang} from "~/utils/getLang";
@@ -28,7 +29,7 @@ import FooterText from "~/locales/footer";
 export const loader = async ({request, context}: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const lang = url.pathname.split('/')[1];
-  const multiLangContent = ['', 'article', 'articles', 'album', 'albums', 'thoughts', 'thought', 'about', 'contact', 'site', 'rss', 'signup', 'login', 'book']
+  const multiLangContent = ['', 'article', 'articles', 'album', 'albums', 'thoughts', 'thought', 'about', 'contact', 'site', 'rss', 'signup', 'login', 'book', 'terms-of-use']
 
   if (!['zh', 'en', 'jp'].includes(lang) && multiLangContent.includes(lang)) {
     // 检测浏览器语言
@@ -136,9 +137,10 @@ export default function App() {
 }
 
 export function ErrorBoundary() {
-  const error = useRouteError();
+  const caughtError = useRouteError();
 
-  if (isRouteErrorResponse(error)) {
+  if (isRouteErrorResponse(caughtError)) {
+    const routeError = caughtError as ErrorResponse;
     return (
         <html lang = "en">
         <head>
@@ -151,9 +153,9 @@ export function ErrorBoundary() {
         <body className = "min-h-screen flex flex-col">
         <main className = "grid min-h-full place-items-center bg-white px-6 py-24 sm:py-32 lg:px-8">
           <div className = "text-center">
-            <p className = "text-base font-semibold text-indigo-600">{error.status}</p>
-            <h1 className = "mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl">{error.statusText}</h1>
-            <p className = "mt-6 text-base leading-7 text-gray-600">{error.data}</p>
+            <p className = "text-base font-semibold text-indigo-600">{routeError.status}</p>
+            <h1 className = "mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl">{routeError.statusText}</h1>
+            <p className = "mt-6 text-base leading-7 text-gray-600">{routeError.data}</p>
             <div className = "mt-10 flex items-center justify-center gap-x-6">
               <Link
                   to = "/"
@@ -169,7 +171,8 @@ export function ErrorBoundary() {
         </html>
     )
         ;
-  } else if (error instanceof Error) {
+  } else if (caughtError instanceof Error) {
+    const { name, message, stack } = caughtError;
     return (
         <html lang = "en">
         <head>
@@ -182,9 +185,9 @@ export function ErrorBoundary() {
         <body className = "min-h-screen flex flex-col">
         <main className = "grid min-h-full place-items-center bg-white px-6 py-24 sm:py-32 lg:px-8">
           <div className = "text-center">
-            <p className = "text-base font-semibold text-indigo-600">{error.name}</p>
-            <h1 className = "mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl">{error.message}</h1>
-            <p className = "mt-6 text-base leading-7 text-gray-600">{error.stack}</p>
+            <p className = "text-base font-semibold text-indigo-600">{name}</p>
+            <h1 className = "mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl">{message}</h1>
+            <p className = "mt-6 text-base leading-7 text-gray-600">{stack}</p>
             <div className = "mt-10 flex items-center justify-center gap-x-6">
               <Link
                   to = "/"
