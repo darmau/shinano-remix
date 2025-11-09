@@ -25,25 +25,24 @@ export default function CommentEditor({ contentTable, contentId, session, replyi
 
           <div className="flex gap-4">
             <input
-              className="w-full border-0 border-b border-b-gray-200 p-0 pb-2 text-gray-900 placeholder:text-gray-400 focus:border-violet-600 focus:ring-0 sm:text-sm sm:leading-6"
+              className="w-full border-0 border-b border-b-gray-200 p-0 pb-2 text-gray-900 placeholder:text-gray-400 sm:text-sm sm:leading-6"
               name="name"
               type="text"
               placeholder={'*' + label.name_placeholder}
               required
             />
             <input
-              className="w-full border-0 border-b border-b-gray-200 p-0 pb-2 text-gray-900 placeholder:text-gray-400 focus:border-violet-600 focus:ring-0 sm:text-sm sm:leading-6"
+              className="w-full border-0 border-b border-b-gray-200 p-0 pb-2 text-gray-900 placeholder:text-gray-400 sm:text-sm sm:leading-6"
               name="email"
               type="email"
               placeholder={'*' + label.email_placeholder}
               required
             />
             <input
-              className="w-full border-0 border-b border-b-gray-200 p-0 pb-2 text-gray-900 placeholder:text-gray-400 focus:border-violet-600 focus:ring-0 sm:text-sm sm:leading-6"
+              className="w-full border-0 border-b border-b-gray-200 p-0 pb-2 text-gray-900 placeholder:text-gray-400 sm:text-sm sm:leading-6"
               name="website"
               type="url"
               placeholder={label.website_placeholder}
-              required
             />
           </div>
 
