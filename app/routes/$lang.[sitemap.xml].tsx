@@ -146,6 +146,12 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
             <changefreq>monthly</changefreq>
             <priority>0.5</priority>
         </url>
+        <url>
+            <loc>${baseUrl}/${lang}/terms-of-use</loc>
+            <lastmod>${now}</lastmod>
+            <changefreq>monthly</changefreq>
+            <priority>0.5</priority>
+        </url>
         ${articleEntries}
 
         ${albumEntries}

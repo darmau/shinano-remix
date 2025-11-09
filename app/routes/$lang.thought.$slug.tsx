@@ -21,6 +21,7 @@ import type {SupabaseClient} from "@supabase/supabase-js";
 import {useEffect, useState} from "react";
 import {parseTurnstileOutcome} from "~/utils/turnstile";
 import {trackPageView} from "~/utils/trackPageView";
+import {sendCommentReplyNotification} from "~/utils/commentNotification.server";
 import type {loader as rootLoader} from "~/root";
 
 export default function ThoughtDetail() {
@@ -284,13 +285,16 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   ];
 };
 
-export async function action({request, context}: ActionFunctionArgs) {
+export async function action({request, context, params}: ActionFunctionArgs) {
   const formData = await request.formData();
   const {supabase} = createClient(request, context);
   const {data: {session}} = await supabase.auth.getSession();
   const content_text = formData.get('content_text') as string;
   const to_thought = parseInt(formData.get('to_thought') as string);
   const reply_to = formData.get('reply_to') ? parseInt(formData.get('reply_to') as string) : null;
+  const receiveNotification = formData.get('receive_notification') === 'true';
+  const lang = params.lang as string;
+  const slug = params.slug as string;
 
   const bark = context.cloudflare.env.BARK_SERVER;
 
@@ -332,7 +336,8 @@ export async function action({request, context}: ActionFunctionArgs) {
       content_text,
       to_thought,
       is_anonymous: true,
-      reply_to
+      reply_to,
+      receive_notification: receiveNotification
     })
     .select(`
         id,
@@ -383,6 +388,7 @@ export async function action({request, context}: ActionFunctionArgs) {
     to_thought,
     is_anonymous: false,
     reply_to,
+    receive_notification: receiveNotification,
   })
   .select(`
       id,
@@ -395,6 +401,26 @@ export async function action({request, context}: ActionFunctionArgs) {
   .single();
 
   await fetch(`${bark}/${userProfile.name}评论了想法/${content_text}`)
+
+  if (reply_to) {
+    try {
+      await sendCommentReplyNotification({
+        supabase,
+        env: context.cloudflare.env,
+        replyToId: reply_to,
+        newCommentAuthorName: userProfile.name ?? "读者",
+        newCommentContent: content_text,
+        content: {
+          type: "thought",
+          id: to_thought,
+          lang,
+          slug
+        }
+      });
+    } catch (error) {
+      console.error("Failed to send thought comment notification:", error);
+    }
+  }
 
   return {
     success: true,

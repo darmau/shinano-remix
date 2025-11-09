@@ -26,6 +26,7 @@ export interface CommentProps {
     name: string,
     role: string
   } | null;
+  receive_notification: boolean;
 }
 
 export function CommentBlock({comment, onReply}: {comment: CommentProps, onReply: (comment: CommentProps) => void}) {

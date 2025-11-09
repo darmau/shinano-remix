@@ -4,11 +4,11 @@ const FooterText = {
       "name": "文章",
       "items": [
         {
-          "name": "推荐文章",
+          "name": "推荐",
           "href": "/zh/articles/featured/1"
         },
         {
-          "name": "最新文章",
+          "name": "最新",
           "href": "/zh/articles/1"
         },
       ]
@@ -17,24 +17,28 @@ const FooterText = {
       "name": "摄影",
       items: [
         {
-          "name": "推荐摄影",
+          "name": "推荐",
           "href": "/zh/albums/featured"
         },
         {
-          "name": "全部摄影",
+          "name": "最新",
           "href": "/zh/albums/all/1"
         },
+        {
+          "name": "地图",
+          "href": "/zh/albums/map"
+        }
       ]
     },
     {
       "name": "其他",
       items: [
         {
-          "name": "所有想法",
+          "name": "想法",
           "href": "/zh/thoughts"
         },
         {
-          "name": "读书记录",
+          "name": "读书",
           "href": "/zh/book"
         }
       ]
@@ -57,6 +61,10 @@ const FooterText = {
         {
           "name": "RSS",
           "href": "/zh/rss"
+        },
+        {
+          "name": "Terms of Use",
+          "href": "/zh/terms-of-use"
         },
       ]
     }
@@ -86,6 +94,10 @@ const FooterText = {
           "name": "All",
           "href": "/en/albums/all/1"
         },
+        {
+          "name": "Map",
+          "href": "/en/albums/map"
+        }
       ]
     },
     {
@@ -120,6 +132,10 @@ const FooterText = {
           "name": "RSS",
           "href": "/en/rss"
         },
+        {
+          "name": "Terms of Use",
+          "href": "/en/terms-of-use"
+        },
       ]
     }
   ],
@@ -147,6 +163,10 @@ const FooterText = {
         {
           "name": "すべて",
           "href": "/jp/albums/all/1"
+        },
+        {
+          "name": "地図",
+          "href": "/jp/albums/map"
         },
       ]
     },
@@ -181,6 +201,10 @@ const FooterText = {
         {
           "name": "RSS",
           "href": "/jp/rss"
+        },
+        {
+          "name": "利用規約",
+          "href": "/jp/terms-of-use"
         },
       ]
     }

@@ -11,7 +11,11 @@ export default {
     "moderation_cta": "后再评论以便立即显示。",
     "author": "作者",
     "reply": "回复",
-    "cancel_reply": "取消回复"
+    "cancel_reply": "取消回复",
+    "receive_notification": "有人回复时邮件提醒我",
+    "name_placeholder": "你的名字",
+    "email_placeholder": "邮箱",
+    "website_placeholder": "网站"
   },
   "en": {
     "submit": "Submit",
@@ -25,7 +29,11 @@ export default {
     "moderation_cta": " to publish instantly.",
     "author": "Author",
     "reply": "Reply",
-    "cancel_reply": "Cancel reply"
+    "cancel_reply": "Cancel reply",
+    "receive_notification": "Email me when someone replies",
+    "name_placeholder": "Your name",
+    "email_placeholder": "Email",
+    "website_placeholder": "Website"
   },
   "jp": {
     "submit": "提出",
@@ -39,6 +47,10 @@ export default {
     "moderation_cta": "するとすぐに表示されます。",
     "author": "著者",
     "reply": "返信",
-    "cancel_reply": "返信をキャンセル"
+    "cancel_reply": "返信をキャンセル",
+    "receive_notification": "返信があったらメールで知らせる",
+    "name_placeholder": "お名前",
+    "email_placeholder": "メールアドレス",
+    "website_placeholder": "ウェブサイト"
   }
 }
