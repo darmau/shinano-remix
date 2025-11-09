@@ -142,9 +142,10 @@ async function resolveRecipientEmail(
     return null;
   }
 
+  // 从 public.users 表获取 user_id (这是 auth.users 的 uuid)
   const registeredUserResponse = await supabase
     .from("users")
-    .select("email, name, id, user_id")
+    .select("user_id")
     .eq("id", comment.user_id)
     .maybeSingle();
 
@@ -153,11 +154,21 @@ async function resolveRecipientEmail(
     return null;
   }
 
-  const registeredUser = registeredUserResponse.data as (Database["public"]["Tables"]["users"]["Row"] & {
-    email?: string | null;
-  }) | null;
+  const registeredUser = registeredUserResponse.data;
+  
+  if (!registeredUser?.user_id) {
+    return null;
+  }
 
-  return registeredUser?.email ?? null;
+  // 从 auth.users 表获取 email
+  const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(registeredUser.user_id);
+
+  if (authError) {
+    console.error("Failed to fetch auth user for comment notification:", authError);
+    return null;
+  }
+
+  return authUser?.user?.email ?? null;
 }
 
 async function buildContentMetadata(
