@@ -90,21 +90,23 @@ export default function Login() {
 export async function action({request, context}: ActionFunctionArgs) {
   const formData = await request.formData()
   const intent = formData.get("intent") as string;
+  const requestUrl = new URL(request.url);
+  const pathLang = requestUrl.pathname.split("/").filter(Boolean)[0];
+  const rawLang = (formData.get("lang") as string | null)?.trim();
+  const lang = rawLang?.length ? rawLang : (pathLang?.length ? pathLang : "zh");
+  const next = requestUrl.searchParams.get("next") ?? `/${lang}`;
 
   const {supabase, headers} = createClient(request, context);
 
   if (intent === 'email') {
     const email = (formData.get("email") as string | null)?.trim();
-    const rawLang = (formData.get("lang") as string | null)?.trim();
-    const lang = rawLang?.length ? rawLang : "zh";
     const labels = SignupText[lang as keyof typeof SignupText] ?? SignupText.zh;
 
     if (!email) {
       return {success: false, error: labels.email_required};
     }
 
-    const origin = new URL(request.url).origin;
-    const emailRedirectTo = `${origin}/auth/confirm?next=/${lang}`;
+    const emailRedirectTo = `${requestUrl.origin}/auth/confirm?next=${encodeURIComponent(next)}`;
 
     const {error} = await supabase.auth.signInWithOtp({
       email,
@@ -123,7 +125,7 @@ export async function action({request, context}: ActionFunctionArgs) {
     const {data, error} = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: `${new URL(request.url).origin}/auth/callback`,
+        redirectTo: `${requestUrl.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     })
 
