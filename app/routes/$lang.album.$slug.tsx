@@ -368,8 +368,6 @@ export async function action({request, context, params}: ActionFunctionArgs) {
   const slug = params.slug as string;
   const ipAddress = getClientIp(request);
 
-  const bark = context.cloudflare.env.BARK_SERVER;
-
   if (!session) {
     const turnstileToken = formData.get('cf-turnstile-response');
     const turnstileResponse = await fetch(
@@ -430,8 +428,6 @@ export async function action({request, context, params}: ActionFunctionArgs) {
       }
     }
 
-    await fetch(`${bark}/${name}评论了摄影/${content_text}`)
-
     return {
       success: '提交成功，请等待审核。Please wait for review.',
       error: null,
@@ -474,8 +470,6 @@ export async function action({request, context, params}: ActionFunctionArgs) {
       reply_to (id, content_text, users (id, name))
     `)
   .single();
-
-  await fetch(`${bark}/${userProfile.name}评论了摄影/${content_text}`)
 
   if (reply_to) {
     try {

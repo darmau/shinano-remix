@@ -20,7 +20,6 @@ export const loader = async ({ context }: LoaderFunctionArgs) => {
 export const action = async ({ request, context }: ActionFunctionArgs) => {
   const { supabase } = createClient(request, context);
   const { data: { session } } = await supabase.auth.getSession();
-  const bark = context.cloudflare.env.BARK_SERVER;
 
   if (!session) {
     return { error: "未登录用户无法提交信息", success: null };
@@ -56,7 +55,6 @@ export const action = async ({ request, context }: ActionFunctionArgs) => {
     return { error: error.message, success: null };
   }
 
-  await fetch(`${bark}/${user.name}给你发送了消息/${message}`);
   return { success: "信息提交成功", error: null };
 };
 
