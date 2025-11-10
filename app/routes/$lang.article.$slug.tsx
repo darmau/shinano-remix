@@ -25,13 +25,199 @@ import CommentEditor from "~/components/CommentEditor";
 import type { CommentProps} from "~/components/CommentBlock";
 import {CommentBlock} from "~/components/CommentBlock";
 import i18nLinks from "~/utils/i18nLinks";
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import type {SupabaseClient} from "@supabase/supabase-js";
 import {EyeIcon, LockClosedIcon} from "@heroicons/react/24/solid";
 import {parseTurnstileOutcome} from "~/utils/turnstile";
 import {trackPageView} from "~/utils/trackPageView";
 import {getClientIp} from "~/utils/getClientIp.server";
 import type {loader as rootLoader} from "~/root";
+
+type TipTapMark = {
+  type?: string;
+  attrs?: Record<string, unknown>;
+};
+
+type TipTapNode = {
+  type?: string;
+  text?: string | null;
+  content?: TipTapNode[];
+  attrs?: {
+    level?: number;
+    id?: string | number;
+    start?: number;
+    href?: string;
+    target?: string;
+    rel?: string;
+    language?: string;
+    alt?: string | null;
+  } & Record<string, unknown>;
+  marks?: TipTapMark[];
+};
+
+type TipTapDoc = {
+  type?: string;
+  content?: TipTapNode[];
+};
+
+const renderPlainArticleHtml = (content: Json | null | undefined): string => {
+  if (!content || typeof content !== "object") {
+    return "";
+  }
+
+  const documentNode = content as TipTapDoc;
+  if (!Array.isArray(documentNode.content) || documentNode.content.length === 0) {
+    return "";
+  }
+
+  const body = documentNode.content.map(renderTipTapNode).join("");
+
+  return body ? `<article>${body}</article>` : "";
+};
+
+const renderTipTapNode = (node?: TipTapNode): string => {
+  if (!node || typeof node.type !== "string") {
+    return "";
+  }
+
+  switch (node.type) {
+    case "doc":
+      return renderChildren(node.content);
+    case "text":
+      return applyMarks(escapeHtml(node.text ?? ""), node.marks);
+    case "hardBreak":
+      return "<br />";
+    case "paragraph":
+      return `<p>${renderChildren(node.content)}</p>`;
+    case "heading": {
+      const level = getHeadingLevel(node.attrs?.level);
+      return `<h${level}>${renderChildren(node.content)}</h${level}>`;
+    }
+    case "blockquote":
+      return `<blockquote>${renderChildren(node.content)}</blockquote>`;
+    case "bulletList":
+      return `<ul>${renderChildren(node.content)}</ul>`;
+    case "orderedList": {
+      const start = typeof node.attrs?.start === "number" && node.attrs.start > 1
+        ? ` start="${node.attrs.start}"`
+        : "";
+      return `<ol${start}>${renderChildren(node.content)}</ol>`;
+    }
+    case "listItem":
+      return `<li>${renderChildren(node.content)}</li>`;
+    case "codeBlock":
+    case "customCodeBlock": {
+      const language = typeof node.attrs?.language === "string" && node.attrs.language.trim()
+        ? ` class="language-${escapeAttr(node.attrs.language.trim())}"`
+        : "";
+      const code = escapeHtml(getTextContent(node.content));
+      return `<pre><code${language}>${code}</code></pre>`;
+    }
+    case "horizontalRule":
+      return "<hr />";
+    case "table":
+      return `<table>${renderChildren(node.content)}</table>`;
+    case "tableRow":
+      return `<tr>${renderChildren(node.content)}</tr>`;
+    case "tableHeader":
+      return `<th>${renderChildren(node.content)}</th>`;
+    case "tableCell":
+      return `<td>${renderChildren(node.content)}</td>`;
+    case "image": {
+      const altText = typeof node.attrs?.alt === "string" ? node.attrs.alt : "";
+      return altText ? `<p>${escapeHtml(altText)}</p>` : "";
+    }
+    default:
+      return renderChildren(node.content);
+  }
+};
+
+const renderChildren = (children?: TipTapNode[]): string => {
+  if (!Array.isArray(children) || children.length === 0) {
+    return "";
+  }
+
+  return children.map(renderTipTapNode).join("");
+};
+
+const applyMarks = (text: string, marks?: TipTapMark[]): string => {
+  if (!text || !Array.isArray(marks) || marks.length === 0) {
+    return text;
+  }
+
+  return marks.reduce((acc, mark) => {
+    switch (mark.type) {
+      case "bold":
+        return `<strong>${acc}</strong>`;
+      case "italic":
+        return `<em>${acc}</em>`;
+      case "strike":
+        return `<del>${acc}</del>`;
+      case "code":
+        return `<code>${acc}</code>`;
+      case "highlight":
+        return `<mark>${acc}</mark>`;
+      case "link": {
+        const href = typeof mark.attrs?.href === "string" ? mark.attrs.href : "#";
+        const targetAttr = typeof mark.attrs?.target === "string" ? ` target="${escapeAttr(mark.attrs.target)}"` : "";
+        const relAttr = typeof mark.attrs?.rel === "string" ? ` rel="${escapeAttr(mark.attrs.rel)}"` : "";
+        return `<a href="${escapeAttr(href)}"${targetAttr}${relAttr}>${acc}</a>`;
+      }
+      default:
+        return acc;
+    }
+  }, text);
+};
+
+const getHeadingLevel = (level?: number): number => {
+  if (typeof level !== "number") {
+    return 2;
+  }
+  if (level < 1) {
+    return 1;
+  }
+  if (level > 6) {
+    return 6;
+  }
+  return Math.round(level);
+};
+
+const getTextContent = (children?: TipTapNode[]): string => {
+  if (!Array.isArray(children) || children.length === 0) {
+    return "";
+  }
+
+  return children.map((child) => {
+    if (!child || typeof child !== "object") {
+      return "";
+    }
+    if (child.type === "text") {
+      return child.text ?? "";
+    }
+    if (child.type === "hardBreak") {
+      return "\n";
+    }
+    return getTextContent(child.content);
+  }).join("");
+};
+
+const HTML_ESCAPE_REGEX = /[&<>"'`]/g;
+const HTML_ESCAPE_MAP: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+  "`": "&#96;",
+};
+
+const escapeHtml = (value: string): string => {
+  return value.replace(HTML_ESCAPE_REGEX, (char) => HTML_ESCAPE_MAP[char] ?? char);
+};
+
+const escapeAttr = (value: string): string => {
+  return escapeHtml(value);
+};
 
 export default function ArticleDetail() {
   const {lang, supabase} = useOutletContext<{ lang: string, supabase: SupabaseClient }>();
@@ -53,6 +239,10 @@ export default function ArticleDetail() {
   const {pathname} = useLocation();
   const isPremiumArticle = article.is_premium === true;
   const canViewContent = !isPremiumArticle || !!session;
+  const plainArticleHtml = useMemo(
+    () => renderPlainArticleHtml(article.content_json as Json | null | undefined),
+    [article.content_json]
+  );
 
   if (!article) {
     throw new Response(null, {
@@ -139,32 +329,41 @@ export default function ArticleDetail() {
           <div className = {`relative grid grid-cols-1 ${canViewContent ? "md:grid-cols-3" : "md:grid-cols-2"} md:gap-24`}>
             <div className = "col-span-1 md:col-span-2 selection:bg-violet-800/60 selection:text-white">
               <div className = "flex flex-col">
-                {canViewContent ? (
-                  article.content_json ? (
-                    <ContentContainer content = {article.content_json as Json}/>
-                  ) : null
-                ) : (
-                  <div className = "relative overflow-hidden rounded-lg border border-violet-200 bg-white/80 p-4 md:p-6">
-                    <div
-                      className = "pointer-events-none select-none blur-sm"
-                      aria-hidden = "true"
-                    >
-                      <div className = "space-y-3 text-left text-lg font-semibold leading-8 text-gray-300">
-                        <p>我们认为下面这些真理是不证自明的：人人生而平等，造物主赋予他们若干不可剥夺的权利，其中包括生命权、自由权和追求幸福的权利。为了保障这些权利，人们才在他们之间建立政府，而政府之正当权力，则来自被统治者的同意。任何形式的政府，只要破坏上述目的，人民就有权利改变或废除它，并建立新政府；新政府赖以奠基的原则，得以组织权力的方式，都要最大可能地增进民众的安全和幸福。的确，从慎重考虑，不应当由于轻微和短暂的原因而改变成立多年的政府。过去的一切经验也都说明，任何苦难，只要尚能忍受，人类都宁愿容忍，而无意废除他们久已习惯了的政府来恢复自身的权益。但是，当政府一贯滥用职权、强取豪夺，一成不变地追逐这一目标，足以证明它旨在把人民置于绝对专制统治之下时，那么，人民就有权利，也有义务推翻这个政府，并为他们未来的安全建立新的保障。</p>
+                  {canViewContent ? (
+                    article.content_json ? (
+                      <ContentContainer content = {article.content_json as Json}/>
+                    ) : null
+                  ) : (
+                    <>
+                      <div className = "relative overflow-hidden rounded-lg border border-violet-200 bg-white/80 p-4 md:p-6">
+                        <div
+                          className = "pointer-events-none select-none blur-sm"
+                          aria-hidden = "true"
+                        >
+                          <div className = "space-y-3 text-left text-lg font-semibold leading-8 text-gray-300">
+                            <p>我们认为下面这些真理是不证自明的：人人生而平等，造物主赋予他们若干不可剥夺的权利，其中包括生命权、自由权和追求幸福的权利。为了保障这些权利，人们才在他们之间建立政府，而政府之正当权力，则来自被统治者的同意。任何形式的政府，只要破坏上述目的，人民就有权利改变或废除它，并建立新政府；新政府赖以奠基的原则，得以组织权力的方式，都要最大可能地增进民众的安全和幸福。的确，从慎重考虑，不应当由于轻微和短暂的原因而改变成立多年的政府。过去的一切经验也都说明，任何苦难，只要尚能忍受，人类都宁愿容忍，而无意废除他们久已习惯了的政府来恢复自身的权益。但是，当政府一贯滥用职权、强取豪夺，一成不变地追逐这一目标，足以证明它旨在把人民置于绝对专制统治之下时，那么，人民就有权利，也有义务推翻这个政府，并为他们未来的安全建立新的保障。</p>
+                          </div>
+                        </div>
+                        <div className = "absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-lg px-6 py-8 text-center">
+                          <LockClosedIcon className = "h-10 w-10 text-violet-600"/>
+                          <p className = "text-base text-zinc-600 md:text-lg">{label.premium_content_locked}</p>
+                          <Link
+                            to = {`/${lang}/login`}
+                            className = "inline-flex items-center rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                          >
+                            {label.login_to_read}
+                          </Link>
+                        </div>
                       </div>
-                    </div>
-                    <div className = "absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-lg px-6 py-8 text-center">
-                      <LockClosedIcon className = "h-10 w-10 text-violet-600"/>
-                      <p className = "text-base text-zinc-600 md:text-lg">{label.premium_content_locked}</p>
-                      <Link
-                        to = {`/${lang}/login`}
-                        className = "inline-flex items-center rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
-                      >
-                        {label.login_to_read}
-                      </Link>
-                    </div>
-                  </div>
-                )}
+                      {plainArticleHtml && (
+                        <div
+                          aria-hidden = "true"
+                          style = {{display: "none"}}
+                          dangerouslySetInnerHTML = {{__html: plainArticleHtml}}
+                        />
+                      )}
+                    </>
+                  )}
                 <NextAndPrev
                     type = "article"
                     next = {nextArticle as NeighboringPost}
@@ -334,10 +533,6 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   // 总页数
   const totalPage = count ? Math.ceil(count / limit) : 1;
-
-  if (articleContent.is_premium && !session) {
-    articleContent.content_json = null;
-  }
 
   // 转换成lang的数组，如['zh', 'en']
   const availableLangs = availableArticle.map((item: { language: { lang: string | null } }) => {
