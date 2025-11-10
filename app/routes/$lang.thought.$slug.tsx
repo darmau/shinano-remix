@@ -21,7 +21,6 @@ import type {SupabaseClient} from "@supabase/supabase-js";
 import {useEffect, useState} from "react";
 import {parseTurnstileOutcome} from "~/utils/turnstile";
 import {trackPageView} from "~/utils/trackPageView";
-import {sendCommentReplyNotification} from "~/utils/commentNotification.server";
 import {getClientIp} from "~/utils/getClientIp.server";
 import type {loader as rootLoader} from "~/root";
 
@@ -399,26 +398,6 @@ export async function action({request, context, params}: ActionFunctionArgs) {
       users (id, name)
     `)
   .single();
-
-  if (reply_to) {
-    try {
-      await sendCommentReplyNotification({
-        supabase,
-        env: context.cloudflare.env,
-        replyToId: reply_to,
-        newCommentAuthorName: userProfile.name ?? "读者",
-        newCommentContent: content_text,
-        content: {
-          type: "thought",
-          id: to_thought,
-          lang,
-          slug
-        }
-      });
-    } catch (error) {
-      console.error("Failed to send thought comment notification:", error);
-    }
-  }
 
   return {
     success: true,
