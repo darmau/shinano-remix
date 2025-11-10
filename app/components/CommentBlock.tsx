@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import { useOutletContext } from "react-router";
+import { marked } from "marked";
 import getTime from "~/utils/getTime";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import CommentText from '~/locales/comment';
@@ -63,7 +65,8 @@ export function CommentBlock({comment, onReply}: {comment: CommentProps, onReply
             </div>
         )}
 
-        <div className = "my-4 text-base text-zinc-700 space-y-2"><CommentContent content = {comment.content_text}/>
+        <div className = "my-4 text-base text-zinc-700 space-y-2">
+          <CommentContent content = {comment.content_text}/>
         </div>
         <button
             onClick = {() => onReply(comment)}
@@ -75,12 +78,33 @@ export function CommentBlock({comment, onReply}: {comment: CommentProps, onReply
   )
 }
 
-function CommentContent({content}: { content: string }) {
-  // 将字符串按换行符分割成数组
-  const lines = content.split('\n');
+const markdownOptions = {
+  gfm: true,
+  breaks: true,
+  headerIds: false,
+  mangle: false,
+} as const;
 
-  // 将每一行转换为<p>标签包裹的内容,并用join方法连接
-  return lines.map((line, index) => (
-      <p key={index}>{line}</p>
-  ));
+function CommentContent({content}: { content: string }) {
+  const html = useMemo(() => {
+    const escaped = escapeHtml(content);
+    const rendered = marked.parse(escaped, markdownOptions);
+    return typeof rendered === "string" ? rendered : "";
+  }, [content]);
+
+  return (
+    <div
+      className="space-y-2 [&_code]:font-mono [&_code]:text-sm [&_a]:text-violet-600 [&_a]:underline"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+function escapeHtml(input: string) {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
