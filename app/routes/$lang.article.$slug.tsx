@@ -31,6 +31,7 @@ import {EyeIcon, LockClosedIcon} from "@heroicons/react/24/solid";
 import {parseTurnstileOutcome} from "~/utils/turnstile";
 import {trackPageView} from "~/utils/trackPageView";
 import {sendCommentReplyNotification} from "~/utils/commentNotification.server";
+import {getClientIp} from "~/utils/getClientIp.server";
 import type {loader as rootLoader} from "~/root";
 
 export default function ArticleDetail() {
@@ -435,6 +436,7 @@ export async function action({request, context, params}: ActionFunctionArgs) {
   const receiveNotification = formData.get('receive_notification') === 'true';
   const lang = params.lang as string;
   const slug = params.slug as string;
+  const ipAddress = getClientIp(request);
 
   const bark = context.cloudflare.env.BARK_SERVER;
 
@@ -477,7 +479,8 @@ export async function action({request, context, params}: ActionFunctionArgs) {
         to_article,
         is_anonymous: true,
         reply_to,
-        receive_notification: receiveNotification
+        receive_notification: receiveNotification,
+        ip: ipAddress
       })
       .select(`
         id,
@@ -528,7 +531,8 @@ export async function action({request, context, params}: ActionFunctionArgs) {
     to_article,
     is_anonymous: false,
     reply_to,
-    receive_notification: receiveNotification
+    receive_notification: receiveNotification,
+    ip: ipAddress
   })
   .select(`
       id,
