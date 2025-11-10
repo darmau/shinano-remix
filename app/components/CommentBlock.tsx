@@ -94,7 +94,7 @@ function CommentContent({content}: { content: string }) {
 
   return (
     <div
-      className="space-y-2 [&_code]:font-mono [&_code]:text-sm [&_a]:text-violet-600 [&_a]:underline"
+      className="comment-markdown"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
