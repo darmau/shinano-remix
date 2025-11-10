@@ -19,7 +19,7 @@ The project is intentionally bespoke: it mirrors my own writing workflow, integr
 - **Thoughts** (`$lang.thoughts.tsx`): lightweight JSON-based micro posts with infinite “load more” pagination and optional inline imagery.
 - **Photography albums** (`$lang.album.$slug.tsx`): gallery/lightbox experience powered by Yet Another React Lightbox, EXIF overlays, Mapbox maps, and location badges. Comments, page views, and tagging mirror the article experience.
 - **Bookshelf** (`$lang.book._index.tsx`): a reading journal listing ratings, capsule reviews, and outbound links, pulled from Supabase and paginated via fetcher actions.
-- **Meta pages** (`$lang.about.tsx`, `$lang.site.tsx`, `$lang.contact.tsx`): showcase biography content, explain the tech stack, and provide a logged-in contact form that stores submissions in Supabase and sends push notifications through the Bark server (`BARK_SERVER` env).
+- **Meta pages** (`$lang.about.tsx`, `$lang.site.tsx`, `$lang.contact.tsx`): showcase biography content, explain the tech stack, and provide a logged-in contact form that stores submissions in Supabase.
 - **Authentication flows** (`$lang.login.tsx`, `auth.callback.tsx`, `auth.confirm.tsx`): passwordless email magic links and GitHub OAuth built on Supabase Auth with tasteful UI components (`EmailLogin`, `GithubLogin`).
 
 ## Architecture
@@ -62,7 +62,6 @@ Required environment variables live in your Cloudflare project (and `.dev.vars` 
 | `BASE_URL` | Canonical site origin used in meta tags, RSS, and sitemaps |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile validation for comments/contact |
 | `MAPBOX_TOKEN` | Mapbox GL token for album maps & EXIF visualizations |
-| `BARK_SERVER` | Endpoint for push notifications triggered on comments/contact |
 
 Because Firewood is tightly coupled to my Supabase schema and CMS workflows, adapting it requires mirroring that data model. The `/site` route (and `app/locales/site.tsx`) documents the reasoning, architecture choices, and trade-offs if you’re curious about the broader system.
 
