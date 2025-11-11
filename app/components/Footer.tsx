@@ -41,13 +41,19 @@ export default function Footer({ lang, currentYear, items }: { lang: string, cur
       </h2>
       <div className="mx-auto max-w-8xl px-6 pb-8 pt-16 sm:pt-24 lg:px-8 lg:pt-32">
         <div className="xl:grid xl:grid-cols-2 xl:gap-8">
-          <img
-            alt="积薪"
-            src="/logo.svg"
-            className="h-12"
-          />
+          <div>
+            <img
+              alt="积薪"
+              src="/logo.svg"
+              className="h-12 mb-4"
+            />
+            {lang === 'jp' && (
+              <a href="https://blog.with2.net/link/?id=2136562&follow" title="人気ブログランキングでフォロー" target="_blank">
+                <img alt="人気ブログランキングでフォロー" width="235" height="46" src="https://blog.with2.net/banner/follow/2136562?t=b" />
+              </a>
+            )}
+          </div>
           <div className="my-16 grid grid-cols-2 lg:grid-cols-4 gap-8 xl:mt-0">
-
             {items?.map((block, index) => (
               <div key={index} className="flex flex-col gap-4">
                 <h3 className="text-sm font-semibold leading-6 text-gray-900">{block.name}</h3>
