@@ -23,6 +23,11 @@ import {parseTurnstileOutcome} from "~/utils/turnstile";
 import {trackPageView} from "~/utils/trackPageView";
 import {getClientIp} from "~/utils/getClientIp.server";
 import type {loader as rootLoader} from "~/root";
+import {
+  generateThoughtStructuredData,
+  generateBreadcrumbStructuredData,
+  generateCommentStructuredData
+} from "~/utils/structuredData";
 
 export default function ThoughtDetail() {
   const {lang, supabase} = useOutletContext<{ lang: string, supabase: SupabaseClient }>();
@@ -36,7 +41,8 @@ export default function ThoughtDetail() {
     comments,
     page,
     limit,
-    totalPage
+    totalPage,
+    structuredData
   } = useLoaderData<typeof loader>();
   const actionResponse = useActionData<typeof action>();
 
@@ -76,8 +82,32 @@ export default function ThoughtDetail() {
   }, [thoughtData.id, supabase]);
 
   return (
-      <div className = "w-full max-w-6xl mx-auto p-4 md:py-8 mb-8 lg:mb-16">
-        <Breadcrumb pages = {breadcrumbPages}/>
+      <>
+        {/* 结构化数据 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData.thought)
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData.breadcrumb)
+          }}
+        />
+        {structuredData.comments.length > 0 && structuredData.comments.map((comment, index) => (
+          <script
+            key={index}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(comment)
+            }}
+          />
+        ))}
+
+        <div className = "w-full max-w-6xl mx-auto p-4 md:py-8 mb-8 lg:mb-16">
+          <Breadcrumb pages = {breadcrumbPages}/>
         <h1 className = "sr-only">Thoughts</h1>
         <div className = "grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className = "col-span-1 lg:col-span-2">
@@ -145,6 +175,7 @@ export default function ThoughtDetail() {
           </div>
         </div>
       </div>
+      </>
   )
 }
 
@@ -230,6 +261,65 @@ export async function loader({
   // 如果实际数据库结构不同，需要根据实际情况调整
   const availableLangs = ["zh", "en", "jp"];
 
+  // 生成结构化数据
+  const baseUrl = context.cloudflare.env.BASE_URL;
+  const imgPrefix = context.cloudflare.env.IMG_PREFIX;
+  const lang = params.lang as string;
+  const currentUrl = `${baseUrl}/${lang}/thought/${slug}`;
+
+  // 处理图片数据
+  const processedImages = thoughtImages?.map((item: any) => {
+    const image = item.image;
+    return {
+      alt: image.alt,
+      storage_key: image.storage_key,
+      width: image.width,
+      height: image.height
+    };
+  }) || [];
+
+  // 想法结构化数据
+  const thoughtStructuredData = generateThoughtStructuredData({
+    thought: {
+      id: thoughtData.id || 0,
+      slug: thoughtData.slug || "",
+      content_text: thoughtData.content_text || "",
+      content_html: null,
+      created_at: thoughtData.created_at || new Date().toISOString(),
+      location: null,
+      page_view: thoughtData.page_view || 0,
+      images: processedImages,
+      comments: [{count: count || 0}]
+    },
+    baseUrl,
+    imgPrefix,
+    lang,
+    url: currentUrl
+  });
+
+  // 面包屑结构化数据
+  const breadcrumbStructuredData = generateBreadcrumbStructuredData([
+    {name: "Home", url: `${baseUrl}/${lang}`},
+    {name: "Thoughts", url: `${baseUrl}/${lang}/thoughts`},
+    {name: thoughtData.content_text ? thoughtData.content_text.slice(0, 50) : "Thought", url: currentUrl}
+  ]);
+
+  // 评论结构化数据
+  const commentStructuredData = comments.length > 0 ? generateCommentStructuredData({
+    comments: comments.map((comment: any) => ({
+      id: comment.id,
+      content_text: comment.content_text,
+      created_at: comment.created_at,
+      user_id: comment.user_id,
+      name: comment.name,
+      is_anonymous: comment.is_anonymous,
+      reply_to: comment.reply_to?.id || null,
+      users: comment.users
+    })),
+    baseUrl,
+    articleUrl: currentUrl
+  }) : [];
+
   return {
     thoughtData,
     thoughtImages,
@@ -238,7 +328,12 @@ export async function loader({
     limit,
     totalPage,
     baseUrl: context.cloudflare.env.BASE_URL,
-    availableLangs
+    availableLangs,
+    structuredData: {
+      thought: thoughtStructuredData,
+      breadcrumb: breadcrumbStructuredData,
+      comments: commentStructuredData
+    }
   }
 }
 

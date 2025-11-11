@@ -32,6 +32,11 @@ import {parseTurnstileOutcome} from "~/utils/turnstile";
 import {trackPageView} from "~/utils/trackPageView";
 import {getClientIp} from "~/utils/getClientIp.server";
 import type {loader as rootLoader} from "~/root";
+import {
+  generateArticleStructuredData,
+  generateBreadcrumbStructuredData,
+  generateCommentStructuredData
+} from "~/utils/structuredData";
 
 type TipTapMark = {
   type?: string;
@@ -231,7 +236,8 @@ export default function ArticleDetail() {
     comments,
     page,
     limit,
-    totalPage
+    totalPage,
+    structuredData
   } = useLoaderData<typeof loader>();
   const actionResponse = useActionData<typeof action>();
 
@@ -287,9 +293,33 @@ export default function ArticleDetail() {
   }, [article.id, supabase]);
 
   return (
-      <div className = "w-full max-w-6xl mx-auto p-4 md:py-8 mb-8 lg:mb-16">
-        <ReadingProcess/>
-        <Breadcrumb pages = {breadcrumbPages}/>
+      <>
+        {/* 结构化数据 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData.article)
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData.breadcrumb)
+          }}
+        />
+        {structuredData.comments.length > 0 && structuredData.comments.map((comment, index) => (
+          <script
+            key={index}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(comment)
+            }}
+          />
+        ))}
+
+        <div className = "w-full max-w-6xl mx-auto p-4 md:py-8 mb-8 lg:mb-16">
+          <ReadingProcess/>
+          <Breadcrumb pages = {breadcrumbPages}/>
         <div className = "flex flex-col gap-8 md:gap-16">
           <div className = "grid grid-cols-1 md:grid-cols-2 grid-rows-1 mt-4 gap-6 md:gap-8">
             <header className = "space-y-4">
@@ -424,6 +454,7 @@ export default function ArticleDetail() {
           </div>
         </div>
       </div>
+      </>
   )
 }
 
@@ -539,6 +570,67 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     return item.language.lang as string
   });
 
+  // 生成结构化数据
+  const baseUrl = context.cloudflare.env.BASE_URL;
+  const imgPrefix = context.cloudflare.env.IMG_PREFIX;
+  const currentUrl = `${baseUrl}/${lang}/article/${slug}`;
+
+  // 文章结构化数据
+  const articleStructuredData = generateArticleStructuredData({
+    article: {
+      id: articleContent.id,
+      title: articleContent.title || "",
+      slug: articleContent.slug || "",
+      subtitle: articleContent.subtitle,
+      abstract: articleContent.abstract,
+      is_featured: articleContent.is_featured,
+      is_premium: articleContent.is_premium,
+      topic: articleContent.topic,
+      published_at: articleContent.published_at || new Date().toISOString(),
+      updated_at: articleContent.updated_at,
+      page_view: articleContent.page_view || 0,
+      cover: articleContent.cover ? {
+        alt: articleContent.cover.alt,
+        storage_key: articleContent.cover.storage_key,
+        width: articleContent.cover.width || 0,
+        height: articleContent.cover.height || 0
+      } : null,
+      category: {
+        title: articleContent.category?.title || "",
+        slug: articleContent.category?.slug || ""
+      },
+      comments: [{count: count || 0}],
+      content_json: articleContent.content_json
+    },
+    baseUrl,
+    imgPrefix,
+    lang,
+    url: currentUrl
+  });
+
+  // 面包屑结构化数据
+  const breadcrumbStructuredData = generateBreadcrumbStructuredData([
+    {name: "Home", url: `${baseUrl}/${lang}`},
+    {name: "Articles", url: `${baseUrl}/${lang}/articles/1`},
+    {name: articleContent.title || "Article", url: currentUrl}
+  ]);
+
+  // 评论结构化数据
+  const commentStructuredData = comments.length > 0 ? generateCommentStructuredData({
+    comments: comments.map((comment: any) => ({
+      id: comment.id,
+      content_text: comment.content_text,
+      created_at: comment.created_at,
+      user_id: comment.user_id,
+      name: comment.name,
+      is_anonymous: comment.is_anonymous,
+      reply_to: comment.reply_to?.id || null,
+      users: comment.users
+    })),
+    baseUrl,
+    articleUrl: currentUrl
+  }) : [];
+
   return {
     article: articleContent,
     previousArticle,
@@ -550,7 +642,12 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     totalPage,
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
-    availableLangs
+    availableLangs,
+    structuredData: {
+      article: articleStructuredData,
+      breadcrumb: breadcrumbStructuredData,
+      comments: commentStructuredData
+    }
   };
 }
 

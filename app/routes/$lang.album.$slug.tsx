@@ -25,6 +25,11 @@ import {parseTurnstileOutcome} from "~/utils/turnstile";
 import {trackPageView} from "~/utils/trackPageView";
 import {getClientIp} from "~/utils/getClientIp.server";
 import type {loader as rootLoader} from "~/root";
+import {
+  generateAlbumStructuredData,
+  generateBreadcrumbStructuredData,
+  generateCommentStructuredData
+} from "~/utils/structuredData";
 
 export default function AlbumDetail() {
   const {lang, supabase} = useOutletContext<{ lang: string, supabase: SupabaseClient }>();
@@ -35,7 +40,8 @@ export default function AlbumDetail() {
     comments,
     page,
     limit,
-    totalPage
+    totalPage,
+    structuredData
   } = useLoaderData<typeof loader>();
   const rootData = useRouteLoaderData<typeof rootLoader>("root");
   const session = rootData?.session ?? null;
@@ -81,8 +87,32 @@ export default function AlbumDetail() {
   }, [albumContent.id, supabase]);
 
   return (
-      <div className = "w-full max-w-8xl mx-auto p-4 md:py-8 lg:mb-16">
-        <Breadcrumb pages = {breadcrumbPages}/>
+      <>
+        {/* 结构化数据 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData.album)
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData.breadcrumb)
+          }}
+        />
+        {structuredData.comments.length > 0 && structuredData.comments.map((comment, index) => (
+          <script
+            key={index}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(comment)
+            }}
+          />
+        ))}
+
+        <div className = "w-full max-w-8xl mx-auto p-4 md:py-8 lg:mb-16">
+          <Breadcrumb pages = {breadcrumbPages}/>
         <div className = "grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className = "col-span-1 lg:col-span-2 lg:self-start">
             <GallerySlide
@@ -171,6 +201,7 @@ export default function AlbumDetail() {
           </div>
         </div>
       </div>
+      </>
   )
 }
 
@@ -279,6 +310,71 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     return item.language.lang as string
   });
 
+  // 生成结构化数据
+  const baseUrl = context.cloudflare.env.BASE_URL;
+  const imgPrefix = context.cloudflare.env.IMG_PREFIX;
+  const currentUrl = `${baseUrl}/${lang}/album/${slug}`;
+
+  // 处理图片数据，提取 EXIF 和位置信息
+  const processedImages = albumImages?.map((item: any) => {
+    const image = item.image;
+    return {
+      id: image.id || 0,
+      alt: image.alt,
+      caption: image.caption,
+      storage_key: image.storage_key,
+      width: image.width,
+      height: image.height,
+      exif: image.exif,
+      location: image.location,
+      latitude: image.latitude,
+      longitude: image.longitude,
+      date: null,
+      taken_at: null
+    };
+  }) || [];
+
+  // 相册结构化数据
+  const albumStructuredData = generateAlbumStructuredData({
+    album: {
+      id: albumContent.id || 0,
+      title: albumContent.title || "",
+      slug: albumContent.slug || "",
+      abstract: albumContent.abstract,
+      published_at: albumContent.published_at || new Date().toISOString(),
+      page_view: albumContent.page_view || 0,
+      images: processedImages,
+      comments: [{count: count || 0}]
+    },
+    baseUrl,
+    imgPrefix,
+    lang,
+    url: currentUrl
+  });
+
+  // 面包屑结构化数据
+  const breadcrumbStructuredData = generateBreadcrumbStructuredData([
+    {name: "Home", url: `${baseUrl}/${lang}`},
+    {name: "Albums", url: `${baseUrl}/${lang}/albums/all/1`},
+    {name: albumContent.title || "Album", url: currentUrl}
+  ]);
+
+  // 评论结构化数据
+  const commentStructuredData = comments.length > 0 ? generateCommentStructuredData({
+    comments: comments.map((comment: any) => ({
+      id: comment.id,
+      content_text: comment.content_text,
+      created_at: comment.created_at,
+      user_id: comment.user_id,
+      name: comment.name,
+      is_anonymous: comment.is_anonymous,
+      reply_to: comment.reply_to?.id || null,
+      users: comment.users
+    })),
+    baseUrl,
+    articleUrl: currentUrl
+  }) : [];
+
   return {
     albumContent,
     albumImages,
@@ -289,7 +385,12 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
     totalPage,
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
-    availableLangs
+    availableLangs,
+    structuredData: {
+      album: albumStructuredData,
+      breadcrumb: breadcrumbStructuredData,
+      comments: commentStructuredData
+    }
   };
 }
 

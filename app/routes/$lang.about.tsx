@@ -12,11 +12,19 @@ import InstagramIcon from "~/icons/Instagram";
 import YoutubeIcon from "~/icons/Youtube";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import i18nLinks from "~/utils/i18nLinks";
+import {generatePersonStructuredData} from "~/utils/structuredData";
 
 export default function AboutMe () {
-  const {content, profileImage} = useLoaderData<typeof loader>();
+  const {content, profileImage, structuredData} = useLoaderData<typeof loader>();
   return (
       <>
+        {/* Person 结构化数据 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData)
+          }}
+        />
         <Subnav active="about" />
         <div className="w-full max-w-6xl mx-auto p-4 md:py-8 my-8 lg:my-16 grid grid-cols-1 gap-y-16 lg:grid-cols-2 lg:grid-rows-[auto_1fr] lg:gap-y-12">
           <div className="lg:pl-20">
@@ -154,11 +162,34 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
 
   const availableLangs = ["zh", "en", "jp"];
 
+  // 生成 Person 结构化数据
+  const baseUrl = context.cloudflare.env.BASE_URL;
+  const imgPrefix = context.cloudflare.env.IMG_PREFIX;
+  const label = getLanguageLabel(HomepageText, lang);
+
+  const personStructuredData = generatePersonStructuredData({
+    name: "李大毛",
+    description: label.about_description,
+    image: {
+      url: `${imgPrefix}/cdn-cgi/image/format=jpeg,width=800/ba07adad-3f02-409b-ad39-2814b6f2ede3`,
+      width: 800,
+      height: 800
+    },
+    url: `${baseUrl}/${lang}/about`,
+    sameAs: [
+      "https://x.com/darmau8964",
+      "https://github.com/Darmau",
+      "https://www.instagram.com/ridamoe",
+      "https://www.youtube.com/@darmau"
+    ]
+  });
+
   return {
     content,
     profileImage,
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
-    availableLangs
+    availableLangs,
+    structuredData: personStructuredData
   };
 }
