@@ -1,0 +1,710 @@
+openapi: 3.0.3
+info:
+  title: Shinano Remix API
+  version: 1.0.0
+  description: |
+    OpenAPI definition for the publicly documented endpoints exposed by the Shinano Remix
+    deployment. The schema captures machine-consumable endpoints such as XML feeds and
+    form-based JSON APIs that power interactive features (comments, pagination, account
+    management, etc.).
+servers:
+  - url: https://darmau.co
+paths:
+  /robots.txt:
+    get:
+      summary: Retrieve the crawler rules
+      tags: [Public Feeds]
+      responses:
+        '200':
+          description: Robots exclusion protocol directives.
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                default:
+                  summary: Robots directives
+                  value: |-
+                    User-agent: Googlebot
+                    
+                    User-agent: *
+                    Allow: /
+                    Disallow: /*/login
+                    Disallow: /en/thought/
+                    Disallow: /jp/thought/
+                    Disallow: /en/book
+                    Disallow: /jp/book
+                    
+                    Sitemap: https://darmau.co/sitemap-index.xml
+  /sitemap-index.xml:
+    get:
+      summary: Retrieve the multi-language sitemap index
+      tags: [Public Feeds]
+      responses:
+        '200':
+          description: XML sitemap index for all supported locales.
+          content:
+            application/xml:
+              schema:
+                type: string
+  /{lang}/sitemap.xml:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
+    get:
+      summary: Retrieve a locale-specific sitemap
+      tags: [Public Feeds]
+      responses:
+        '200':
+          description: XML sitemap with localized article, album, and thought URLs.
+          content:
+            application/xml:
+              schema:
+                type: string
+  /{lang}/article/rss.xml:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
+    get:
+      summary: Fetch the article RSS feed
+      tags: [Public Feeds]
+      responses:
+        '200':
+          description: RSS 2.0 feed of recent long-form articles.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              description: Feed cached for 28 days.
+          content:
+            application/xml:
+              schema:
+                type: string
+  /{lang}/album/rss.xml:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
+    get:
+      summary: Fetch the photography RSS feed
+      tags: [Public Feeds]
+      responses:
+        '200':
+          description: RSS 2.0 feed of recent photo essays.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/xml:
+              schema:
+                type: string
+  /{lang}/thought/rss.xml:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
+    get:
+      summary: Fetch the thought RSS feed
+      tags: [Public Feeds]
+      responses:
+        '200':
+          description: RSS 2.0 feed of micro-thoughts.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/xml:
+              schema:
+                type: string
+  /{lang}/login:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
+    post:
+      summary: Start an email magic link or GitHub OAuth login
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - intent
+              properties:
+                intent:
+                  type: string
+                  description: Login strategy to execute.
+                  enum: [email, github]
+                email:
+                  type: string
+                  format: email
+                  description: Required when `intent` is `email`.
+                lang:
+                  type: string
+                  description: Preferred UI language for validation copy.
+                  enum: [zh, en, jp]
+                next:
+                  type: string
+                  description: Optional URL path to redirect after authentication completes.
+      responses:
+        '200':
+          description: Magic link request accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '302':
+          description: Redirect to the GitHub OAuth consent screen.
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Destination OAuth authorization URL.
+        '400':
+          description: Invalid request payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+            text/plain:
+              schema:
+                type: string
+  /auth/confirm:
+    post:
+      summary: Finalize email signup by setting a username
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - username
+              properties:
+                username:
+                  type: string
+                  description: Public display name for the authenticated user.
+                next:
+                  type: string
+                  description: Application path to redirect to after completion.
+      responses:
+        '200':
+          description: Username validation errors (AJAX submissions).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmError'
+        '302':
+          description: Successfully set the username; redirects to the requested page.
+          headers:
+            Location:
+              schema:
+                type: string
+        '401':
+          description: Session is missing or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmError'
+  /{lang}/contact:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
+    post:
+      summary: Submit a private contact message
+      tags: [Engagement]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - contact_type
+                - contact
+                - message
+              properties:
+                contact_type:
+                  type: string
+                  description: Preferred communication channel.
+                  enum: [email, telegram, wechat, line]
+                contact:
+                  type: string
+                  description: Address or handle for the chosen channel.
+                message:
+                  type: string
+                  description: Free-form message body.
+      responses:
+        '200':
+          description: Submission accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactResponse'
+        '401':
+          description: Requester is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactResponse'
+  /{lang}/article/{slug}:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
+      - $ref: '#/components/parameters/Slug'
+    post:
+      summary: Create a comment on an article
+      tags: [Comments]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommentSubmissionBase'
+                - type: object
+                  properties:
+                    to_article:
+                      type: integer
+                      description: Numeric article identifier.
+      responses:
+        '200':
+          description: Comment submission outcome.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentSubmissionResponse'
+  /{lang}/album/{slug}:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
+      - $ref: '#/components/parameters/Slug'
+    post:
+      summary: Create a comment on a photo album
+      tags: [Comments]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommentSubmissionBase'
+                - type: object
+                  properties:
+                    to_photo:
+                      type: integer
+                      description: Numeric photo album identifier.
+      responses:
+        '200':
+          description: Comment submission outcome.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentSubmissionResponse'
+  /{lang}/thought/{slug}:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
+      - $ref: '#/components/parameters/Slug'
+    post:
+      summary: Create a comment on a thought entry
+      tags: [Comments]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommentSubmissionBase'
+                - type: object
+                  properties:
+                    to_thought:
+                      type: integer
+                      description: Numeric thought identifier.
+      responses:
+        '200':
+          description: Comment submission outcome.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentSubmissionResponse'
+  /{lang}/thoughts:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
+    post:
+      summary: Fetch a paginated batch of thoughts
+      tags: [Content Pagination]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - page
+              properties:
+                page:
+                  type: integer
+                  minimum: 0
+                  description: Zero-based page index.
+      responses:
+        '200':
+          description: Next slice of thoughts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThoughtList'
+  /{lang}/book:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
+    post:
+      summary: Fetch a paginated batch of book notes
+      tags: [Content Pagination]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - page
+              properties:
+                page:
+                  type: integer
+                  minimum: 0
+                  description: Zero-based page index.
+      responses:
+        '200':
+          description: Next slice of book notes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookList'
+  /{lang}/unsubscribe:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
+    post:
+      summary: Revoke email notifications for a comment thread
+      tags: [Notifications]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: Signed token from the unsubscribe link.
+      responses:
+        '200':
+          description: Unsubscribe result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnsubscribeResponse'
+  /unsubscribe:
+    post:
+      summary: Directly unsubscribe a comment by ID
+      tags: [Notifications]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - commentId
+              properties:
+                commentId:
+                  type: integer
+                  description: Identifier of the comment to disable notifications for.
+      responses:
+        '200':
+          description: Unsubscribe result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnsubscribeResponse'
+  /{lang}/profile/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Lang'
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Authenticated user's Supabase auth identifier.
+    post:
+      summary: Manage personal comments
+      tags: [Profile]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - intent
+                - commentId
+              properties:
+                intent:
+                  type: string
+                  description: Action to perform on the selected comment.
+                  enum: [delete, toggle_notification]
+                commentId:
+                  type: integer
+                  description: Comment identifier owned by the current user.
+                currentValue:
+                  type: boolean
+                  description: Existing receive_notification flag, required when toggling notifications.
+      responses:
+        '200':
+          description: Operation result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileActionResponse'
+components:
+  parameters:
+    Lang:
+      name: lang
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [zh, en, jp]
+      description: BCP-47 language code supported by the site.
+    Slug:
+      name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Human-readable resource slug.
+  schemas:
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
+          nullable: true
+      required: [success, error]
+    ConfirmError:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    ContactResponse:
+      type: object
+      properties:
+        success:
+          type: string
+          nullable: true
+        error:
+          type: string
+          nullable: true
+      required: [success, error]
+    CommentSubmissionBase:
+      type: object
+      required:
+        - content_text
+      properties:
+        content_text:
+          type: string
+          description: Comment body in plain text.
+        reply_to:
+          type: integer
+          nullable: true
+          description: Identifier of the parent comment to reply to.
+        receive_notification:
+          type: boolean
+          description: Whether to receive email replies.
+        name:
+          type: string
+          description: Display name (anonymous submissions only).
+        email:
+          type: string
+          format: email
+          description: Email address (anonymous submissions only).
+        website:
+          type: string
+          format: uri
+          description: Personal website URL (anonymous submissions only).
+        cf-turnstile-response:
+          type: string
+          description: Cloudflare Turnstile captcha token required for guests.
+    CommentSubmissionResponse:
+      type: object
+      properties:
+        success:
+          oneOf:
+            - type: boolean
+            - type: string
+        error:
+          type: string
+          nullable: true
+        comment:
+          oneOf:
+            - $ref: '#/components/schemas/Comment'
+            - type: 'null'
+      required: [success, error, comment]
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          nullable: true
+        user_id:
+          type: integer
+          nullable: true
+        content_text:
+          type: string
+        created_at:
+          type: string
+        is_anonymous:
+          type: boolean
+        reply_to:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/CommentSummary'
+            - type: 'null'
+        users:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - type: 'null'
+      required: [id, content_text, created_at, is_anonymous]
+    CommentSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        content_text:
+          type: string
+        is_anonymous:
+          type: boolean
+        users:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - type: 'null'
+      required: [id, content_text, is_anonymous]
+    UserSummary:
+      type: object
+      properties:
+        id:
+          oneOf:
+            - type: integer
+            - type: string
+        name:
+          type: string
+          nullable: true
+      required: [id]
+    ThoughtList:
+      type: object
+      properties:
+        thoughts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Thought'
+      required: [thoughts]
+    Thought:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        content_json:
+          type: object
+          nullable: true
+        created_at:
+          type: string
+        page_view:
+          type: integer
+        comments:
+          type: integer
+          description: Aggregated comment count.
+        thought_image:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThoughtImage'
+      required: [id, slug, created_at, page_view, comments, thought_image]
+    ThoughtImage:
+      type: object
+      properties:
+        image:
+          type: object
+          properties:
+            id:
+              oneOf:
+                - type: integer
+                - type: string
+            alt:
+              type: string
+              nullable: true
+            storage_key:
+              type: string
+          required: [id, storage_key]
+      required: [image]
+    BookList:
+      type: object
+      properties:
+        books:
+          type: array
+          items:
+            $ref: '#/components/schemas/Book'
+      required: [books]
+    Book:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        rate:
+          type: integer
+        comment:
+          type: string
+          nullable: true
+        link:
+          type: string
+          nullable: true
+        date:
+          type: string
+          nullable: true
+        cover:
+          type: object
+          nullable: true
+          properties:
+            id:
+              oneOf:
+                - type: integer
+                - type: string
+            alt:
+              type: string
+              nullable: true
+            storage_key:
+              type: string
+          required: [id, storage_key]
+      required: [id, title, rate]
+    UnsubscribeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
+          nullable: true
+      required: [success]
+    ProfileActionResponse:
+      type: object
+      properties:
+        success:
+          type: string
+          nullable: true
+        error:
+          type: string
+          nullable: true
+      required: [success, error]
