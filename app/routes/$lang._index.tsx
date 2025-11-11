@@ -37,7 +37,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
       rel: "alternate",
       type: "application/rss+xml",
       title: "RSS",
-      href: `${baseUrl}/${lang}/article/rss.xml`,
+      href: `${baseUrl}/${lang}/rss.xml`,
     },
     {
       property: "og:title",
