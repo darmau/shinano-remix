@@ -10,11 +10,11 @@ import type { Image } from "~/types/Image";
 const SITE_AUTHOR = {
   "@type": "Person" as const,
   name: "李大毛",
-  url: "https://lidamao.com",
+  url: "https://darmau.co",
   sameAs: [
     "https://x.com/darmau8964",
     "https://github.com/Darmau",
-    "https://www.instagram.com/ridamoe",
+    "https://www.threads.com/@uedashishi",
     "https://www.youtube.com/@darmau",
   ],
 };
@@ -23,10 +23,10 @@ const SITE_AUTHOR = {
 const SITE_PUBLISHER = {
   "@type": "Organization" as const,
   name: "李大毛的个人网站",
-  url: "https://lidamao.com",
+  url: "https://darmau.co",
   logo: {
     "@type": "ImageObject" as const,
-    url: "https://img.lidamao.com/logo.png",
+    url: "https://darmau.co/logo.svg",
   },
 };
 
@@ -64,7 +64,7 @@ export function generateArticleStructuredData(params: {
   if (article.cover) {
     structuredData.image = {
       "@type": "ImageObject",
-      url: `${imgPrefix}/cdn-cgi/image/format=jpeg,width=1200/${article.cover.storage_key}`,
+      url: `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/${article.cover.storage_key}`,
       width: article.cover.width,
       height: article.cover.height,
       caption: article.cover.alt || article.title,
@@ -182,7 +182,7 @@ export function generateAlbumStructuredData(params: {
       const imageObject: any = {
         "@type": "ImageObject",
         contentUrl: `${imgPrefix}/${image.storage_key}`,
-        url: `${imgPrefix}/cdn-cgi/image/format=jpeg,width=1200/${image.storage_key}`,
+        url: `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/${image.storage_key}`,
         width: image.width,
         height: image.height,
         caption: image.caption || image.alt,
@@ -222,7 +222,7 @@ export function generateAlbumStructuredData(params: {
     if (album.images[0]) {
       structuredData.image = {
         "@type": "ImageObject",
-        url: `${imgPrefix}/cdn-cgi/image/format=jpeg,width=1200/${album.images[0].storage_key}`,
+        url: `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/${album.images[0].storage_key}`,
         width: album.images[0].width,
         height: album.images[0].height,
       };
@@ -361,7 +361,7 @@ export function generateCommentStructuredData(params: {
   baseUrl: string;
   articleUrl: string;
 }) {
-  const { comments, baseUrl, articleUrl } = params;
+  const { comments, articleUrl } = params;
 
   return comments.map((comment) => {
     const structuredData: any = {
@@ -425,7 +425,7 @@ export function generatePersonStructuredData(params: {
     sameAs: sameAs || [
       "https://x.com/darmau8964",
       "https://github.com/Darmau",
-      "https://www.instagram.com/ridamoe",
+      "https://www.threads.com/@uedashishi",
       "https://www.youtube.com/@darmau",
     ],
   };
