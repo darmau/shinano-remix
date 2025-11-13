@@ -1,4 +1,4 @@
-import {useState, useRef} from "react";
+import { useState, useRef, useEffect } from "react";
 import type { Image } from "~/types/Image";
 import { useOutletContext } from "react-router";
 
@@ -7,8 +7,14 @@ export default function ResponsiveImage({ image, width, classList }: { image: Im
   const [imageLoaded, setImageLoaded] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  const base = image.width > image.height ? 'width' : 'height';
+  const base = image.width > image.height ? "width" : "height";
 
+  useEffect(() => {
+    const imgElement = imgRef.current;
+    if (imgElement && imgElement.complete) {
+      setImageLoaded(true);
+    }
+  }, [image.storage_key]);
 
   const highResSrc = `${prefix}/cdn-cgi/image/format=auto,${base}=${width}/${image.storage_key}`;
   const highResSrcSet = `${highResSrc} 1x, ${prefix}/cdn-cgi/image/format=auto,${base}=${width * 2}/${image.storage_key} 2x`;
@@ -17,15 +23,21 @@ export default function ResponsiveImage({ image, width, classList }: { image: Im
       <div className={`${classList} relative overflow-hidden`}>
         {/* Low resolution blurred image */}
         <img
-            className={`scale-105 brightness-110 absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-0' : 'opacity-100'}`}
-            src={`${prefix}/cdn-cgi/image/format=auto,${base}=24/${image.storage_key}`}
+            className={`scale-105 brightness-110 absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+              imageLoaded ? "opacity-0" : "opacity-100"
+            }`}
+            src={`${prefix}/cdn-cgi/image/format=jpeg,${base}=24/${image.storage_key}`}
             alt={image.alt ?? ""}
             width={width}
             style={{ filter: 'blur(32px)' }}
         />
 
         {/* High resolution image */}
-        <picture className={`transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
+        <picture
+          className={`transition-opacity duration-300 ${
+            imageLoaded ? "opacity-100" : "opacity-0"
+          }`}
+        >
           <source
               media="(max-width: 639px)"
               srcSet={highResSrc}
@@ -45,6 +57,7 @@ export default function ResponsiveImage({ image, width, classList }: { image: Im
               loading="lazy"
               decoding="async"
               onLoad={() => setImageLoaded(true)}
+              onError={() => setImageLoaded(true)}
           />
         </picture>
       </div>
