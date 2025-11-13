@@ -22,7 +22,7 @@ import NextAndPrev from "~/components/NextAndPrev";
 import type {BreadcrumbProps} from "~/components/Breadcrumb";
 import Breadcrumb from "~/components/Breadcrumb";
 import CommentEditor from "~/components/CommentEditor";
-import type { CommentProps} from "~/components/CommentBlock";
+import type { CommentProps} from "~/types/Comment.tsx";
 import {CommentBlock} from "~/components/CommentBlock";
 import i18nLinks from "~/utils/i18nLinks";
 import {useEffect, useMemo, useState} from "react";
@@ -534,7 +534,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
         content_text,
         created_at,
         is_anonymous,
-        users (id, name, role),
+        users (id, name, role, website),
         reply_to (id, content_text, is_anonymous, name, users (id, name))
       `)
       .eq('to_article', articleContent.id)
@@ -717,7 +717,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   ];
 };
 
-export async function action({request, context, params}: ActionFunctionArgs) {
+export async function action({request, context}: ActionFunctionArgs) {
   const formData = await request.formData();
   const {supabase} = createClient(request, context);
   const {data: {session}} = await supabase.auth.getSession();
@@ -725,8 +725,6 @@ export async function action({request, context, params}: ActionFunctionArgs) {
   const to_article = parseInt(formData.get('to_article') as string);
   const reply_to = formData.get('reply_to') ? parseInt(formData.get('reply_to') as string) : null;
   const receiveNotification = formData.get('receive_notification') === 'true';
-  const lang = params.lang as string;
-  const slug = params.slug as string;
   const ipAddress = getClientIp(request);
 
   if (!session) {

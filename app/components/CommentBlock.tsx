@@ -4,60 +4,15 @@ import { marked } from "marked";
 import getTime from "~/utils/getTime";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import CommentText from '~/locales/comment';
-import { CheckBadgeIcon } from "@heroicons/react/20/solid";
-
-export interface CommentProps {
-  id: number;
-  user_id: number | null;
-  name: string | null;
-  website: string | null;
-  content_text: string;
-  created_at: string;
-  is_anonymous: boolean;
-  reply_to: {
-    id: number,
-    content_text: string,
-    is_anonymous: boolean,
-    name: string,
-    users: {
-      id: number;
-      name: string;
-    }
-  }
-  users: {
-    id: number,
-    name: string,
-    role: string
-  } | null;
-  receive_notification: boolean;
-}
+import type { CommentProps } from "~/types/Comment.tsx";
+import Username from "./Username";
 
 export function CommentBlock({ comment, onReply }: { comment: CommentProps, onReply: (comment: CommentProps) => void }) {
   const { lang } = useOutletContext<{ lang: string }>();
   const label = getLanguageLabel(CommentText, lang);
   return (
     <div className="pt-8">
-      {/*匿名用户名*/}
-      {comment.is_anonymous && <h4 className="font-medium text-zinc-800 mb-2 hover:text-violet-700">
-        {comment.website ? (
-          <a href={comment.website} target="_blank" rel="noreferrer">
-            {comment.name}
-          </a>
-        ) : (
-          <span>{comment.name}</span>
-        )}
-      </h4>}
-
-      {/*实名用户名*/}
-      {!comment.is_anonymous && <h4 className="font-medium text-zinc-800 mb-2">
-        {comment.users!.name}
-        {comment.users && comment.users.role === 'admin' ?
-          <span
-            className="rounded bg-violet-100 border border-violet-500 text-violet-700 text-xs p-1 ml-1"
-          >{label.author}</span>
-          : <CheckBadgeIcon className="w-4 h-4 ml-1 inline-block text-violet-700" />
-        }
-      </h4>}
+      <Username comment={comment} />
 
       <div className="text-sm text-zinc-500">{getTime(comment.created_at, lang)}</div>
 

@@ -16,7 +16,7 @@ import Breadcrumb from "~/components/Breadcrumb";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import AlbumText from "~/locales/album";
 import CommentEditor from "~/components/CommentEditor";
-import type { CommentProps} from "~/components/CommentBlock";
+import type { CommentProps} from "~/types/Comment.tsx";
 import {CommentBlock} from "~/components/CommentBlock";
 import i18nLinks from "~/utils/i18nLinks";
 import type {SupabaseClient} from "@supabase/supabase-js";
@@ -275,7 +275,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
         content_text,
         created_at,
         is_anonymous,
-        users (id, name, role),
+        users (id, name, role, website),
         reply_to (id, content_text, is_anonymous, name, users (id, name))
       `)
       .eq('to_photo', albumContent.id)

@@ -11,7 +11,7 @@ import ResponsiveImage from "~/components/ResponsiveImage";
 import type {Image} from "~/types/Image";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 import "yet-another-react-lightbox/plugins/captions.css";
-import type { CommentProps} from "~/components/CommentBlock";
+import type { CommentProps} from "~/types/Comment.tsx";
 import {CommentBlock} from "~/components/CommentBlock";
 import CommentEditor from "~/components/CommentEditor";
 import i18nLinks from "~/utils/i18nLinks";
@@ -233,7 +233,7 @@ export async function loader({
         content_text,
         created_at,
         is_anonymous,
-        users (id, name, role),
+        users (id, name, role, website),
         reply_to (id, content_text, is_anonymous, name, users (id, name))
       `)
       .eq('to_thought', thoughtData.id)
