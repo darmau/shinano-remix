@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useOutletContext } from "react-router";
 import type {GalleryPhoto} from "~/utils/generatePhotoAlbum";
 
@@ -8,6 +8,21 @@ export default function GalleryImage({ image, width, classList }: { image: Galle
   const imgRef = useRef<HTMLImageElement>(null);
 
   const base = image.width > image.height ? 'width' : 'height';
+  const logPrefix = `[GalleryImage] ${image.storage_key}`;
+
+  useEffect(() => {
+    const imgElement = imgRef.current;
+
+    console.log(`${logPrefix} effect invoked`, {
+      hasImgElement: !!imgElement,
+      complete: imgElement?.complete ?? null,
+    });
+
+    if (imgElement && imgElement.complete) {
+      console.log(`${logPrefix} already complete on mount, forcing loaded state`);
+      setImageLoaded(true);
+    }
+  }, [image.storage_key, logPrefix]);
 
   const highResSrc = `${prefix}/cdn-cgi/image/format=auto,${base}=${width}/${image.storage_key}`;
   const highResSrcSet = `${highResSrc} 1x, ${prefix}/cdn-cgi/image/format=auto,${base}=${width * 2}/${image.storage_key} 2x`;
@@ -41,7 +56,14 @@ export default function GalleryImage({ image, width, classList }: { image: Galle
               sizes="(max-width: 720px) 100vw, 2x"
               alt={image.alt ?? ""}
               width={width}
-              onLoad={() => setImageLoaded(true)}
+              onLoad={() => {
+                console.log(`${logPrefix} onLoad fired`);
+                setImageLoaded(true);
+              }}
+              onError={(error) => {
+                console.error(`${logPrefix} onError fired`, error);
+                setImageLoaded(true);
+              }}
           />
         </picture>
       </div>
