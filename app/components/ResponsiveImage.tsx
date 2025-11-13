@@ -8,13 +8,21 @@ export default function ResponsiveImage({ image, width, classList }: { image: Im
   const imgRef = useRef<HTMLImageElement>(null);
 
   const base = image.width > image.height ? "width" : "height";
+  const logPrefix = `[ResponsiveImage] ${image.storage_key}`;
 
   useEffect(() => {
     const imgElement = imgRef.current;
+
+    console.log(`${logPrefix} effect invoked`, {
+      hasImgElement: !!imgElement,
+      complete: imgElement?.complete ?? null,
+    });
+
     if (imgElement && imgElement.complete) {
+      console.log(`${logPrefix} already complete on mount, forcing loaded state`);
       setImageLoaded(true);
     }
-  }, [image.storage_key]);
+  }, [image.storage_key, logPrefix]);
 
   const highResSrc = `${prefix}/cdn-cgi/image/format=auto,${base}=${width}/${image.storage_key}`;
   const highResSrcSet = `${highResSrc} 1x, ${prefix}/cdn-cgi/image/format=auto,${base}=${width * 2}/${image.storage_key} 2x`;
@@ -56,8 +64,14 @@ export default function ResponsiveImage({ image, width, classList }: { image: Im
               width={width}
               loading="lazy"
               decoding="async"
-              onLoad={() => setImageLoaded(true)}
-              onError={() => setImageLoaded(true)}
+              onLoad={() => {
+                console.log(`${logPrefix} onLoad fired`);
+                setImageLoaded(true);
+              }}
+              onError={(error) => {
+                console.error(`${logPrefix} onError fired`, error);
+                setImageLoaded(true);
+              }}
           />
         </picture>
       </div>
