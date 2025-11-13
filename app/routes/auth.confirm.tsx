@@ -18,6 +18,10 @@ type LoaderData = {
 
 type ActionData = {
   error?: string;
+  values?: {
+    username?: string;
+    website?: string;
+  };
 };
 
 function deriveLang(input?: string | null): SupportedLang {
@@ -149,7 +153,12 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       // 如果已有用户名，同步到 public.users 并重定向
       if (hasUsername) {
         console.log("User has username, syncing and redirecting");
-        await syncUserToPublicTable(supabase, session.user.id, session.user.user_metadata.name);
+        await syncUserToPublicTable(
+          supabase,
+          session.user.id,
+          session.user.user_metadata.name,
+          session.user.user_metadata.website ?? null
+        );
         return redirect(nextQuery, { headers });
       }
 
@@ -172,6 +181,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 export async function action({ request, context }: ActionFunctionArgs) {
   const formData = await request.formData();
   const username = (formData.get("username") as string | null)?.trim();
+  const websiteInput = (formData.get("website") as string | null)?.trim();
   const nextPath = (formData.get("next") as string | null) ?? "/zh";
   const lang = deriveLang(nextPath);
 
@@ -190,19 +200,51 @@ export async function action({ request, context }: ActionFunctionArgs) {
     );
   }
 
+  let website: string | null = null;
+
+  if (websiteInput) {
+    const normalizedWebsite =
+      websiteInput.startsWith("http://") || websiteInput.startsWith("https://")
+        ? websiteInput
+        : `https://${websiteInput}`;
+
+    try {
+      const parsedUrl = new URL(normalizedWebsite);
+      website = parsedUrl.toString();
+    } catch {
+      const responseHeaders = new Headers(headers);
+      responseHeaders.set("Content-Type", "application/json; charset=utf-8");
+      return new Response(
+        JSON.stringify({
+          error: labels.website_invalid,
+          values: {
+            username: username ?? "",
+            website: websiteInput,
+          },
+        } satisfies ActionData),
+        { status: 400, headers: responseHeaders }
+      );
+    }
+  }
+
   // 验证用户名
   if (!username) {
     const responseHeaders = new Headers(headers);
     responseHeaders.set("Content-Type", "application/json; charset=utf-8");
     return new Response(
-      JSON.stringify({ error: labels.username_required } satisfies ActionData),
+      JSON.stringify({
+        error: labels.username_required,
+        values: {
+          website: websiteInput ?? "",
+        },
+      } satisfies ActionData),
       { status: 400, headers: responseHeaders }
     );
   }
 
   // 更新 user_metadata
   const { error: updateError } = await supabase.auth.updateUser({
-    data: { name: username, email: session.user.email }
+    data: { name: username, email: session.user.email, website }
   });
 
   if (updateError) {
@@ -210,20 +252,33 @@ export async function action({ request, context }: ActionFunctionArgs) {
     const responseHeaders = new Headers(headers);
     responseHeaders.set("Content-Type", "application/json; charset=utf-8");
     return new Response(
-      JSON.stringify({ error: labels.invalid } satisfies ActionData),
+      JSON.stringify({
+        error: labels.invalid,
+        values: {
+          username,
+          website: website ?? websiteInput ?? "",
+        },
+      } satisfies ActionData),
       { status: 500, headers: responseHeaders }
     );
   }
 
   // 同步到 public.users
-  await syncUserToPublicTable(supabase, session.user.id, username);
+  await syncUserToPublicTable(supabase, session.user.id, username, website);
 
   // 重定向到目标页面
   return redirect(nextPath, { headers });
 }
 
 // 同步用户信息到 public.users 表
-async function syncUserToPublicTable(supabase: any, userId: string, username: string) {
+async function syncUserToPublicTable(
+  supabase: any,
+  userId: string,
+  username: string,
+  website: string | null
+) {
+  const websiteValue = website ?? null;
+
   try {
     const { data: existingUser } = await supabase
       .from("users")
@@ -234,12 +289,12 @@ async function syncUserToPublicTable(supabase: any, userId: string, username: st
     if (existingUser) {
       await supabase
         .from("users")
-        .update({ name: username })
+        .update({ name: username, website: websiteValue })
         .eq("user_id", userId);
     } else {
       await supabase
         .from("users")
-        .insert({ user_id: userId, name: username });
+        .insert({ user_id: userId, name: username, website: websiteValue });
     }
   } catch (error) {
     console.error("Failed to sync user to public.users:", error);
@@ -291,6 +346,7 @@ export default function ConfirmPage() {
                   required
                   placeholder={labels.username_placeholder}
                   className="block w-full rounded-md border-0 p-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-violet-600 sm:text-sm sm:leading-6"
+                  defaultValue={actionData?.values?.username ?? ""}
                   disabled={isSubmitting}
                 />
                 {userEmail && (
@@ -300,6 +356,22 @@ export default function ConfirmPage() {
                 )}
               </div>
               
+              <div className="space-y-2">
+                <label htmlFor="website" className="block text-sm font-medium text-zinc-700">
+                  {labels.website_label}
+                </label>
+                <input
+                  type="url"
+                  id="website"
+                  name="website"
+                  placeholder={labels.website_placeholder}
+                  className="block w-full rounded-md border-0 p-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-violet-600 sm:text-sm sm:leading-6"
+                  defaultValue={actionData?.values?.website ?? ""}
+                  disabled={isSubmitting}
+                />
+                <p className="text-xs text-zinc-500">{labels.website_hint}</p>
+              </div>
+
               <button
                 type="submit"
                 className="flex w-full justify-center rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 disabled:cursor-not-allowed disabled:opacity-70"

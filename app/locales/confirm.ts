@@ -10,7 +10,11 @@ export default {
     username_placeholder: "请输入用户名",
     username_required: "请输入用户名",
     username_hint: "这是你首次登录，请设置一个用户名",
-    new_user_description: "欢迎！请设置你的用户名后点击下方按钮完成注册。"
+    new_user_description: "欢迎！请设置你的用户名后点击下方按钮完成注册。",
+    website_label: "个人网站（可选）",
+    website_placeholder: "https://example.com",
+    website_hint: "如果你有个人网站或项目主页，可以在此填写。",
+    website_invalid: "请输入有效的网址。",
   },
 
   en: {
@@ -24,7 +28,11 @@ export default {
     username_placeholder: "Enter your username",
     username_required: "Username is required",
     username_hint: "This is your first login, please set a username",
-    new_user_description: "Welcome! Please set your username and click the button below to complete registration."
+    new_user_description: "Welcome! Please set your username and click the button below to complete registration.",
+    website_label: "Website (optional)",
+    website_placeholder: "https://example.com",
+    website_hint: "Share your personal site or project homepage if you have one.",
+    website_invalid: "Please enter a valid URL.",
   },
 
   jp: {
@@ -38,7 +46,11 @@ export default {
     username_placeholder: "ユーザー名を入力してください",
     username_required: "ユーザー名を入力してください",
     username_hint: "初めてのログインです。ユーザー名を設定してください",
-    new_user_description: "ようこそ！ユーザー名を設定して、下のボタンをクリックして登録を完了してください。"
+    new_user_description: "ようこそ！ユーザー名を設定して、下のボタンをクリックして登録を完了してください。",
+    website_label: "ウェブサイト（任意）",
+    website_placeholder: "https://example.com",
+    website_hint: "個人サイトやプロジェクトページがあれば入力してください。",
+    website_invalid: "有効なURLを入力してください。",
   },
 }
 
