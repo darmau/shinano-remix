@@ -13,11 +13,6 @@ export default function GalleryImage({ image, width, classList }: { image: Galle
   useEffect(() => {
     const imgElement = imgRef.current;
 
-    console.log(`${logPrefix} effect invoked`, {
-      hasImgElement: !!imgElement,
-      complete: imgElement?.complete ?? null,
-    });
-
     if (imgElement && imgElement.complete) {
       console.log(`${logPrefix} already complete on mount, forcing loaded state`);
       setImageLoaded(true);
@@ -56,14 +51,7 @@ export default function GalleryImage({ image, width, classList }: { image: Galle
               sizes="(max-width: 720px) 100vw, 2x"
               alt={image.alt ?? ""}
               width={width}
-              onLoad={() => {
-                console.log(`${logPrefix} onLoad fired`);
-                setImageLoaded(true);
-              }}
-              onError={(error) => {
-                console.error(`${logPrefix} onError fired`, error);
-                setImageLoaded(true);
-              }}
+              onLoad={() => setImageLoaded(true)}
           />
         </picture>
       </div>

@@ -12,16 +12,6 @@ export default function ResponsiveImage({ image, width, classList }: { image: Im
 
   useEffect(() => {
     const imgElement = imgRef.current;
-
-    console.log(`${logPrefix} effect invoked`, {
-      hasImgElement: !!imgElement,
-      complete: imgElement?.complete ?? null,
-    });
-
-    if (imgElement && imgElement.complete) {
-      console.log(`${logPrefix} already complete on mount, forcing loaded state`);
-      setImageLoaded(true);
-    }
   }, [image.storage_key, logPrefix]);
 
   const highResSrc = `${prefix}/cdn-cgi/image/format=auto,${base}=${width}/${image.storage_key}`;
@@ -65,11 +55,9 @@ export default function ResponsiveImage({ image, width, classList }: { image: Im
               loading="lazy"
               decoding="async"
               onLoad={() => {
-                console.log(`${logPrefix} onLoad fired`);
                 setImageLoaded(true);
               }}
               onError={(error) => {
-                console.error(`${logPrefix} onError fired`, error);
                 setImageLoaded(true);
               }}
           />
