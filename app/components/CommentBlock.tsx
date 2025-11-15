@@ -6,6 +6,7 @@ import getLanguageLabel from "~/utils/getLanguageLabel";
 import CommentText from '~/locales/comment';
 import type { CommentProps } from "~/types/Comment.tsx";
 import Username from "./Username";
+import MarkdownContent from "./MarkdownContent";
 
 export function CommentBlock({ comment, onReply }: { comment: CommentProps, onReply: (comment: CommentProps) => void }) {
   const { lang } = useOutletContext<{ lang: string }>();
@@ -23,7 +24,7 @@ export function CommentBlock({ comment, onReply }: { comment: CommentProps, onRe
       )}
 
       <div className="my-4 text-base text-zinc-700 space-y-2">
-        <CommentContent content={comment.content_text} />
+        <MarkdownContent content={comment.content_text} />
       </div>
       <button
         onClick={() => onReply(comment)}
@@ -33,35 +34,4 @@ export function CommentBlock({ comment, onReply }: { comment: CommentProps, onRe
       </button>
     </div>
   )
-}
-
-const markdownOptions = {
-  gfm: true,
-  breaks: true,
-  headerIds: false,
-  mangle: false,
-} as const;
-
-function CommentContent({ content }: { content: string }) {
-  const html = useMemo(() => {
-    const escaped = escapeHtml(content);
-    const rendered = marked.parse(escaped, markdownOptions);
-    return typeof rendered === "string" ? rendered : "";
-  }, [content]);
-
-  return (
-    <div
-      className="comment-markdown"
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
-}
-
-function escapeHtml(input: string) {
-  return input
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }

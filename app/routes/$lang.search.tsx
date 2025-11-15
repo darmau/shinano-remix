@@ -6,6 +6,7 @@ import SearchText from "~/locales/search";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
 import SearchResult from "~/components/SearchResult";
+import MarkdownContent from "~/components/MarkdownContent";
 
 export const loader = async ({ context }: LoaderFunctionArgs) => {
   const availableLangs = ["zh", "en", "jp"];
@@ -125,7 +126,7 @@ export default function Search() {
                   {label.answer_heading}
                 </h3>
                 <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
-                  {actionData.results.response}
+                <MarkdownContent content={actionData.results.response} />
                 </div>
               </div>
             )}

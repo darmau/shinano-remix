@@ -16,7 +16,7 @@ export default function SearchResult({ result }: { result: SearchResult }) {
     >
       <div className="">
         <a href={result.filename} target="_blank" rel="noopener noreferrer">
-          <h4 className="text-lg font-medium text-violet-900">
+          <h4 className="text-xl font-medium text-violet-900">
             {decodedTitle}
           </h4>
         </a>
