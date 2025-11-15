@@ -5,6 +5,7 @@ import getLanguageLabel from "~/utils/getLanguageLabel";
 import SearchText from "~/locales/search";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
+import SearchResult from "~/components/SearchResult";
 
 export const loader = async ({ context }: LoaderFunctionArgs) => {
   const availableLangs = ["zh", "en", "jp"];
@@ -44,7 +45,11 @@ export const action = async ({ request, context }: ActionFunctionArgs) => {
       query: query.trim(),
       model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
       rewrite_query: true,
-      max_num_results: 2,
+      max_num_results: 10,
+      retrieval_options: {
+        enabled: true,
+        model: "@cf/qwen/qwen3-30b-a3b-fp8"
+      },
       ranking_options: {
         score_threshold: 0.3
       },
@@ -72,16 +77,12 @@ export default function Search() {
   const actionData = useActionData<typeof action>();
   const { lang } = useOutletContext<{ lang: string }>();
   const navigation = useNavigation();
-  const loaderData = useLoaderData<typeof loader>();
   const label = getLanguageLabel(SearchText, lang);
   const isLoading = navigation.state === "submitting" || navigation.state === "loading";
 
   return (
-    <>
-      <Subnav active="about" />
-      <div className="max-w-4xl mx-auto my-8 lg:my-12 px-4 lg:p-0">
+      <div className="max-w-2xl mx-auto my-8 lg:my-12 px-4 lg:p-0">
         <header className="text-center space-y-4 mb-8">
-          <h2 className="font-medium text-sm text-violet-700">{label.title}</h2>
           <h1 className="font-medium text-3xl text-zinc-700">{label.title}</h1>
           <p className="text-zinc-500">{label.description}</p>
         </header>
@@ -140,34 +141,8 @@ export default function Search() {
                     filename: string;
                     score: number;
                     attributes: Record<string, string | number | boolean | null>;
-                  }, index: number) => (
-                    <div
-                      key={result.file_id || index}
-                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium text-gray-900">
-                          {result.filename || `Result ${index + 1}`}
-                        </h4>
-                        {result.score !== undefined && (
-                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                            Score: {result.score.toFixed(3)}
-                          </span>
-                        )}
-                      </div>
-                      {result.attributes && Object.keys(result.attributes).length > 0 && (
-                        <div className="mt-2 text-sm text-gray-600">
-                          <details className="cursor-pointer">
-                            <summary className="text-gray-500 hover:text-gray-700">
-                              Attributes
-                            </summary>
-                            <pre className="mt-2 text-xs bg-gray-50 p-2 rounded overflow-auto">
-                              {JSON.stringify(result.attributes, null, 2)}
-                            </pre>
-                          </details>
-                        </div>
-                      )}
-                    </div>
+                  }) => (
+                    <SearchResult result={result} />
                   ))}
                 </div>
               </div>
@@ -181,7 +156,6 @@ export default function Search() {
           </div>
         )}
       </div>
-    </>
   );
 }
 
