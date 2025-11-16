@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "shinano-remix",
+  "compatibility_date": "2025-11-07",
+  "pages_build_output_dir": "./build/client",
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  },
+  "env": {
+    "preview": {
+      "name": "shinano-remix-preview",
+      "ai": {
+        "binding": "AI",
+        "remote": true
+      }
+    },
+    "production": {
+      "name": "shinano-remix",
+      "ai": {
+        "binding": "AI",
+        "remote": true
+      }
+    }
+  }
+}

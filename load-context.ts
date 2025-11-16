@@ -1,19 +1,14 @@
 import type {PlatformProxy} from "wrangler";
 
-// When using `wrangler.toml` to configure bindings,
+// When using `wrangler.jsonc` to configure bindings,
 // `wrangler types` will generate types for those bindings
-// into the global `Env` interface.
-// Need this empty interface so that typechecking passes
-// even if no `wrangler.toml` exists.
+// into the global `Cloudflare.Env` interface.
+// We extend it here to include additional environment variables
+// that may not be in the wrangler config but are used in the app.
  
-interface Env {
-  BASE_URL: string;
-  IMG_PREFIX: string;
-  SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
-  MAPBOX_TOKEN: string;
-  TURNSTILE_SITE_KEY: string;
-  TURNSTILE_SECRET_KEY: string;
+interface Env extends Cloudflare.Env {
+  // Additional environment variables used in the app
+  RESEND_KEY?: string;
 }
 
 type Cloudflare = Omit<PlatformProxy<Env>, "dispose">;

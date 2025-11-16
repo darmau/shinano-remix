@@ -33,8 +33,8 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const langParam = typeof params.lang === "string" ? params.lang : "zh";
   const lang = availableLangs.includes(langParam) ? langParam : "zh";
   const labels = getLanguageLabel(UnsubscribeText, lang);
-  const baseUrl =
-    context.cloudflare?.env?.BASE_URL || process.env.BASE_URL || "";
+  const runtimeEnv = context.cloudflare?.env ?? globalThis.process?.env ?? {};
+  const baseUrl = runtimeEnv.BASE_URL ?? "";
 
   const url = new URL(request.url);
   const token = url.searchParams.get("token");
@@ -49,8 +49,7 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
     } satisfies LoaderData;
   }
 
-  const secret =
-    context.cloudflare?.env?.UNSUBSCRIBE_KEY || process.env.UNSUBSCRIBE_KEY;
+  const secret = runtimeEnv.UNSUBSCRIBE_KEY;
 
   if (!secret) {
     return {
@@ -138,8 +137,8 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
     } satisfies ActionData;
   }
 
-  const secret =
-    context.cloudflare?.env?.UNSUBSCRIBE_KEY || process.env.UNSUBSCRIBE_KEY;
+  const runtimeEnv = context.cloudflare?.env ?? globalThis.process?.env ?? {};
+  const secret = runtimeEnv.UNSUBSCRIBE_KEY;
 
   if (!secret) {
     return {
@@ -311,5 +310,4 @@ export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
 
   return [...metaEntries, ...links];
 };
-
 
