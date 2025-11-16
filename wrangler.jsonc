@@ -8,6 +8,13 @@
     "remote": true
   },
   "env": {
+    "preview": {
+      "name": "shinano-remix-preview",
+      "ai": {
+        "binding": "AI",
+        "remote": true
+      }
+    },
     "production": {
       "name": "shinano-remix",
       "ai": {
