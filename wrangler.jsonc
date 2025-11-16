@@ -3,9 +3,17 @@
   "name": "shinano-remix",
   "compatibility_date": "2025-11-07",
   "pages_build_output_dir": "./build/client",
-  
   "ai": {
     "binding": "AI",
     "remote": true
   },
+  "env": {
+    "production": {
+      "name": "shinano-remix",
+      "ai": {
+        "binding": "AI",
+        "remote": true
+      }
+    }
+  }
 }
