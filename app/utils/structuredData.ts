@@ -434,22 +434,26 @@ export function generatePersonStructuredData(params: {
 
   return {
     "@context": "https://schema.org",
-    "@type": ["Person", "ProfilePage"],
-    name,
-    description,
-    image: {
-      "@type": "ImageObject",
-      url: image.url,
-      width: image.width,
-      height: image.height,
-    },
+    "@type": ["WebPage", "ProfilePage"],
     url,
-    sameAs: sameAs || [
-      "https://x.com/darmau8964",
-      "https://github.com/Darmau",
-      "https://www.threads.com/@uedashishi",
-      "https://www.youtube.com/@darmau",
-    ],
+    mainEntity: {
+      "@type": "Person",
+      name,
+      description,
+      image: {
+        "@type": "ImageObject",
+        url: image.url,
+        width: image.width,
+        height: image.height,
+      },
+      url,
+      sameAs: sameAs || [
+        "https://x.com/darmau8964",
+        "https://github.com/Darmau",
+        "https://www.threads.com/@uedashishi",
+        "https://www.youtube.com/@darmau",
+      ],
+    },
   };
 }
 
