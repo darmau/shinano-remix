@@ -161,7 +161,7 @@ export default function Navbar({ lang, items }: { lang: string, items: NavItem[]
           </div>
           <div className="flex items-center gap-3">
             <Profile lang={lang} />
-            <Link to={`/${lang}/search`} className="flex items-center gap-2">
+            <Link to={`/${lang}/search`} className="flex items-center gap-2" data-umami-event="Search">
               <MagnifyingGlassIcon className="size-5 text-gray-900" />
             </Link>
           </div>
