@@ -8,22 +8,4 @@
     "binding": "AI",
     "remote": true
   },
-  "env": {
-    "development": {
-      "name": "shinano-remix-dev",
-      "ai": {
-        "binding": "AI",
-        "remote": true
-      }
-      // Add development-specific bindings here
-    },
-    "production": {
-      "name": "shinano-remix",
-      "ai": {
-        "binding": "AI",
-        "remote": true
-      }
-      // Add production-specific bindings here
-    }
-  }
 }
