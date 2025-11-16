@@ -39,11 +39,12 @@ export const loader = async ({request, context}: LoaderFunctionArgs) => {
     return redirect(`/${detectedLang}${url.pathname}`);
   }
 
+  const runtimeEnv = context?.cloudflare?.env ?? globalThis.process?.env ?? {};
   const env = {
-    SUPABASE_URL: context?.cloudflare?.env?.SUPABASE_URL || process.env.SUPABASE_URL,
-    SUPABASE_ANON_KEY: context?.cloudflare?.env?.SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
-    PREFIX: context?.cloudflare?.env?.IMG_PREFIX || process.env.IMG_PREFIX,
-    TURNSTILE_SITE_KEY: context?.cloudflare?.env?.TURNSTILE_SITE_KEY || process.env.TURNSTILE_SITE_KEY,
+    SUPABASE_URL: runtimeEnv.SUPABASE_URL ?? "",
+    SUPABASE_ANON_KEY: runtimeEnv.SUPABASE_ANON_KEY ?? "",
+    PREFIX: runtimeEnv.IMG_PREFIX ?? "",
+    TURNSTILE_SITE_KEY: runtimeEnv.TURNSTILE_SITE_KEY ?? "",
   };
 
   const {supabase} = createClient(request, context);

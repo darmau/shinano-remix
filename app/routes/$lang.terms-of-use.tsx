@@ -40,8 +40,8 @@ export const loader = async ({
   const markdown = TERMS_BY_LANG[lang];
   const html = await marked.parse(markdown);
 
-  const baseUrl =
-    context?.cloudflare?.env?.BASE_URL ?? process.env.BASE_URL ?? "";
+  const runtimeEnv = context?.cloudflare?.env ?? globalThis.process?.env ?? {};
+  const baseUrl = runtimeEnv.BASE_URL ?? "";
 
   return {
     lang,
@@ -126,4 +126,3 @@ export default function TermsOfUse() {
     </section>
   );
 }
-
