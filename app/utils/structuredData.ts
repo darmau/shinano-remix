@@ -31,6 +31,28 @@ const SITE_PUBLISHER = {
 };
 
 /**
+ * 生成网站级别的结构化数据
+ * Generate structured data for the WebSite entity
+ */
+export function generateWebsiteStructuredData(params: {
+  baseUrl: string;
+  name: string;
+  alternateName?: string[];
+  inLanguage?: string;
+}) {
+  const { baseUrl, name, alternateName, inLanguage } = params;
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name,
+    alternateName: alternateName && alternateName.length > 0 ? alternateName : undefined,
+    url: baseUrl,
+    inLanguage,
+    publisher: SITE_PUBLISHER,
+  };
+}
+
+/**
  * 生成文章的结构化数据
  * Generate structured data for an article
  */

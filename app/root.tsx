@@ -25,6 +25,7 @@ import PendingNavigation from "~/components/PendingNavigation";
 import NavbarItems from "~/locales/navbar";
 import getFooterLabels from "~/utils/getFooterLabels";
 import FooterText from "~/locales/footer";
+import {generateWebsiteStructuredData, serializeStructuredData} from "~/utils/structuredData";
 
 export const loader = async ({request, context}: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -64,6 +65,7 @@ export const loader = async ({request, context}: LoaderFunctionArgs) => {
 
   return {
     lang,
+    baseUrl: url.origin,
     env,
     session,
     currentYear,
@@ -78,6 +80,7 @@ export const loader = async ({request, context}: LoaderFunctionArgs) => {
 export default function App() {
   const {
     lang,
+    baseUrl,
     env,
     session,
     currentYear,
@@ -89,6 +92,17 @@ export default function App() {
   const turnstileSiteKey = env.TURNSTILE_SITE_KEY;
 
   const {revalidate} = useRevalidator()
+
+  // localized site names
+  const SITE_NAMES: Record<string, string> = { zh: "积薪", en: "Firewood", jp: "積薪" };
+  const siteName = SITE_NAMES[lang] ?? "积薪";
+  const alternateNames = ["积薪", "Firewood", "積薪", "darmau.co"].filter(n => n !== siteName);
+  const websiteJsonLd = generateWebsiteStructuredData({
+    baseUrl,
+    name: siteName,
+    alternateName: alternateNames,
+    inLanguage: lang,
+  });
 
   const [supabase] = useState(() =>
       createBrowserClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
@@ -120,6 +134,12 @@ export default function App() {
         <meta name = "viewport" content = "width=device-width, initial-scale=1"/>
         <link rel = "icon" href = "/favicon.ico" type = "image/x-icon"/>
         <script defer src="https://cloud.umami.is/script.js" data-website-id="95e278fe-8fe4-4526-b975-99ebfe91a184"></script>
+        <meta property = "og:site_name" content = {siteName}/>
+        <meta name = "application-name" content = {siteName}/>
+        <script
+          type = "application/ld+json"
+          dangerouslySetInnerHTML = {{__html: serializeStructuredData(websiteJsonLd)}}
+        />
         <Meta/>
         <Links/>
       </head>
