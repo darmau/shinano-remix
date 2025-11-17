@@ -127,7 +127,6 @@ function renderHeading(node: Content, prefix: string): string {
 }
 
 function renderCodeBlock(node: Content): string {
-  const language = node.attrs?.language ?? "";
   const codeContent = node.content?.[0]?.text ?? "";
   // 转义HTML特殊字符
   const escapedCode = codeContent

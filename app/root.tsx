@@ -12,9 +12,8 @@ import {
   useRevalidator,
   useRouteError,
 } from "react-router";
-import type { ErrorResponse } from "react-router";
+import type { ErrorResponse, LoaderFunctionArgs } from "react-router";
 import "./tailwind.css";
-import type { LoaderFunctionArgs } from "react-router";
 import {getLang} from "~/utils/getLang";
 import {createClient} from "~/utils/supabase/server";
 import {useEffect, useState} from "react";
