@@ -48,7 +48,11 @@ export const action = async ({request, context}: ActionFunctionArgs) => {
       text: text.trim(),
       source_lang: "zh",
       target_lang: normalizedTargetLang,
-    });
+    },
+    {
+      gateway: "shinano"
+    }
+  );
 
     let translation = "";
     if (typeof result === "string") {
