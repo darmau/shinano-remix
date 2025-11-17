@@ -110,9 +110,6 @@ export default function ThoughtCard({thought}: { thought: Thought }) {
 
               {showTranslation && translatedText && (
                   <div className = "rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-zinc-700 whitespace-pre-line">
-                    <p className = "text-xs font-semibold uppercase tracking-wide text-violet-600 mb-2">
-                      {label.translation_heading}
-                    </p>
                     {translatedText}
                   </div>
               )}

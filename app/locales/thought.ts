@@ -10,7 +10,6 @@ export default {
     "translating": "翻译中...",
     "show_translation": "显示翻译",
     "show_original": "显示原文",
-    "translation_heading": "翻译结果",
     "translation_error": "翻译失败，请稍后重试"
   },
   "en": {
@@ -24,7 +23,6 @@ export default {
     "translating": "Translating...",
     "show_translation": "Show translation",
     "show_original": "Show original",
-    "translation_heading": "Translation",
     "translation_error": "Translation failed. Please try again."
   },
   "jp": {
@@ -38,7 +36,6 @@ export default {
     "translating": "翻訳中...",
     "show_translation": "翻訳を表示",
     "show_original": "原文を表示",
-    "translation_heading": "翻訳結果",
     "translation_error": "翻訳に失敗しました。後でもう一度お試しください。"
   }
 }
