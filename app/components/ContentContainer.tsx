@@ -24,6 +24,7 @@ export type Content = {
     caption?: string | null;
     width?: number;
     height?: number;
+    code?: string;
   };
   text?: string;
   marks?: Mark[];
@@ -173,8 +174,6 @@ const Blockquote = ({content}: { content?: ContentItem[] }) => (
       ))}
     </blockquote>
 );
-
-import {useEffect, useState} from "react";
 
 const CodeBlock = ({attrs, content}: { attrs?: Content["attrs"]; content?: ContentItem[] }) => {
   const language = attrs?.language ?? "";
