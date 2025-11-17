@@ -98,7 +98,7 @@ export default function ThoughtCard({thought}: { thought: Thought }) {
                   type = "button"
                   onClick = {handleTranslateClick}
                   disabled = {isTranslating && !translatedText}
-                  data-umami-event = "Thought translate"
+                  data-umami-event = "Translate"
                   className = "text-sm font-medium text-violet-700 hover:text-violet-900 disabled:text-zinc-400"
               >
                 {buttonLabel}
