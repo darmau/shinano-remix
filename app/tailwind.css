@@ -10,6 +10,13 @@
   }
 }
 
+@layer iframe-container {
+  iframe {
+    width: 100%;
+    min-height: 480px;
+  }
+}
+
 @layer components {
   .comment-markdown {
     @apply space-y-3 leading-relaxed text-zinc-700;

@@ -111,6 +111,8 @@ const Node = ({node}: { node: Content }) => {
       return <BulletList content = {node.content}/>;
     case 'orderedList':
       return <OrderedList attrs = {node.attrs} content = {node.content}/>;
+    case 'embed':
+      return <Iframe attrs = {node.attrs}/>;
     default:
       return null;
   }
@@ -245,6 +247,15 @@ const Horizental = () => (
 const Image = ({attrs}: { attrs: ImageAttrs }) => (
     <ArticleImage attrs = {attrs}/>
 );
+
+// iframe
+const Iframe = ({ attrs }: { attrs: Content["attrs"] }) => {
+  const code = attrs!.code;
+  return (
+    // dangerouslySetInnerHTML
+    <div className = "iframe-container" dangerouslySetInnerHTML = {{__html: code as string}} />
+  );
+};
 
 const Table = ({content}: { content?: ContentItem[] }) => {
   // 假设第一行总是表头
