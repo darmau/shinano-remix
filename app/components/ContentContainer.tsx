@@ -353,6 +353,8 @@ const TextNode = ({node}: { node: Content }) => {
         case 'code':
           content = <code className = "font-mono px-2">{content}</code>;
           break;
+        case 'superscript':
+          content = <sup className = "text-sm">{content}</sup>;
       }
     });
   }
