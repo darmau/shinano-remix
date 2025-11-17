@@ -388,8 +388,6 @@ export async function action({request, context, params}: ActionFunctionArgs) {
   const to_thought = parseInt(formData.get('to_thought') as string);
   const reply_to = formData.get('reply_to') ? parseInt(formData.get('reply_to') as string) : null;
   const receiveNotification = formData.get('receive_notification') === 'true';
-  const lang = params.lang as string;
-  const slug = params.slug as string;
   const ipAddress = getClientIp(request);
 
   if (!session) {

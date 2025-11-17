@@ -48,7 +48,7 @@ export default function Footer({ lang, currentYear, items }: { lang: string, cur
               className="h-12 mb-4"
             />
             {lang === 'jp' && (
-              <a href="https://blog.with2.net/link/?id=2136562&follow" title="人気ブログランキングでフォロー" target="_blank">
+              <a href="https://blog.with2.net/link/?id=2136562&follow" title="人気ブログランキングでフォロー" target="_blank" rel="noreferrer">
                 <img alt="人気ブログランキングでフォロー" width="235" height="46" src="https://blog.with2.net/banner/follow/2136562?t=b" />
               </a>
             )}

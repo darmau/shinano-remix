@@ -1,9 +1,7 @@
-import Subnav from "~/components/Subnav";
-import { Form, useActionData, useOutletContext, useNavigation, useLoaderData } from "react-router";
+import { Form, useActionData, useOutletContext, useNavigation } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import SearchText from "~/locales/search";
-import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
 import SearchResult from "~/components/SearchResult";
 import MarkdownContent from "~/components/MarkdownContent";
@@ -143,7 +141,7 @@ export default function Search() {
                     score: number;
                     attributes: Record<string, string | number | boolean | null>;
                   }) => (
-                    <SearchResult result={result} />
+                    <SearchResult key={result.file_id} result={result} />
                   ))}
                 </div>
               </div>

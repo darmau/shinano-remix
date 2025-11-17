@@ -39,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AuthCodeError() {
-  const { next, reason, lang } = useLoaderData<typeof loader>();
+  const { reason, lang } = useLoaderData<typeof loader>();
   const labels = getLanguageLabel(ConfirmText, lang);
   const loginPath = `/${lang}/login`;
 

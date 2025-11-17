@@ -1,4 +1,4 @@
-import { Form, Link, useActionData, useLoaderData, useNavigation } from "react-router";
+import { Form, useActionData, useLoaderData, useNavigation } from "react-router";
 import { redirect } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import type { EmailOtpType } from "@supabase/supabase-js";

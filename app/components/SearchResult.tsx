@@ -11,7 +11,6 @@ export default function SearchResult({ result }: { result: SearchResult }) {
 
   return (
     <div
-      key={result.file_id}
       className="flex justify-between gap-4 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
     >
       <div className="">

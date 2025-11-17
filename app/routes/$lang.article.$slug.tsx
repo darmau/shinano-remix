@@ -465,7 +465,6 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const page = url.searchParams.get('page') ? parseInt(url.searchParams.get('page')!) : 1;
   const limit = url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : 20;
-  const {data: {session}} = await supabase.auth.getSession();
 
   // 文章详情
   const {data: articleContent} = await supabase

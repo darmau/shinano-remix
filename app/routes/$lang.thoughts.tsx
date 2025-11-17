@@ -14,6 +14,7 @@ export interface Thought {
   id: number,
   slug: string,
   content_json: Json,
+  content_text: string,
   created_at: string,
   page_view: number,
   comments: { count: number }[],
@@ -110,6 +111,7 @@ const asThought = (value: unknown): Thought | null => {
   const id = value["id"];
   const slug = value["slug"];
   const contentJson = value["content_json"];
+  const contentText = value["content_text"];
   const createdAt = value["created_at"];
   const pageView = value["page_view"];
 
@@ -131,6 +133,7 @@ const asThought = (value: unknown): Thought | null => {
     id,
     slug,
     content_json,
+    content_text: typeof contentText === "string" ? contentText : "",
     created_at: createdAt,
     page_view: typeof pageView === "number" ? pageView : 0,
     comments,
@@ -157,6 +160,7 @@ export async function loader({request, context}: LoaderFunctionArgs) {
       id,
       slug,
       content_json,
+      content_text,
       created_at,
       page_view,
       comments:comment(count),
@@ -238,6 +242,7 @@ export async function action({request, context}: ActionFunctionArgs) {
     id,
     slug,
     content_json,
+    content_text,
     created_at,
     page_view,
     comments:comment(count),

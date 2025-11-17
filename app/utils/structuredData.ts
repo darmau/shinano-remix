@@ -170,7 +170,7 @@ export function generateAlbumStructuredData(params: {
   lang: string;
   url: string;
 }) {
-  const { album, baseUrl, imgPrefix, lang, url } = params;
+  const { album, imgPrefix, lang, url } = params;
 
   const structuredData: any = {
     "@context": "https://schema.org",
@@ -280,7 +280,7 @@ export function generateThoughtStructuredData(params: {
   lang: string;
   url: string;
 }) {
-  const { thought, baseUrl, imgPrefix, lang, url } = params;
+  const { thought, imgPrefix, lang, url } = params;
 
   // 使用前100个字符作为标题
   const headline = thought.content_text.slice(0, 100);

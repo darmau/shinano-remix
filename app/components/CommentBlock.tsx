@@ -1,6 +1,4 @@
-import { useMemo } from "react";
 import { useOutletContext } from "react-router";
-import { marked } from "marked";
 import getTime from "~/utils/getTime";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import CommentText from '~/locales/comment';

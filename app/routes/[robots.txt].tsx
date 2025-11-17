@@ -9,10 +9,8 @@ export const loader = async ({context}: LoaderFunctionArgs) => {
     "User-agent: *",
     "Allow: /",
     "Disallow: /*/login",
-    "Disallow: /en/thought/",
-    "Disallow: /jp/thought/",
-    "Disallow: /en/book",
-    "Disallow: /jp/book",
+    "Disallow: /*/unsubscribe",
+    "Disallow: /auth/*",
     "",
     `Sitemap: ${baseUrl}/sitemap-index.xml`,
     ""
