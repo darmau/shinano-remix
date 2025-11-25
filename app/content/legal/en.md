@@ -15,13 +15,13 @@ The Site is independently operated by an individual for the purpose of publishin
 ## 2. Data Collection and Privacy
 
 1. **Analytics Data**  
-   The Site uses [Umami](https://umami.is) for anonymous analytics to improve content and performance. Umami collects limited non-personal information, including:
-   - Visitor’s country or region  
+   The Site uses [Google Analytics 4 (GA4)](https://analytics.google.com/) deployed through [Cloudflare Zaraz](https://www.cloudflare.com/products/zaraz/) for analytics to improve content and performance. GA4 collects limited non-personal information, including:
+   - Visitor's country or region  
    - Device type and operating system  
    - Browser language and version  
    - Page visits and time spent on the Site  
 
-   These data are **aggregated and anonymized**. They are not associated with identifiable individuals and are never used for tracking or commercial purposes.
+   These data are **aggregated and anonymized**. They are not associated with identifiable individuals and are never used for tracking or commercial purposes. All analytics data is processed through Cloudflare Zaraz, which provides enhanced privacy controls and data processing capabilities.
 
 2. **User Authentication**  
    The Site uses [Supabase Auth](https://supabase.com/docs/guides/auth) for user authentication. When you log in or register, authorization is handled directly by the Supabase platform.  
@@ -75,7 +75,7 @@ The Site is independently operated by an individual for the purpose of publishin
 
 ## 6. Disclaimer
 
-1. The Site is not responsible for any service interruptions, data loss, or other technical issues caused by third-party services (including but not limited to Supabase, GitHub, and Umami).  
+1. The Site is not responsible for any service interruptions, data loss, or other technical issues caused by third-party services (including but not limited to Supabase, GitHub, Cloudflare Zaraz, and Google Analytics).  
 2. Users are solely responsible for the content they post and any legal consequences arising therefrom.  
 3. The Site is not liable for the accuracy or legality of external links or referenced materials.
 
