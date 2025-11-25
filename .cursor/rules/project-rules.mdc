@@ -1,0 +1,73 @@
+---
+alwaysApply: true
+---
+
+# React Router 7 Project Rules
+
+## 1. Architecture & Software Engineering Principles
+
+### Separation of Concerns (SoC)
+
+- **Routes are Controllers**: Treat files in `routes/` strictly as orchestration layers.
+  - **DO**: Use `loader` and `action` solely for request validation, calling services, and returning responses.
+  - **DON'T**: Write complex business logic (e.g., heavy data transformation, database queries) directly inside route modules.
+- **Service Layer**: Delegate business logic to a dedicated Service Layer (e.g., `app/services/*` or `app/core/*`).
+- **Locality of Behavior**: Keep code close to where it is executed. Do not abstract UI logic unless it is reused in at least **three different places** (Rule of Three).
+
+### Abstraction & DRY
+
+- **Check Before Create**: Before implementing a new utility function, verify if it exists in `app/utils` or installed libraries (e.g., `date-fns`, `clsx`).
+- **Meaningful Abstraction**: Create hooks or components only when they encapsulate significant logic or state. Avoid creating "wrapper hell" (shallow wrappers around standard HTML/components).
+
+## 2. Performance & Edge-Native Optimization
+
+### Edge-First Standards
+
+- **Web Standards Only**: Use standard Web APIs exclusively (`Request`, `Response`, `FormData`, `URLSearchParams`).
+  - **Reason**: Ensures compatibility with Edge runtimes (Cloudflare Workers, Vercel Edge) and keeps the app portable.
+  - **Restricted**: Do NOT use Node.js specific APIs (like `fs`, `path`, `stream`) in runtime code unless strictly isolated in a server-only adapter.
+
+### Loading & Concurrency
+
+- **Parallel Execution**: Inside `loaders`, always use `Promise.all` when fetching independent data sources to prevent request waterfalls.
+- **HTTP Caching**: Implement appropriate `Cache-Control` headers in `loader` responses for public or static data.
+- **Bundle Optimization**: Use named imports (`import { X } from 'lib'`) to facilitate Tree-Shaking.
+
+## 3. Code Quality, Modernity & Simplicity
+
+### Clean Code (KISS)
+
+- **Guard Clauses**: Prefer early returns (Guard Clauses) over deep nested `if/else` blocks.
+- **Explicit Naming**: Variable and function names must be descriptive. (e.g., use `isSubmittingTransaction` instead of `loading`).
+- **Type Safety**: Use standard TypeScript interfaces. Utilize the `satisfies` operator to ensure type conformance without losing literal inference.
+
+### React Router 7 Specifics
+
+- **No Effects for Data**: Do NOT use `useEffect` for initial data fetching. Always rely on `loader`.
+- **Mutations**: Use `<Form>` or `useFetcher` for data mutations to leverage automatic revalidation.
+- **Single Fetch**: If enabled, adhere to the Single Fetch pattern and typing.
+
+## 4. Accessibility (A11y) & Semantics
+
+### Semantic HTML
+
+- **Structure**: Use semantic tags (`<main>`, `<article>`, `<nav>`, `<aside>`, `<section>`) instead of generic `<div>` soup.
+- **Interactive Elements**: Ensure buttons and links have discernible text or `aria-label`.
+
+### Accessible Forms & Feedback
+
+- **Validation**: Connect server-side validation errors (from `action`) to inputs using `aria-invalid="true"` and `aria-errormessage`.
+- **Focus Management**: Ensure focus is managed correctly during complex client-side state changes (though RR7 handles page transitions automatically).
+
+---
+
+## AI Generation Instruction (System Prompt)
+
+> "When generating code for this project, strictly follow these rules:
+>
+> 1. **Architectural Check**: Does this logic belong in the Route (Controller) or a Service?
+> 2. **Edge Compatibility**: Are you using standard Web APIs (Request/Response)?
+> 3. **Simplicity**: Can this be written with a Guard Clause? Is the abstraction necessary?
+> 4. **A11y**: Is the HTML semantic and accessible?
+>
+> Prefer existing utilities over new ones. Prioritize readability and standard implementation."

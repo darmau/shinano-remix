@@ -9,6 +9,7 @@ import {ArrowsPointingOutIcon, ChevronLeftIcon, ChevronRightIcon} from "@heroico
 import debounce from "lodash/debounce";
 import type {EXIFProps} from "~/components/EXIF";
 import EXIF from "~/components/EXIF";
+import { trackViewFullscreen } from "~/utils/zaraz";
 
 export interface AlbumPhoto {
   order: number,
@@ -25,7 +26,13 @@ export interface AlbumPhoto {
   }
 }
 
-export default function GallerySlide({albumImages, onIndexChange}: { albumImages: AlbumPhoto[], onIndexChange: (index: number) => void }) {
+interface GallerySlideProps {
+  albumImages: AlbumPhoto[];
+  onIndexChange: (index: number) => void;
+  albumTitle?: string;
+}
+
+export default function GallerySlide({albumImages, onIndexChange, albumTitle}: GallerySlideProps) {
   const {prefix} = useOutletContext<{ prefix: string }>();
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
@@ -93,9 +100,13 @@ export default function GallerySlide({albumImages, onIndexChange}: { albumImages
             }}
           />
           <button
-              onClick = {() => setOpen(true)}
+              onClick = {() => {
+                setOpen(true);
+                if (albumTitle) {
+                  trackViewFullscreen(albumTitle);
+                }
+              }}
               type = "button"
-              data-umami-event = "Full Screen"
               aria-label = "Full Screen"
               className = "absolute top-8 right-8 z-50 p-2 rounded-full bg-white/60 backdrop-blur-2xl"
           >

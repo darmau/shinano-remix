@@ -10,6 +10,7 @@ import BookText from "~/locales/books";
 import i18nLinks from "~/utils/i18nLinks";
 import {startTransition, useEffect, useState} from "react";
 import ThoughtText from "~/locales/thought";
+import { trackLoadMore } from "~/utils/zaraz";
 
 type BookRecord = {
   id: number;
@@ -123,6 +124,7 @@ export default function Book() {
   }, [fetcher.data]);
 
   const loadMore = () => {
+    trackLoadMore('book');
     fetcher.submit({page: page.toString()}, {method: "post"});
     setPage((prevPage) => prevPage + 1);
   };
@@ -163,7 +165,6 @@ export default function Book() {
             ))}
           </div>
           <button
-              data-umami-event = "Load more books"
               className = "bg-violet-700 font-medium px-4 py-2 text-white rounded-md my-8 mx-auto block text-sm"
               onClick = {loadMore} disabled = {fetcher.state === "submitting"}
           >

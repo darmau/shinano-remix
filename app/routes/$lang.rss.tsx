@@ -6,6 +6,7 @@ import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import {useState} from "react";
 import i18nLinks from "~/utils/i18nLinks";
+import { trackRSSClick, type RSSType } from "~/utils/zaraz";
 
 export default function RSS() {
   const {lang, prefix} = useOutletContext<{ lang: string, prefix: string }>();
@@ -16,9 +17,10 @@ export default function RSS() {
   const [copiedPhoto, setCopiedPhoto] = useState(false);
   const [copiedThought, setCopiedThought] = useState(false);
 
-  const copyToClipboard = async (url: string, type: string) => {
+  const copyToClipboard = async (url: string, type: RSSType) => {
     try {
       await navigator.clipboard.writeText(url);
+      trackRSSClick(type);
       if (type === 'article') {
         setCopiedPhoto(false);
         setCopiedThought(false);
@@ -53,8 +55,6 @@ export default function RSS() {
                 <h3 className = "font-medium text-lg text-zinc-700">{label.article}</h3>
                 <code className = "text-sm block font-mono text-zinc-600">{`https://darmau.co/${lang}/article/rss.xml`}</code>
                 <button
-                    data-umami-event = "RSS"
-                    data-umami-event-type = "Article"
                     onClick = {() => copyToClipboard(`https://darmau.co/${lang}/article/rss.xml`, 'article')}
                     className="bg-violet-600 text-white font-medium py-3 w-full rounded-md"
                 >
@@ -75,8 +75,6 @@ export default function RSS() {
                 <h3 className = "font-medium text-lg text-zinc-700">{label.photography}</h3>
                 <code className = "text-sm block font-mono text-zinc-600">{`https://darmau.co/${lang}/album/rss.xml`}</code>
                 <button
-                    data-umami-event = "RSS"
-                    data-umami-event-type = "Photography"
                     onClick = {() => copyToClipboard(`https://darmau.co/${lang}/album/rss.xml`, 'photo')}
                     className = "bg-violet-600 text-white font-medium py-3 w-full rounded-md"
                 >
@@ -103,8 +101,6 @@ export default function RSS() {
                 <h3 className = "font-medium text-lg text-zinc-700">{label.thought}</h3>
                 <code className = "text-sm block font-mono text-zinc-600">{`https://darmau.co/${lang}/thought/rss.xml`}</code>
                 <button
-                    data-umami-event = "RSS"
-                    data-umami-event-type = "Thought"
                     onClick = {() => copyToClipboard(`https://darmau.co/${lang}/thought/rss.xml`, 'thought')}
                     className = "bg-violet-600 text-white font-medium py-3 w-full rounded-md"
                 >

@@ -3,14 +3,23 @@ import TwitterIcon from "~/icons/Twitter";
 import CopyIcon from "~/icons/Copy";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import Text from '~/locales/utils';
+import { trackCopyLink, trackShareX, type ContentType } from "~/utils/zaraz";
 
-export default function ShareButton({url, title, lang}: {url: string, title: string, lang: string}) {
+interface ShareButtonProps {
+  url: string;
+  title: string;
+  lang: string;
+  contentType: ContentType;
+}
+
+export default function ShareButton({url, title, lang, contentType}: ShareButtonProps) {
   const label = getLanguageLabel(Text, lang);
   const [showMessage, setShowMessage] = useState(false);
 
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(url);
+      trackCopyLink(title, contentType);
       setShowMessage(true);
       setTimeout(() => {
         setShowMessage(false);
@@ -20,22 +29,28 @@ export default function ShareButton({url, title, lang}: {url: string, title: str
     }
   };
 
+  const handleShareX = () => {
+    trackShareX(title, contentType);
+  };
+
   const encodeUrl = encodeURIComponent(url);
   const encodeTitle = encodeURIComponent(title);
   const twitterUrl = `https://x.com/intent/tweet?text=${encodeTitle}&url=${encodeUrl}&via=darmau8964`;
 
   return (
       <div className="flex justify-start gap-3 items-center">
-        {showMessage && <p className="text-sm text-green-600">{label.coppied}</p>}
-        <button onClick={copyToClipboard} className="group flex gap-2 border border-gray-200 rounded-md shadow-sm p-2 justify-between" data-umami-event="Copy Link">
+        <button onClick={copyToClipboard} className="group flex gap-2 border border-gray-200 rounded-md shadow-sm p-2 justify-between">
           <CopyIcon className="h-5 w-5 group-hover:text-zinc-900" />
-          <span className="text-sm text-zinc-700 group-hover:font-medium">{label.copy_link}</span>
+          <span className={`text-sm group-hover:font-medium ${showMessage ? 'text-green-600' : 'text-zinc-700'}`}>
+            {showMessage ? label.coppied : label.copy_link}
+          </span>
         </button>
         <a
             className="twitter-share-button border border-gray-200 rounded-md shadow-sm p-2 group"
             href={twitterUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleShareX}
         >
           <TwitterIcon className="h-5 w-5 text-zinc-600 group-hover:text-zinc-900" />
         </a>

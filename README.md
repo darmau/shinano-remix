@@ -40,7 +40,6 @@ The project is intentionally bespoke: it mirrors my own writing workflow, integr
 - Mapbox GL for location-aware photography
 - Cloudflare Turnstile for form protection
 - Resend + Bark notifications for transactional messaging
-- Umami analytics hooks on key CTAs
 
 ## Running the Site Locally
 

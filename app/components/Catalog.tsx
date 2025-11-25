@@ -70,7 +70,7 @@ export default function Catalog({content, url, title, lang}: { content: Json, ur
         <div className="flex flex-col gap-2 border-b border-gray-200 pb-6">
           {generateTableOfContents(article)}
         </div>
-        <ShareButton url = {url} title = {title} lang = {lang}/>
+        <ShareButton url={url} title={title} lang={lang} contentType="article" />
       </nav>
   );
 }

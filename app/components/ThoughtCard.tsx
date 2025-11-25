@@ -8,6 +8,7 @@ import {ChatBubbleOvalLeftIcon} from "@heroicons/react/24/outline";
 import {useEffect, useState} from "react";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ThoughtText from "~/locales/thought";
+import { trackTranslate } from "~/utils/zaraz";
 
 export default function ThoughtCard({thought}: { thought: Thought }) {
   const {lang} = useOutletContext<{ lang: string }>();
@@ -36,6 +37,9 @@ export default function ThoughtCard({thought}: { thought: Thought }) {
     if (!canTranslate) {
       return;
     }
+
+    // 记录每次翻译按钮点击
+    trackTranslate();
 
     if (translatedText) {
       setShowTranslation((prev) => !prev);
@@ -98,7 +102,6 @@ export default function ThoughtCard({thought}: { thought: Thought }) {
                   type = "button"
                   onClick = {handleTranslateClick}
                   disabled = {isTranslating && !translatedText}
-                  data-umami-event = "Translate"
                   className = "text-sm font-medium text-violet-700 hover:text-violet-900 disabled:text-zinc-400"
               >
                 {buttonLabel}

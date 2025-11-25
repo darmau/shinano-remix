@@ -9,6 +9,7 @@ import i18nLinks from "~/utils/i18nLinks";
 import Subnav from "~/components/Subnav";
 import type {Json} from "~/types/supabase";
 import {isJsonValue} from "~/utils/json";
+import { trackLoadMore } from "~/utils/zaraz";
 
 export interface Thought {
   id: number,
@@ -282,6 +283,7 @@ export default function Thoughts() {
   }, [fetcher.data]);
 
   const loadMore = () => {
+    trackLoadMore('thought');
     fetcher.submit({page: page.toString()}, {method: "post"});
     setPage((prevPage) => prevPage + 1);
   };
@@ -297,7 +299,6 @@ export default function Thoughts() {
             ))}
           </div>
           <button
-              data-umami-event = "Load more thoughts"
               className = "bg-violet-700 font-medium px-4 py-2 text-white rounded-md mt-4 mx-auto block text-sm"
               onClick = {loadMore} disabled = {fetcher.state === "submitting"}
           >
