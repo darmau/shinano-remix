@@ -75,8 +75,6 @@ export default function Footer({ lang, currentYear, items }: { lang: string, cur
         <div className="mt-8 border-t border-gray-900/10 pt-8 md:flex md:items-center md:justify-between">
           <div className="flex space-x-6 md:order-2">
             <Link
-              data-umami-event="RSS"
-              data-umami-event-type="footer"
               to={`${lang}/rss`}
               className="text-gray-400 hover:text-gray-500"
             >
@@ -85,7 +83,6 @@ export default function Footer({ lang, currentYear, items }: { lang: string, cur
             </Link>
             {navigation.social.map((item) => (
               <a
-                data-umami-event="Social Link" data-umami-event-social={item.name}
                 key={item.name} href={item.href} target="_blank" rel="noreferrer"
                 className="text-gray-400 hover:text-gray-500"
               >

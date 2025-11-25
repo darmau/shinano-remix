@@ -132,7 +132,6 @@ export default function App() {
         <meta charSet = "utf-8"/>
         <meta name = "viewport" content = "width=device-width, initial-scale=1"/>
         <link rel = "icon" href = "/favicon.ico" type = "image/x-icon"/>
-        <script defer src="https://cloud.umami.is/script.js" data-website-id="95e278fe-8fe4-4526-b975-99ebfe91a184"></script>
         <meta property = "og:site_name" content = {siteName}/>
         <meta name = "application-name" content = {siteName}/>
         <script

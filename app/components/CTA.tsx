@@ -24,7 +24,6 @@ export default function CTA() {
                   href = "https://quail.ink/firewood"
                   target = "_blank"
                   rel = "noreferrer"
-                  data-umami-event = "Subscribe"
               >
                 {label.cta_button}
               </a>
