@@ -3,14 +3,23 @@ import TwitterIcon from "~/icons/Twitter";
 import CopyIcon from "~/icons/Copy";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import Text from '~/locales/utils';
+import { trackCopyLink, trackShareX, type ContentType } from "~/utils/zaraz";
 
-export default function ShareButton({url, title, lang}: {url: string, title: string, lang: string}) {
+interface ShareButtonProps {
+  url: string;
+  title: string;
+  lang: string;
+  contentType: ContentType;
+}
+
+export default function ShareButton({url, title, lang, contentType}: ShareButtonProps) {
   const label = getLanguageLabel(Text, lang);
   const [showMessage, setShowMessage] = useState(false);
 
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(url);
+      trackCopyLink(title, contentType);
       setShowMessage(true);
       setTimeout(() => {
         setShowMessage(false);
@@ -18,6 +27,10 @@ export default function ShareButton({url, title, lang}: {url: string, title: str
     } catch (err) {
       console.error('复制失败:', err);
     }
+  };
+
+  const handleShareX = () => {
+    trackShareX(title, contentType);
   };
 
   const encodeUrl = encodeURIComponent(url);
@@ -37,6 +50,7 @@ export default function ShareButton({url, title, lang}: {url: string, title: str
             href={twitterUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleShareX}
         >
           <TwitterIcon className="h-5 w-5 text-zinc-600 group-hover:text-zinc-900" />
         </a>

@@ -10,6 +10,7 @@ import BookText from "~/locales/books";
 import i18nLinks from "~/utils/i18nLinks";
 import {startTransition, useEffect, useState} from "react";
 import ThoughtText from "~/locales/thought";
+import { trackLoadMore } from "~/utils/zaraz";
 
 type BookRecord = {
   id: number;
@@ -123,6 +124,7 @@ export default function Book() {
   }, [fetcher.data]);
 
   const loadMore = () => {
+    trackLoadMore('book');
     fetcher.submit({page: page.toString()}, {method: "post"});
     setPage((prevPage) => prevPage + 1);
   };

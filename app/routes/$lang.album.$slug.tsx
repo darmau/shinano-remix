@@ -122,6 +122,7 @@ export default function AlbumDetail() {
             <GallerySlide
               albumImages={albumImages as unknown as AlbumPhoto[]}
               onIndexChange={setCurrentIndex}
+              albumTitle={albumContent.title!}
             />
           </div>
 
@@ -165,7 +166,8 @@ export default function AlbumDetail() {
             <ShareButton 
               url={`${baseUrl}${pathname}`}
               title={albumContent.title!}
-              lang={lang} />
+              lang={lang}
+              contentType="album" />
           </div>
           <div className="col-span-1 lg:col-span-2 lg:self-start">
             <CommentEditor
