@@ -25,6 +25,7 @@ import NavbarItems from "~/locales/navbar";
 import getFooterLabels from "~/utils/getFooterLabels";
 import FooterText from "~/locales/footer";
 import {generateWebsiteStructuredData, serializeStructuredData} from "~/utils/structuredData";
+import Banners from "./components/Banners";
 
 export const loader = async ({request, context}: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -145,6 +146,7 @@ export default function App() {
       <Navbar lang = {lang} items = {navbarItems}/>
       <PendingNavigation/>
       <main className = {`flex-1 w-full mt-[76px] ${navigation.state === 'loading' && 'opacity-30'}`}>
+        <Banners lang={lang}/>
         <Outlet context = {{supabase, lang, prefix, turnstileSiteKey}}/>
       </main>
       <Footer lang = {lang} currentYear = {currentYear} items = {footerItems}/>
