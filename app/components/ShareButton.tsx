@@ -26,10 +26,11 @@ export default function ShareButton({url, title, lang}: {url: string, title: str
 
   return (
       <div className="flex justify-start gap-3 items-center">
-        {showMessage && <p className="text-sm text-green-600">{label.coppied}</p>}
         <button onClick={copyToClipboard} className="group flex gap-2 border border-gray-200 rounded-md shadow-sm p-2 justify-between">
           <CopyIcon className="h-5 w-5 group-hover:text-zinc-900" />
-          <span className="text-sm text-zinc-700 group-hover:font-medium">{label.copy_link}</span>
+          <span className={`text-sm group-hover:font-medium ${showMessage ? 'text-green-600' : 'text-zinc-700'}`}>
+            {showMessage ? label.coppied : label.copy_link}
+          </span>
         </button>
         <a
             className="twitter-share-button border border-gray-200 rounded-md shadow-sm p-2 group"
