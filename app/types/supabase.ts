@@ -25,6 +25,7 @@ export type Database = {
           is_top: boolean | null
           lang: number | null
           page_view: number | null
+          reactions: Json | null
           published_at: string | null
           slug: string | null
           subtitle: string | null
@@ -47,6 +48,7 @@ export type Database = {
           is_top?: boolean | null
           lang?: number | null
           page_view?: number | null
+          reactions?: Json | null
           published_at?: string | null
           slug?: string | null
           subtitle?: string | null
@@ -69,6 +71,7 @@ export type Database = {
           is_top?: boolean | null
           lang?: number | null
           page_view?: number | null
+          reactions?: Json | null
           published_at?: string | null
           slug?: string | null
           subtitle?: string | null
@@ -447,6 +450,7 @@ export type Database = {
           is_top: boolean | null
           lang: number | null
           page_view: number | null
+          reactions: Json | null
           published_at: string | null
           slug: string | null
           title: string | null
@@ -467,6 +471,7 @@ export type Database = {
           is_top?: boolean | null
           lang?: number | null
           page_view?: number | null
+          reactions?: Json | null
           published_at?: string | null
           slug?: string | null
           title?: string | null
@@ -487,6 +492,7 @@ export type Database = {
           is_top?: boolean | null
           lang?: number | null
           page_view?: number | null
+          reactions?: Json | null
           published_at?: string | null
           slug?: string | null
           title?: string | null
@@ -706,6 +712,7 @@ export type Database = {
           id: number
           location: string | null
           page_view: number | null
+          reactions: Json | null
           slug: string | null
           topic: string[] | null
         }
@@ -717,6 +724,7 @@ export type Database = {
           id?: number
           location?: string | null
           page_view?: number | null
+          reactions?: Json | null
           slug?: string | null
           topic?: string[] | null
         }
@@ -728,6 +736,7 @@ export type Database = {
           id?: number
           location?: string | null
           page_view?: number | null
+          reactions?: Json | null
           slug?: string | null
           topic?: string[] | null
         }
@@ -943,6 +952,14 @@ export type Database = {
       }
     }
     Functions: {
+      add_reaction: {
+        Args: {
+          content_type: string
+          content_id: number
+          reaction_type: string
+        }
+        Returns: Json
+      }
       article_page_view: {
         Args: {
           article_id: number

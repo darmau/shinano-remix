@@ -31,7 +31,7 @@ import {
   generateCommentStructuredData
 } from "~/utils/structuredData";
 import ShareButton from "~/components/ShareButton";
-import album from "~/locales/album";
+import Reaction, {type ReactionSummary} from "~/components/Reaction";
 
 export default function AlbumDetail() {
   const { lang, supabase } = useOutletContext<{ lang: string, supabase: SupabaseClient }>();
@@ -143,6 +143,13 @@ export default function AlbumDetail() {
                 ))}
               </ol>
             )}
+
+            <Reaction
+              contentType="photo"
+              contentId={albumContent.id}
+              reactions={albumContent.reactions as ReactionSummary | null}
+            />
+            
             <div className="flex gap-2 justify-start items-center">
               <MapPinIcon className="w-6 h-6 text-violet-700 inline-block" />
               <p className="text-sm text-zinc-500">{albumImages![currentIndex].image.location}</p>
@@ -236,6 +243,7 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
       content_text,
       topic,
       page_view,
+      reactions,
       category (title, slug),
       language!inner (lang)
     `)

@@ -200,7 +200,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
       language!inner (lang),
       cover (id, alt, storage_key, width, height)
       `)
-    .limit(24);
+    .limit(32);
 
   if (error) {
     return new Response(error.message, {status: 500});
