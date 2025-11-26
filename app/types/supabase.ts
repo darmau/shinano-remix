@@ -1013,14 +1013,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
-      remove_reaction: {
-        Args: {
-          content_type: string
-          content_id: number
-          reaction_type: string
-        }
-        Returns: Json
-      }
     }
     Enums: {
       content: "article" | "photo" | "video" | "thought"
