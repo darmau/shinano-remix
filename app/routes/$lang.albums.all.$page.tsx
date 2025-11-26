@@ -7,7 +7,7 @@ import Pagination from "~/components/Pagination";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
-import type { AlbumRow, GalleryItem, GalleryMediaImage, ThoughtRow } from "~/types/Gallery";
+import type { GalleryItem, GalleryMediaImage } from "~/types/Gallery";
 import GalleryCard from "~/components/GalleryCard";
 
 type LoaderData = {
@@ -21,97 +21,83 @@ type LoaderData = {
 
 const PAGE_SIZE = 20;
 
-const toImages = (cover: AlbumRow["cover"] | null, galleryImages?: AlbumRow["photo_image"] | ThoughtRow["thought_image"]): GalleryMediaImage[] => {
-  const images: GalleryMediaImage[] = [];
+// gallery_feed view 返回的行类型
+type GalleryFeedRow = {
+  content_type: "photo" | "thought";
+  id: number;
+  slug: string | null;
+  title: string | null;
+  content_text: string | null;
+  created_at: string | null;
+  sort_date: string | null;
+  lang: string | null;
+  cover: {
+    id: string | number;
+    alt: string | null;
+    storage_key: string;
+    width: number | null;
+    height: number | null;
+  } | null;
+  images: {
+    order: number | null;
+    image: {
+      id: string | number;
+      alt: string | null;
+      storage_key: string;
+      width: number | null;
+      height: number | null;
+    };
+  }[] | null;
+};
 
-  if (Array.isArray(galleryImages)) {
-    galleryImages
-      .map(item => ({ order: item?.order ?? 0, image: item?.image }))
-      .filter((item): item is { order: number; image: NonNullable<AlbumRow["cover"]> } => !!item.image)
-      .sort((a, b) => a.order - b.order)
-      .forEach(({ image }) => {
-        images.push({
-          id: String(image.id),
-          alt: image.alt ?? null,
-          storage_key: image.storage_key,
-          width: image.width ?? 0,
-          height: image.height ?? 0,
-        });
+const normalizeGalleryFeed = (rows: unknown): GalleryItem[] => {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  return rows.flatMap(row => {
+    if (!row || typeof row !== "object") {
+      return [];
+    }
+
+    const item = row as GalleryFeedRow;
+    if (typeof item.id !== "number") {
+      return [];
+    }
+
+    // 从 images 数组提取图片，按 order 排序
+    const images: GalleryMediaImage[] = (item.images ?? [])
+      .filter(entry => entry?.image?.storage_key)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map(entry => ({
+        id: String(entry.image.id),
+        alt: entry.image.alt ?? null,
+        storage_key: entry.image.storage_key,
+        width: entry.image.width ?? 0,
+        height: entry.image.height ?? 0,
+      }));
+
+    // 如果没有 images 但有 cover，使用 cover 作为图片
+    if (images.length === 0 && item.cover?.storage_key) {
+      images.push({
+        id: String(item.cover.id),
+        alt: item.cover.alt ?? null,
+        storage_key: item.cover.storage_key,
+        width: item.cover.width ?? 0,
+        height: item.cover.height ?? 0,
       });
-  }
-
-  const hasCover = cover && images.some(img => img.storage_key === cover.storage_key);
-
-  if (cover && !hasCover) {
-    images.push({
-      id: String(cover.id),
-      alt: cover.alt ?? null,
-      storage_key: cover.storage_key,
-      width: cover.width ?? 0,
-      height: cover.height ?? 0,
-    });
-  }
-
-  return images;
-};
-
-const normalizeAlbums = (rows: unknown): GalleryItem[] => {
-  if (!Array.isArray(rows)) {
-    return [];
-  }
-
-  return rows.flatMap(row => {
-    if (!row || typeof row !== "object") {
-      return [];
-    }
-
-    const candidate = row as AlbumRow;
-    if (typeof candidate.id !== "number" || !candidate.cover || !candidate.language) {
-      return [];
     }
 
     return [{
-      type: "photo" as const,
-      id: candidate.id,
-      slug: candidate.slug,
-      title: candidate.title ?? "",
-      content: candidate.content_text ?? "",
-      createdAt: candidate.published_at ?? candidate.created_at ?? "",
-      images: toImages(candidate.cover, candidate.photo_image),
+      type: item.content_type,
+      id: item.id,
+      slug: item.slug,
+      title: item.title ?? "",
+      content: item.content_text ?? "",
+      createdAt: item.sort_date ?? "",
+      images,
     }];
   });
-};
-
-const normalizeThoughts = (rows: unknown): GalleryItem[] => {
-  if (!Array.isArray(rows)) {
-    return [];
-  }
-
-  return rows.flatMap(row => {
-    if (!row || typeof row !== "object") {
-      return [];
-    }
-
-    const candidate = row as ThoughtRow;
-    if (candidate.push_to_gallery !== true || typeof candidate.id !== "number") {
-      return [];
-    }
-
-    return [{
-      type: "thought" as const,
-      id: candidate.id,
-      slug: candidate.slug,
-      title: "",
-      content: candidate.content_text ?? "",
-      createdAt: candidate.created_at ?? "",
-      images: toImages(null, candidate.thought_image ?? null),
-    }];
-  });
-};
-
-const toTimestamp = (value: string) => {
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? 0 : parsed;
 };
 
 const isLoaderData = (value: unknown): value is LoaderData =>
@@ -250,79 +236,34 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
     return new Response(null, { status: 404 });
   }
 
-  const fetchLimit = page * PAGE_SIZE;
+  // 使用 gallery_feed view 进行数据库层分页
+  const start = (page - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE - 1;
 
-  const [albumResult, thoughtResult] = await Promise.all([
+  // 使用类型断言绕过 gallery_feed view 的类型检查
+  const [feedResult, countResult] = await Promise.all([
     supabase
-      .from('photo')
-      .select(`
-        id,
-        title,
-        slug,
-        content_text,
-        created_at,
-        published_at,
-        cover (id, alt, storage_key, width, height),
-        language!inner (lang),
-        photo_image (
-          order,
-          image (id, alt, storage_key, width, height)
-        )
-      `)
-      .eq('language.lang', lang)
-      .eq('is_draft', false)
-      .order('published_at', { ascending: false })
-      .limit(fetchLimit),
+      .from('gallery_feed' as 'photo')
+      .select('*')
+      .or(`lang.eq.${lang},lang.is.null`)  // photo 按语言过滤，thought 无语言限制
+      .order('sort_date', { ascending: false })
+      .range(start, end),
     supabase
-      .from('thought')
-      .select(`
-      id,
-      slug,
-      content_text,
-      created_at,
-      push_to_gallery,
-      thought_image (
-        order,
-        image (id, alt, storage_key, width, height)
-      )
-    `)
-      .order('created_at', { ascending: false })
-      .limit(fetchLimit)
-      .eq('push_to_gallery' as never, true)
+      .from('gallery_feed' as 'photo')
+      .select('*', { count: 'exact', head: true })
+      .or(`lang.eq.${lang},lang.is.null`)
   ]);
 
-  if (albumResult.error) {
-    return new Response(albumResult.error.message, { status: 500 });
+  if (feedResult.error) {
+    return new Response(feedResult.error.message, { status: 500 });
   }
 
-  if (thoughtResult.error) {
-    return new Response(thoughtResult.error.message, { status: 500 });
-  }
-
-  const albums = normalizeAlbums(albumResult.data);
-  const thoughts = normalizeThoughts(thoughtResult.data);
-  const sortedItems = [...albums, ...thoughts].sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
-  const start = (page - 1) * PAGE_SIZE;
-
-  const { count: photoCount } = await supabase
-    .from('photo')
-    .select(`
-    id,
-    language!inner (lang)
-  `, { count: 'exact', head: true })
-    .eq('is_draft', false)
-    .eq('language.lang', lang);
-
-  const { count: thoughtCount } = await supabase
-    .from('thought')
-    .select('id', { count: 'exact', head: true })
-    .eq('push_to_gallery' as never, true);
-
+  const items = normalizeGalleryFeed(feedResult.data);
   const availableLangs = ["zh", "en", "jp"];
 
   return {
-    items: sortedItems.slice(start, start + PAGE_SIZE),
-    count: (photoCount ?? 0) + (thoughtCount ?? 0),
+    items,
+    count: countResult.count ?? 0,
     page,
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
