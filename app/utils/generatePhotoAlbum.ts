@@ -23,7 +23,7 @@ export interface GalleryPhoto {
   href: string;
   label: string;
   title: string;
-  storage_key?: string;
+  storage_key: string;
 }
 
 export function generatePhotoAlbum(featuredPhotos: FeaturedPhoto[], prefix: string, lang: string) {

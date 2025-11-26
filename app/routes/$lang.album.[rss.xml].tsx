@@ -2,21 +2,17 @@ import type { LoaderFunctionArgs } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from '~/locales/homepage';
+import type {FeedEnclosure, RichRssEntry} from "~/types/rss";
 
-export type RssEntry = {
-  title: string | null;
-  link: string;
-  description: string | null;
-  pubDate: string | null;
-  author: string | null;
-  guid: number;
-  content: string;
-  category: string | null;
-  enclosure?: {
-    url: string;
-    type: string;
-    length: string;
-  };
+export type RssEntry = RichRssEntry;
+
+type AlbumImageAsset = {
+  order: number;
+  storageKey: string;
+  width: number | null;
+  height: number | null;
+  alt: string | null;
+  caption: string | null;
 };
 
 export function generateRss({description, entries, link, title, language}: {
@@ -71,6 +67,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   const {supabase} = createClient(request, context);
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
+  const prefix = context.cloudflare.env.IMG_PREFIX ?? "https://img.darmau.co";
 
   const {data: posts} = await supabase
   .from('photo')
@@ -90,6 +87,28 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   .order('published_at', {ascending: false})
   .limit(30);
 
+  const postIds = posts?.map((post) => post.id) ?? [];
+  let albumImagesMap: Record<number, AlbumImageAsset[]> = {};
+
+  if (postIds.length > 0) {
+    const {data: albumImagesData} = await supabase
+    .from('photo_image')
+    .select(`
+        photo_id,
+        order,
+        image (
+          alt,
+          caption,
+          height,
+          width,
+          storage_key
+        )
+      `)
+    .in('photo_id', postIds);
+
+    albumImagesMap = buildAlbumImagesMap(albumImagesData);
+  }
+
   const feed = generateRss({
     title: `${label.title} - ${label.photography}`,
     description: label.description,
@@ -103,7 +122,11 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
       category: post.category!.title,
       link: `https://darmau.co/${lang}/album/${post.slug}`,
       guid: post.id,
-      content: getFirstThreeParagraphs(post.content_text),
+      content: createEntryContent(
+        post.content_text,
+        albumImagesMap[post.id] ?? [],
+        prefix
+      ),
       enclosure: post.cover ? {
         url: `https://img.darmau.co/cdn-cgi/image/format=jpeg,width=960/https://img.darmau.co/${post.cover.storage_key}`,
         type: 'image/jpeg' as const,
@@ -130,7 +153,7 @@ function getFirstThreeParagraphs(text: string | null): string {
   .join('\n');
 }
 
-function generateEnclosure(enclosure: {url: string, type: string, length: string} | undefined): string {
+function generateEnclosure(enclosure: FeedEnclosure | undefined): string {
   if (!enclosure) {
     return `
       <enclosure
@@ -147,4 +170,108 @@ function generateEnclosure(enclosure: {url: string, type: string, length: string
       length="${enclosure.length}"
     />
   `;
+}
+
+function createEntryContent(
+  text: string | null,
+  images: AlbumImageAsset[],
+  prefix: string
+): string {
+  const baseContent = getFirstThreeParagraphs(text);
+  const imagesHtml = renderAlbumImagesHtml(images, prefix);
+  if (!imagesHtml) {
+    return baseContent;
+  }
+  return `${baseContent}\n\n${imagesHtml}`;
+}
+
+type RawAlbumImage =
+  | {
+      photo_id: number | null;
+      order: number | null;
+      image: {
+        storage_key: string;
+        width: number | null;
+        height: number | null;
+        alt: string | null;
+        caption: string | null;
+      } | null;
+    };
+
+function buildAlbumImagesMap(data: RawAlbumImage[] | null): Record<number, AlbumImageAsset[]> {
+  if (!data) {
+    return {};
+  }
+
+  const map: Record<number, AlbumImageAsset[]> = {};
+
+  for (const item of data) {
+    if (!item?.photo_id || !item.image?.storage_key) {
+      continue;
+    }
+
+    const asset: AlbumImageAsset = {
+      order: item.order ?? Number.MAX_SAFE_INTEGER,
+      storageKey: item.image.storage_key,
+      width: item.image.width,
+      height: item.image.height,
+      alt: item.image.alt,
+      caption: item.image.caption,
+    };
+
+    if (!map[item.photo_id]) {
+      map[item.photo_id] = [];
+    }
+    map[item.photo_id].push(asset);
+  }
+
+  Object.values(map).forEach((images) => {
+    images.sort(
+      (a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER)
+    );
+  });
+
+  return map;
+}
+
+const HTML_ESCAPE_REGEX = /[&<>"']/g;
+const HTML_ESCAPE_MAP: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+
+function escapeHtml(value: string): string {
+  return value.replace(HTML_ESCAPE_REGEX, (char) => HTML_ESCAPE_MAP[char] ?? char);
+}
+
+function renderAlbumImagesHtml(images: AlbumImageAsset[], prefix: string): string {
+  if (!images.length) {
+    return '';
+  }
+
+  const figures = images
+    .map((image) => {
+      if (!image.storageKey) {
+        return '';
+      }
+      const src = `${prefix}/cdn-cgi/image/format=jpeg,width=1600/${image.storageKey}`;
+      const widthAttr = image.width ? ` width="${image.width}"` : '';
+      const heightAttr = image.height ? ` height="${image.height}"` : '';
+      const caption = image.caption ? `<figcaption>${escapeHtml(image.caption)}</figcaption>` : '';
+      return `<figure>
+  <img src="${src}" loading="lazy" decoding="async" alt="${escapeHtml(image.alt ?? '')}"${widthAttr}${heightAttr} />
+  ${caption}
+</figure>`;
+    })
+    .filter(Boolean)
+    .join('');
+
+  if (!figures) {
+    return '';
+  }
+
+  return `<div class="album-images">${figures}</div>`;
 }
