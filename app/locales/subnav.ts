@@ -28,12 +28,12 @@ const Subnav: SubnavType = {
     ],
     "photography": [
       {
-        "name": "推荐",
-        "link": "/zh/albums/featured"
-      },
-      {
         "name": "最新",
         "link": "/zh/albums/all/1"
+      },
+      {
+        "name": "推荐",
+        "link": "/zh/albums/featured"
       },
       {
         "name": "地图",
@@ -86,12 +86,12 @@ const Subnav: SubnavType = {
     ],
     "photography": [
       {
-        "name": "Featured",
-        "link": "/en/albums/featured"
-      },
-      {
         "name": "Latest",
         "link": "/en/albums/all/1"
+      },
+      {
+        "name": "Featured",
+        "link": "/en/albums/featured"
       },
       {
         "name": "Map",
@@ -144,12 +144,12 @@ const Subnav: SubnavType = {
     ],
     "photography": [
       {
-        "name": "厳選",
-        "link": "/jp/albums/featured"
-      },
-      {
         "name": "最新",
         "link": "/jp/albums/all/1"
+      },
+      {
+        "name": "厳選",
+        "link": "/jp/albums/featured"
       },
       {
         "name": "地図",

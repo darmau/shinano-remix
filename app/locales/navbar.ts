@@ -18,7 +18,7 @@ const Navbar: NavbarType = {
     },
     {
       "name": "摄影",
-      "link": "/zh/albums/featured",
+      "link": "/zh/albums/all/1",
       "type": "album"
     },
     {
@@ -40,7 +40,7 @@ const Navbar: NavbarType = {
     },
     {
       "name": "Photography",
-      "link": "/en/albums/featured",
+      "link": "/en/albums/all/1",
       "type": "album"
     },
     {
@@ -62,7 +62,7 @@ const Navbar: NavbarType = {
     },
     {
       "name": "写真",
-      "link": "/jp/albums/featured",
+      "link": "/jp/albums/all/1",
       "type": "album"
     },
     {
