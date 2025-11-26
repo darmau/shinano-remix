@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Subnav from "~/components/Subnav";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { createClient } from "~/utils/supabase/server";
@@ -138,9 +138,29 @@ export default function AllAlbums() {
     [items, visibleCount]
   );
 
-  const loadMore = () => {
+  const hasMore = visibleCount < items.length;
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const loadMore = useCallback(() => {
     setVisibleCount(prev => Math.min(items.length, prev + 5));
-  };
+  }, [items.length]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loadMore]);
 
   return (
     <>
@@ -153,13 +173,8 @@ export default function AllAlbums() {
           ))}
         </ul>
 
-        {visibleCount < items.length && (
-          <button
-            className="bg-zinc-900 text-white px-4 py-2 rounded-md text-sm"
-            onClick={loadMore}
-          >
-            加载更多
-          </button>
+        {hasMore && (
+          <div ref={sentinelRef} className="h-10" aria-hidden="true" />
         )}
 
         <Pagination count={count ?? 0} limit={PAGE_SIZE} page={page} path={path} />
