@@ -1,5 +1,5 @@
 import type {SupabaseClient} from "@supabase/supabase-js";
-import {useCallback, useEffect, useMemo, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {useLocation, useOutletContext} from "react-router";
 
 export type ReactionType = 'like' | 'love' | 'haha' | 'wow' | 'sad' | 'think';
@@ -81,13 +81,6 @@ const storeReaction = (pathname: string, reaction: ReactionType) => {
   window.localStorage.setItem(getStorageKey(pathname, reaction), String(Date.now()));
 };
 
-const clearStoredReaction = (pathname: string, reaction: ReactionType) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  window.localStorage.removeItem(getStorageKey(pathname, reaction));
-};
-
 export default function Reaction({
   contentType,
   contentId,
@@ -124,21 +117,19 @@ export default function Reaction({
   }, [reactions]);
 
   const handleReaction = useCallback(async (reaction: ReactionType) => {
-    if (pending) {
+    if (pending || active.has(reaction)) {
       return;
     }
 
-    const isActive = active.has(reaction);
     setPending(reaction);
     setError(null);
 
     const fallback = {
       ...counts,
-      [reaction]: Math.max(0, counts[reaction] + (isActive ? -1 : 1))
+      [reaction]: (counts[reaction] ?? 0) + 1
     } as ReactionCounts;
 
-    const rpcName = isActive ? 'remove_reaction' : 'add_reaction';
-    const {data, error: rpcError} = await supabase.rpc(rpcName, {
+    const {data, error: rpcError} = await supabase.rpc('add_reaction', {
       content_type: contentType,
       content_id: contentId,
       reaction_type: reaction
@@ -156,31 +147,18 @@ export default function Reaction({
 
     setActive((prev) => {
       const updated = new Set(prev);
-      if (isActive) {
-        updated.delete(reaction);
-        clearStoredReaction(pathname, reaction);
-      } else {
-        updated.add(reaction);
-        storeReaction(pathname, reaction);
-      }
+      updated.add(reaction);
+      storeReaction(pathname, reaction);
       return updated;
     });
 
     setPending(null);
   }, [active, contentId, contentType, counts, pathname, supabase, pending]);
 
-  const total = useMemo(() => {
-    return REACTION_CONFIG.reduce((sum, item) => sum + (counts[item.key] ?? 0), 0);
-  }, [counts]);
-
   return (
-    <div className={`rounded-xl border border-zinc-200 bg-white/70 shadow-sm p-3 flex flex-col gap-2 ${className}`}>
-      <div className="flex items-center justify-between text-sm text-zinc-500 px-1">
-        <p>表达你的态度</p>
-        <p>总计 {total}</p>
-      </div>
+    <div className="my-4 rounded-xl flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
-        {REACTION_CONFIG.map(({key, emoji, label}) => {
+        {REACTION_CONFIG.map(({key, emoji}) => {
           const isActive = active.has(key);
           const isLoading = pending === key;
           const count = counts[key] ?? 0;
@@ -197,7 +175,6 @@ export default function Reaction({
               ${isLoading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               <span className="text-lg" aria-hidden="true">{emoji}</span>
-              <span>{label}</span>
               <span className="text-xs text-zinc-500">· {count}</span>
             </button>
           );
