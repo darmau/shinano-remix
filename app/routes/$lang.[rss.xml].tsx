@@ -3,6 +3,7 @@ import HomepageText from "~/locales/homepage";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import { createClient } from "~/utils/supabase/server";
 import getTime from "~/utils/getTime";
+import type { FeedEnclosure } from "~/types/rss";
 
 type RssEntry = {
   title: string;
@@ -13,11 +14,7 @@ type RssEntry = {
   category?: string;
   content?: string;
   author?: string;
-  enclosure?: {
-    url: string;
-    type: string;
-    length: string;
-  };
+  enclosure?: FeedEnclosure;
 };
 
 function formatPubDate(date: string | null): string {
@@ -42,7 +39,7 @@ function shouldRenderContent(content?: string | null): content is string {
   return Boolean(content && content.trim().length > 0);
 }
 
-function generateEnclosure(enclosure: RssEntry["enclosure"]): string {
+function generateEnclosure(enclosure: FeedEnclosure | undefined): string {
   if (!enclosure) {
     return "";
   }

@@ -2,22 +2,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from '~/locales/homepage';
+import type {FeedEnclosure, RichRssEntry} from "~/types/rss";
 
-export type RssEntry = {
-  title: string | null;
-  link: string;
-  description: string | null;
-  pubDate: string | null;
-  author: string | null;
-  guid: number;
-  content: string;
-  category: string | null;
-  enclosure?: {
-    url: string;
-    type: string;
-    length: string;
-  };
-};
+export type RssEntry = RichRssEntry;
 
 type AlbumImageAsset = {
   order: number;
@@ -166,7 +153,7 @@ function getFirstThreeParagraphs(text: string | null): string {
   .join('\n');
 }
 
-function generateEnclosure(enclosure: {url: string, type: string, length: string} | undefined): string {
+function generateEnclosure(enclosure: FeedEnclosure | undefined): string {
   if (!enclosure) {
     return `
       <enclosure

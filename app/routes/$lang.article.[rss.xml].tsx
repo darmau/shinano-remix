@@ -3,6 +3,7 @@ import {createClient} from "~/utils/supabase/server";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from '~/locales/homepage';
 import type {Json} from "~/types/supabase";
+import type {FeedEnclosure, RichRssEntry} from "~/types/rss";
 
 type TipTapMark = {
   type?: string;
@@ -223,21 +224,7 @@ const getStyleAttr = (tag: string): string => {
   return style ? ` style="${style}"` : "";
 };
 
-export type RssEntry = {
-  title: string | null;
-  link: string;
-  description: string | null;
-  pubDate: string | null;
-  author: string | null;
-  guid: number;
-  content: string;
-  category: string | null;
-  enclosure?: {
-    url: string;
-    type: string;
-    length: string;
-  };
-};
+export type RssEntry = RichRssEntry;
 
 export function generateRss({description, entries, link, title, language}: {
   title: string;
@@ -348,7 +335,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   });
 }
 
-function generateEnclosure(enclosure: {url: string, type: string, length: string} | undefined): string {
+function generateEnclosure(enclosure: FeedEnclosure | undefined): string {
   if (!enclosure) {
     return `
       <enclosure
