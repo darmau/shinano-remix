@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import type { GalleryItem, GalleryMediaImage } from "~/types/Gallery";
+import getTime from "~/utils/getTime";
 
 // 根据图片数量返回对应的 grid 布局类名
 const getGridClass = (count: number): string => {
@@ -44,13 +45,12 @@ export default function GalleryCard({
   const gridClass = getGridClass(images.length);
 
   return (
-    <li className="space-y-3">
+    <li className="flex flex-col gap-2">
       <div className="flex items-center gap-3">
-        <time className="text-sm text-zinc-500 tabular-nums">{item.createdAt}</time>
         {item.type === "photo" && item.title && (
           <Link
             to={href}
-            className="font-medium text-zinc-900 hover:text-zinc-600 transition-colors"
+            className="text-xl font-medium text-zinc-900 hover:text-zinc-600 transition-colors"
           >
             {item.title}
           </Link>
@@ -58,19 +58,23 @@ export default function GalleryCard({
       </div>
 
       {item.type === "thought" && item.content && (
-        <Link to={href} className="block text-sm text-zinc-700 whitespace-pre-line line-clamp-3">
+        <Link to={href} className="block text-sm text-zinc-700 line-clamp-3">
           {item.content}
         </Link>
       )}
 
-      <Link to={href} className={`grid ${gridClass} gap-1 rounded-lg overflow-hidden max-w-lg`}>
+      <time className="text-sm text-zinc-500 tabular-nums">
+        {getTime(item.createdAt, lang)}
+      </time>
+
+      <Link to={href} className={`grid ${gridClass} gap-1 rounded-lg overflow-hidden`}>
         {displayImages.map((image, index) => {
           const isLastWithMore = index === 8 && remainingCount > 0;
-          
+
           return (
             <div key={image.id} className="relative overflow-hidden aspect-square">
               <img
-                src={`${prefix}/cdn-cgi/image/format=auto,width=400/${image.storage_key}`}
+                src={`${prefix}/cdn-cgi/image/format=auto,width=720/${image.storage_key}`}
                 alt={image.alt ?? ""}
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                 loading="lazy"

@@ -1,13 +1,13 @@
-import {useMemo, useState} from "react";
+import { useMemo, useState } from "react";
 import Subnav from "~/components/Subnav";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import {createClient} from "~/utils/supabase/server";
+import { createClient } from "~/utils/supabase/server";
 import { useLoaderData, useLocation, useOutletContext } from "react-router";
 import Pagination from "~/components/Pagination";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
-import type {AlbumRow, GalleryItem, GalleryMediaImage, ThoughtRow} from "~/types/Gallery";
+import type { AlbumRow, GalleryItem, GalleryMediaImage, ThoughtRow } from "~/types/Gallery";
 import GalleryCard from "~/components/GalleryCard";
 
 type LoaderData = {
@@ -26,18 +26,18 @@ const toImages = (cover: AlbumRow["cover"] | null, galleryImages?: AlbumRow["pho
 
   if (Array.isArray(galleryImages)) {
     galleryImages
-        .map(item => ({order: item?.order ?? 0, image: item?.image}))
-        .filter((item): item is { order: number; image: NonNullable<AlbumRow["cover"]> } => !!item.image)
-        .sort((a, b) => a.order - b.order)
-        .forEach(({image}) => {
-          images.push({
-            id: String(image.id),
-            alt: image.alt ?? null,
-            storage_key: image.storage_key,
-            width: image.width ?? 0,
-            height: image.height ?? 0,
-          });
+      .map(item => ({ order: item?.order ?? 0, image: item?.image }))
+      .filter((item): item is { order: number; image: NonNullable<AlbumRow["cover"]> } => !!item.image)
+      .sort((a, b) => a.order - b.order)
+      .forEach(({ image }) => {
+        images.push({
+          id: String(image.id),
+          alt: image.alt ?? null,
+          storage_key: image.storage_key,
+          width: image.width ?? 0,
+          height: image.height ?? 0,
         });
+      });
   }
 
   const hasCover = cover && images.some(img => img.storage_key === cover.storage_key);
@@ -115,18 +115,18 @@ const toTimestamp = (value: string) => {
 };
 
 const isLoaderData = (value: unknown): value is LoaderData =>
-    typeof value === "object" &&
-    value !== null &&
-    "baseUrl" in value &&
-    "availableLangs" in value &&
-    "page" in value &&
-    "prefix" in value &&
-    "items" in value &&
-    "count" in value;
+  typeof value === "object" &&
+  value !== null &&
+  "baseUrl" in value &&
+  "availableLangs" in value &&
+  "page" in value &&
+  "prefix" in value &&
+  "items" in value &&
+  "count" in value;
 
 export default function AllAlbums() {
-  const {prefix, lang} = useOutletContext<{prefix: string, lang: string}>();
-  const {items, count, page} = useLoaderData<LoaderData>();
+  const { prefix, lang } = useOutletContext<{ prefix: string, lang: string }>();
+  const { items, count, page } = useLoaderData<LoaderData>();
   const location = useLocation();
   const [visibleCount, setVisibleCount] = useState(5);
 
@@ -134,8 +134,8 @@ export default function AllAlbums() {
   const path = location.pathname.replace(/\/\d+$/, '');
 
   const visibleItems = useMemo(
-      () => items.slice(0, Math.min(visibleCount, items.length)),
-      [items, visibleCount]
+    () => items.slice(0, Math.min(visibleCount, items.length)),
+    [items, visibleCount]
   );
 
   const loadMore = () => {
@@ -143,49 +143,49 @@ export default function AllAlbums() {
   };
 
   return (
-      <>
-        <Subnav active = "photography"/>
-        <h1 className = "sr-only">Photography</h1>
-        <div className = "w-full max-w-5xl mx-auto p-4 lg:mb-16 space-y-6">
-          <ul className = "space-y-6">
-            {visibleItems.map((item) => (
-                <GalleryCard item = {item} lang = {lang} prefix = {prefix} key = {`${item.type}-${item.id}`}/>
-            ))}
-          </ul>
+    <>
+      <Subnav active="photography" />
+      <h1 className="sr-only">Photography</h1>
+      <div className="w-full max-w-5xl mx-auto p-4 lg:mb-16 space-y-6">
+        <ul className="mx-auto space-y-12 lg:space-y-16 max-w-lg">
+          {visibleItems.map((item) => (
+            <GalleryCard item={item} lang={lang} prefix={prefix} key={`${item.type}-${item.id}`} />
+          ))}
+        </ul>
 
-          {visibleCount < items.length && (
-              <button
-                  className = "bg-zinc-900 text-white px-4 py-2 rounded-md text-sm"
-                  onClick = {loadMore}
-              >
-                加载更多
-              </button>
-          )}
+        {visibleCount < items.length && (
+          <button
+            className="bg-zinc-900 text-white px-4 py-2 rounded-md text-sm"
+            onClick={loadMore}
+          >
+            加载更多
+          </button>
+        )}
 
-          <Pagination count = {count ?? 0} limit = {PAGE_SIZE} page = {page} path = {path}/>
-        </div>
-      </>
+        <Pagination count={count ?? 0} limit={PAGE_SIZE} page={page} path={path} />
+      </div>
+    </>
   )
 }
 
-export const meta: MetaFunction<typeof loader> = ({params, data}) => {
+export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
 
   if (!isLoaderData(data)) {
-    return [{title: 'Not Found'}];
+    return [{ title: 'Not Found' }];
   }
 
   const baseUrl = data.baseUrl;
   const ogCover = data.items.find(item => item.images.length > 0)?.images[0]?.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f";
   const multiLangLinks = i18nLinks(baseUrl,
-      lang,
-      data.availableLangs,
-      `albums/all/${data.page}`
+    lang,
+    data.availableLangs,
+    `albums/all/${data.page}`
   );
 
   return [
-    {title: label.albums_title},
+    { title: label.albums_title },
     {
       name: "description",
       content: label.albums_description,
@@ -225,22 +225,22 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   ];
 };
 
-export async function loader({request, context, params}: LoaderFunctionArgs) {
-  const {supabase} = createClient(request, context);
+export async function loader({ request, context, params }: LoaderFunctionArgs) {
+  const { supabase } = createClient(request, context);
   const lang = params.lang as string;
   const page = Number(params.page);
 
   // 如果page无法转换为数字，返回404
   if (!Number.isInteger(page) || page < 1) {
-    return new Response(null, {status: 404});
+    return new Response(null, { status: 404 });
   }
 
   const fetchLimit = page * PAGE_SIZE;
 
   const [albumResult, thoughtResult] = await Promise.all([
     supabase
-    .from('photo')
-    .select(`
+      .from('photo')
+      .select(`
         id,
         title,
         slug,
@@ -254,13 +254,13 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
           image (id, alt, storage_key, width, height)
         )
       `)
-    .eq('language.lang', lang)
-    .eq('is_draft', false)
-    .order('published_at', {ascending: false})
-    .limit(fetchLimit),
+      .eq('language.lang', lang)
+      .eq('is_draft', false)
+      .order('published_at', { ascending: false })
+      .limit(fetchLimit),
     supabase
-    .from('thought')
-    .select(`
+      .from('thought')
+      .select(`
       id,
       slug,
       content_text,
@@ -271,17 +271,17 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
         image (id, alt, storage_key, width, height)
       )
     `)
-    .order('created_at', {ascending: false})
-    .limit(fetchLimit)
-    .eq('push_to_gallery' as never, true)
+      .order('created_at', { ascending: false })
+      .limit(fetchLimit)
+      .eq('push_to_gallery' as never, true)
   ]);
 
   if (albumResult.error) {
-    return new Response(albumResult.error.message, {status: 500});
+    return new Response(albumResult.error.message, { status: 500 });
   }
 
   if (thoughtResult.error) {
-    return new Response(thoughtResult.error.message, {status: 500});
+    return new Response(thoughtResult.error.message, { status: 500 });
   }
 
   const albums = normalizeAlbums(albumResult.data);
@@ -289,19 +289,19 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   const sortedItems = [...albums, ...thoughts].sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
   const start = (page - 1) * PAGE_SIZE;
 
-  const {count: photoCount} = await supabase
-  .from('photo')
-  .select(`
+  const { count: photoCount } = await supabase
+    .from('photo')
+    .select(`
     id,
     language!inner (lang)
-  `, {count: 'exact', head: true})
-  .eq('is_draft', false)
-  .eq('language.lang', lang);
+  `, { count: 'exact', head: true })
+    .eq('is_draft', false)
+    .eq('language.lang', lang);
 
-  const {count: thoughtCount} = await supabase
-  .from('thought')
-  .select('id', {count: 'exact', head: true})
-  .eq('push_to_gallery' as never, true);
+  const { count: thoughtCount } = await supabase
+    .from('thought')
+    .select('id', { count: 'exact', head: true })
+    .eq('push_to_gallery' as never, true);
 
   const availableLangs = ["zh", "en", "jp"];
 
