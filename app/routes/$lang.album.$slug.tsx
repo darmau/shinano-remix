@@ -31,6 +31,7 @@ import {
   generateCommentStructuredData
 } from "~/utils/structuredData";
 import ShareButton from "~/components/ShareButton";
+import Reaction, {type ReactionSummary} from "~/components/Reaction";
 import album from "~/locales/album";
 
 export default function AlbumDetail() {
@@ -168,6 +169,11 @@ export default function AlbumDetail() {
               title={albumContent.title!}
               lang={lang}
               contentType="album" />
+            <Reaction
+              contentType="photo"
+              contentId={albumContent.id}
+              reactions={albumContent.reactions as ReactionSummary | null}
+            />
           </div>
           <div className="col-span-1 lg:col-span-2 lg:self-start">
             <CommentEditor
@@ -236,6 +242,7 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
       content_text,
       topic,
       page_view,
+      reactions,
       category (title, slug),
       language!inner (lang)
     `)

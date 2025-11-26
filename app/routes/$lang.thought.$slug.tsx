@@ -16,6 +16,7 @@ import {CommentBlock} from "~/components/CommentBlock";
 import CommentEditor from "~/components/CommentEditor";
 import i18nLinks from "~/utils/i18nLinks";
 import getTime from "~/utils/getTime";
+import Reaction, {type ReactionSummary} from "~/components/Reaction";
 import {EyeIcon} from "@heroicons/react/24/solid";
 import type {SupabaseClient} from "@supabase/supabase-js";
 import {useEffect, useState} from "react";
@@ -131,6 +132,12 @@ export default function ThoughtDetail() {
               ·
               <p className = "text-sm text-zinc-500">{getTime(thoughtData.created_at!, lang)}</p>
             </div>
+            <Reaction
+                contentType = "thought"
+                contentId = {thoughtData.id}
+                reactions = {thoughtData.reactions as ReactionSummary | null}
+                className = "mt-6"
+            />
           </div>
 
           <div className = "col-span-1 space-y-4">
@@ -198,6 +205,7 @@ export async function loader({
       content_text,
       slug,
       page_view,
+      reactions,
       created_at
     `)
   .eq('slug', slug)

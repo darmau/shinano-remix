@@ -19,6 +19,7 @@ import Catalog from "~/components/Catalog";
 import ReadingProcess from "~/components/ReadingProcess";
 import type {NeighboringPost} from "~/components/NextAndPrev";
 import NextAndPrev from "~/components/NextAndPrev";
+import Reaction, {type ReactionSummary} from "~/components/Reaction";
 import type {BreadcrumbProps} from "~/components/Breadcrumb";
 import Breadcrumb from "~/components/Breadcrumb";
 import CommentEditor from "~/components/CommentEditor";
@@ -394,6 +395,12 @@ export default function ArticleDetail() {
                       )}
                     </>
                   )}
+                <Reaction
+                    contentType = "article"
+                    contentId = {article.id}
+                    reactions = {article.reactions as ReactionSummary | null}
+                    className = "mt-10"
+                />
                 <NextAndPrev
                     type = "article"
                     next = {nextArticle as NeighboringPost}
@@ -483,6 +490,7 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
       topic,
       content_json,
       page_view,
+      reactions,
       category (title, slug),
       cover (alt, height, width, storage_key),
       language!inner (lang),
