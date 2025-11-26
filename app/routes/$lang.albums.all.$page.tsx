@@ -2,12 +2,13 @@ import {useMemo, useState} from "react";
 import Subnav from "~/components/Subnav";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
-import { Link, useLoaderData, useLocation, useOutletContext } from "react-router";
+import { useLoaderData, useLocation, useOutletContext } from "react-router";
 import Pagination from "~/components/Pagination";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
 import type {AlbumRow, GalleryItem, GalleryMediaImage, ThoughtRow} from "~/types/Gallery";
+import GalleryCard from "~/components/GalleryCard";
 
 type LoaderData = {
   items: GalleryItem[];
@@ -147,40 +148,9 @@ export default function AllAlbums() {
         <h1 className = "sr-only">Photography</h1>
         <div className = "w-full max-w-5xl mx-auto p-4 lg:mb-16 space-y-6">
           <ul className = "space-y-6">
-            {visibleItems.map((item) => {
-              const href = item.type === "photo"
-                  ? `/${lang}/album/${item.slug ?? item.id}`
-                  : `/${lang}/thought/${item.slug ?? item.id}`;
-
-              return (
-                  <li key = {`${item.type}-${item.id}`} className = "flex gap-4 items-start">
-                    {item.images.length > 0 && (
-                        <div className = "flex flex-wrap gap-2 w-40 sm:w-60">
-                          {item.images.map((image) => (
-                              <img
-                                  key = {image.id}
-                                  src = {`${prefix}/cdn-cgi/image/format=auto,width=240/${image.storage_key}`}
-                                  alt = {image.alt ?? ""}
-                                  className = "w-20 h-20 object-cover rounded"
-                                  loading = "lazy"
-                              />
-                          ))}
-                        </div>
-                    )}
-                    <div className = "flex-1 space-y-2">
-                      {item.type === "photo" ? (
-                          <Link to = {href} className = "text-lg font-semibold text-zinc-900">
-                            {item.title || "Untitled"}
-                          </Link>
-                      ) : (
-                          <Link to = {href} className = "text-sm text-zinc-700 whitespace-pre-line">
-                            {item.content}
-                          </Link>
-                      )}
-                    </div>
-                  </li>
-              );
-            })}
+            {visibleItems.map((item) => (
+                <GalleryCard item = {item} lang = {lang} prefix = {prefix} key = {`${item.type}-${item.id}`}/>
+            ))}
           </ul>
 
           {visibleCount < items.length && (
