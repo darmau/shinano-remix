@@ -1,36 +1,16 @@
+import {useMemo, useState} from "react";
 import Subnav from "~/components/Subnav";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import { Link, useLoaderData, useLocation, useOutletContext } from "react-router";
-import type {FeaturedPhoto} from "~/utils/generatePhotoAlbum";
-import {generatePhotoAlbum} from "~/utils/generatePhotoAlbum";
-import {ServerPhotoAlbum} from "~/components/ServerPhotoAlbum";
-import GalleryImage from "~/components/GalleryImage";
-import "react-photo-album/columns.css";
 import Pagination from "~/components/Pagination";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import i18nLinks from "~/utils/i18nLinks";
-
-type AlbumRow = {
-  id: number;
-  title: string | null;
-  slug: string | null;
-  page_view: number | null;
-  cover: {
-    id: string | number;
-    alt: string | null;
-    storage_key: string;
-    width: number | null;
-    height: number | null;
-  } | null;
-  language: {
-    lang: string | null;
-  } | null;
-};
+import type {AlbumRow, GalleryItem, GalleryMediaImage, ThoughtRow} from "~/types/Gallery";
 
 type LoaderData = {
-  albums: FeaturedPhoto[];
+  items: GalleryItem[];
   count: number;
   page: number;
   baseUrl: string;
@@ -38,41 +18,99 @@ type LoaderData = {
   availableLangs: string[];
 };
 
-const normalizeAlbums = (rows: unknown, fallbackLang: string): FeaturedPhoto[] => {
+const PAGE_SIZE = 20;
+
+const toImages = (cover: AlbumRow["cover"] | null, galleryImages?: AlbumRow["photo_image"] | ThoughtRow["thought_image"]): GalleryMediaImage[] => {
+  const images: GalleryMediaImage[] = [];
+
+  if (Array.isArray(galleryImages)) {
+    galleryImages
+        .map(item => ({order: item?.order ?? 0, image: item?.image}))
+        .filter((item): item is { order: number; image: NonNullable<AlbumRow["cover"]> } => !!item.image)
+        .sort((a, b) => a.order - b.order)
+        .forEach(({image}) => {
+          images.push({
+            id: String(image.id),
+            alt: image.alt ?? null,
+            storage_key: image.storage_key,
+            width: image.width ?? 0,
+            height: image.height ?? 0,
+          });
+        });
+  }
+
+  const hasCover = cover && images.some(img => img.storage_key === cover.storage_key);
+
+  if (cover && !hasCover) {
+    images.push({
+      id: String(cover.id),
+      alt: cover.alt ?? null,
+      storage_key: cover.storage_key,
+      width: cover.width ?? 0,
+      height: cover.height ?? 0,
+    });
+  }
+
+  return images;
+};
+
+const normalizeAlbums = (rows: unknown): GalleryItem[] => {
   if (!Array.isArray(rows)) {
     return [];
   }
 
-  const normalized: FeaturedPhoto[] = [];
-
-  rows.forEach(row => {
+  return rows.flatMap(row => {
     if (!row || typeof row !== "object") {
-      return;
+      return [];
     }
 
     const candidate = row as AlbumRow;
     if (typeof candidate.id !== "number" || !candidate.cover || !candidate.language) {
-      return;
+      return [];
     }
 
-    normalized.push({
+    return [{
+      type: "photo" as const,
       id: candidate.id,
       slug: candidate.slug,
       title: candidate.title ?? "",
-      language: {
-        lang: candidate.language.lang ?? fallbackLang,
-      },
-      cover: {
-        id: String(candidate.cover.id),
-        alt: candidate.cover.alt,
-        storage_key: candidate.cover.storage_key,
-        width: candidate.cover.width ?? 0,
-        height: candidate.cover.height ?? 0,
-      },
-    });
+      content: candidate.content_text ?? "",
+      createdAt: candidate.published_at ?? candidate.created_at ?? "",
+      images: toImages(candidate.cover, candidate.photo_image),
+    }];
   });
+};
 
-  return normalized;
+const normalizeThoughts = (rows: unknown): GalleryItem[] => {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  return rows.flatMap(row => {
+    if (!row || typeof row !== "object") {
+      return [];
+    }
+
+    const candidate = row as ThoughtRow;
+    if (candidate.push_to_gallery !== true || typeof candidate.id !== "number") {
+      return [];
+    }
+
+    return [{
+      type: "thought" as const,
+      id: candidate.id,
+      slug: candidate.slug,
+      title: "",
+      content: candidate.content_text ?? "",
+      createdAt: candidate.created_at ?? "",
+      images: toImages(null, candidate.thought_image ?? null),
+    }];
+  });
+};
+
+const toTimestamp = (value: string) => {
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
 };
 
 const isLoaderData = (value: unknown): value is LoaderData =>
@@ -82,54 +120,79 @@ const isLoaderData = (value: unknown): value is LoaderData =>
     "availableLangs" in value &&
     "page" in value &&
     "prefix" in value &&
-    "albums" in value &&
+    "items" in value &&
     "count" in value;
 
 export default function AllAlbums() {
   const {prefix, lang} = useOutletContext<{prefix: string, lang: string}>();
-  const {albums, count, page} = useLoaderData<LoaderData>();
+  const {items, count, page} = useLoaderData<LoaderData>();
   const location = useLocation();
+  const [visibleCount, setVisibleCount] = useState(5);
 
   // 将pathname末尾的page去掉
   const path = location.pathname.replace(/\/\d+$/, '');
 
-  const photos = generatePhotoAlbum(albums, prefix, lang);
+  const visibleItems = useMemo(
+      () => items.slice(0, Math.min(visibleCount, items.length)),
+      [items, visibleCount]
+  );
+
+  const loadMore = () => {
+    setVisibleCount(prev => Math.min(items.length, prev + 5));
+  };
 
   return (
       <>
         <Subnav active = "photography"/>
         <h1 className = "sr-only">Photography</h1>
-        <div className = "w-full max-w-8xl mx-auto p-4 lg:mb-16 space-y-8">
-          <ServerPhotoAlbum
-              layout = "columns"
-              photos = {photos}
-              breakpoints = {[480, 720, 1080]}
-              columns = {(containerWidth: number) => {
-                if (containerWidth < 480) return 1;
-                if (containerWidth < 720) return 2;
-                if (containerWidth < 960) return 3;
-                return 4;
-              }}
-              spacing = {0}
-              render = {{
-                // eslint-disable-next-line no-empty-pattern
-                photo: ({}, {photo}: { photo: typeof photos[number] }) => (
-                    <Link
-                        to = {photo.href} className = "group m-2 relative rounded-md overflow-hidden" key = {photo.key}
-                    >
-                      <div className = "z-20 absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 to-transparent">
-                        <div
-                            className = "transform translate-y-full transition-transform duration-300 group-hover:translate-y-0 p-4"
-                        >
-                          <p className = "text-white font-medium text-base">{photo.title}</p>
+        <div className = "w-full max-w-5xl mx-auto p-4 lg:mb-16 space-y-6">
+          <ul className = "space-y-6">
+            {visibleItems.map((item) => {
+              const href = item.type === "photo"
+                  ? `/${lang}/album/${item.slug ?? item.id}`
+                  : `/${lang}/thought/${item.slug ?? item.id}`;
+
+              return (
+                  <li key = {`${item.type}-${item.id}`} className = "flex gap-4 items-start">
+                    {item.images.length > 0 && (
+                        <div className = "flex flex-wrap gap-2 w-40 sm:w-60">
+                          {item.images.map((image) => (
+                              <img
+                                  key = {image.id}
+                                  src = {`${prefix}/cdn-cgi/image/format=auto,width=240/${image.storage_key}`}
+                                  alt = {image.alt ?? ""}
+                                  className = "w-20 h-20 object-cover rounded"
+                                  loading = "lazy"
+                              />
+                          ))}
                         </div>
-                      </div>
-                      <GalleryImage image = {photo} width = {640} classList = "group w-full h-auto"/>
-                    </Link>
-                )
-              }}
-          />
-          <Pagination count = {count ?? 0} limit = {16} page = {page} path = {path}/>
+                    )}
+                    <div className = "flex-1 space-y-2">
+                      {item.type === "photo" ? (
+                          <Link to = {href} className = "text-lg font-semibold text-zinc-900">
+                            {item.title || "Untitled"}
+                          </Link>
+                      ) : (
+                          <Link to = {href} className = "text-sm text-zinc-700 whitespace-pre-line">
+                            {item.content}
+                          </Link>
+                      )}
+                    </div>
+                  </li>
+              );
+            })}
+          </ul>
+
+          {visibleCount < items.length && (
+              <button
+                  className = "bg-zinc-900 text-white px-4 py-2 rounded-md text-sm"
+                  onClick = {loadMore}
+              >
+                加载更多
+              </button>
+          )}
+
+          <Pagination count = {count ?? 0} limit = {PAGE_SIZE} page = {page} path = {path}/>
         </div>
       </>
   )
@@ -144,6 +207,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   }
 
   const baseUrl = data.baseUrl;
+  const ogCover = data.items.find(item => item.images.length > 0)?.images[0]?.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f";
   const multiLangLinks = i18nLinks(baseUrl,
       lang,
       data.availableLangs,
@@ -173,8 +237,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
     },
     {
       property: "og:image",
-      // 没有数据的时候会有bug
-      content: `${data.prefix}/cdn-cgi/image/format=jpeg,width=960/${data.albums[0]?.cover?.storage_key ?? "a2b148a3-5799-4be0-a8d4-907f9355f20f"}`
+      content: `${data.prefix}/cdn-cgi/image/format=jpeg,width=960/${ogCover}`
     },
     {
       property: "og:description",
@@ -195,35 +258,68 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
 export async function loader({request, context, params}: LoaderFunctionArgs) {
   const {supabase} = createClient(request, context);
   const lang = params.lang as string;
-  const page = params.page as string;
+  const page = Number(params.page);
 
   // 如果page无法转换为数字，返回404
-  if (isNaN(Number(page))) {
+  if (!Number.isInteger(page) || page < 1) {
     return new Response(null, {status: 404});
   }
 
-  const {data: albumRows, error: albumsError} = await supabase
-  .from('photo')
-  .select(`
-      id,
-      title,
-      slug,
-      page_view,
-      cover (id, alt, storage_key, width, height),
-      language!inner (lang)
-    `)
-  .eq('language.lang', lang)
-  .eq('is_draft', false)
-  .limit(12)
-  .range((Number(page) - 1) * 16, Number(page) * 16 - 1)
-  .order('published_at', {ascending: false});
+  const fetchLimit = page * PAGE_SIZE;
 
-  if (albumsError) {
-    return new Response(albumsError.message, {status: 500});
+  const [albumResult, thoughtResult] = await Promise.all([
+    supabase
+    .from('photo')
+    .select(`
+        id,
+        title,
+        slug,
+        content_text,
+        created_at,
+        published_at,
+        cover (id, alt, storage_key, width, height),
+        language!inner (lang),
+        photo_image (
+          order,
+          image (id, alt, storage_key, width, height)
+        )
+      `)
+    .eq('language.lang', lang)
+    .eq('is_draft', false)
+    .order('published_at', {ascending: false})
+    .limit(fetchLimit),
+    supabase
+    .from('thought')
+    .select(`
+      id,
+      slug,
+      content_text,
+      created_at,
+      push_to_gallery,
+      thought_image (
+        order,
+        image (id, alt, storage_key, width, height)
+      )
+    `)
+    .order('created_at', {ascending: false})
+    .limit(fetchLimit)
+    .eq('push_to_gallery' as never, true)
+  ]);
+
+  if (albumResult.error) {
+    return new Response(albumResult.error.message, {status: 500});
   }
 
-  // 指定语言album的数量，排除草稿
-  const {count} = await supabase
+  if (thoughtResult.error) {
+    return new Response(thoughtResult.error.message, {status: 500});
+  }
+
+  const albums = normalizeAlbums(albumResult.data);
+  const thoughts = normalizeThoughts(thoughtResult.data);
+  const sortedItems = [...albums, ...thoughts].sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
+  const start = (page - 1) * PAGE_SIZE;
+
+  const {count: photoCount} = await supabase
   .from('photo')
   .select(`
     id,
@@ -232,13 +328,17 @@ export async function loader({request, context, params}: LoaderFunctionArgs) {
   .eq('is_draft', false)
   .eq('language.lang', lang);
 
-  const availableLangs = [lang];
-  const albums = normalizeAlbums(albumRows, lang);
+  const {count: thoughtCount} = await supabase
+  .from('thought')
+  .select('id', {count: 'exact', head: true})
+  .eq('push_to_gallery' as never, true);
+
+  const availableLangs = ["zh", "en", "jp"];
 
   return {
-    albums,
-    count: count ?? 0,
-    page: Number(page),
+    items: sortedItems.slice(start, start + PAGE_SIZE),
+    count: (photoCount ?? 0) + (thoughtCount ?? 0),
+    page,
     baseUrl: context.cloudflare.env.BASE_URL,
     prefix: context.cloudflare.env.IMG_PREFIX,
     availableLangs,
