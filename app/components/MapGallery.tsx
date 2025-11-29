@@ -116,8 +116,8 @@ export default function MapGallery({
         type: "geojson",
         data: imageCollection,
         cluster: true,
-        clusterMaxZoom: 14, // 最大聚合层级
-        clusterRadius: 50, // 聚合半径（像素）
+        clusterMaxZoom: 12, // 最大聚合层级（降低，更早停止聚合）
+        clusterRadius: 30, // 聚合半径（像素）- 更小让点更分散
       });
 
       // 添加聚合圆圈图层
@@ -139,11 +139,11 @@ export default function MapGallery({
           "circle-radius": [
             "step",
             ["get", "point_count"],
-            20, // 小于10个点
+            14, // 小于10个点
             10,
-            30, // 10-30个点
+            18, // 10-30个点
             30,
-            40, // 大于30个点
+            24, // 大于30个点
           ],
         },
       });
@@ -189,7 +189,7 @@ export default function MapGallery({
         const clusterId = features[0].properties?.cluster_id;
         const source = mapInstance.getSource("photos") as mapboxgl.GeoJSONSource;
         const currentZoom = mapInstance.getZoom();
-        const zoomThreshold = 13; // 缩放阈值：13级
+        const zoomThreshold = 11; // 缩放阈值：11级（与 clusterMaxZoom 配合）
         
         // 如果当前缩放级别达到阈值，直接显示图片列表
         if (currentZoom >= zoomThreshold) {
