@@ -165,6 +165,76 @@ export function buildCommentsStructuredData(
   });
 }
 
+export function generateThoughtStructuredData(params: {
+  thought: {
+    id: number;
+    slug: string;
+    content_text: string;
+    created_at: string;
+    page_view: number;
+    images?: Array<{
+      alt: string | null;
+      storage_key: string;
+      width: number;
+      height: number;
+    }>;
+    comments?: { count: number }[];
+  };
+  baseUrl: string;
+  imgPrefix: string;
+  lang: string;
+  url: string;
+}) {
+  const { thought, imgPrefix, lang, url } = params;
+  const headline = thought.content_text.slice(0, 100);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const structuredData: any = {
+    "@context": "https://schema.org",
+    "@type": "SocialMediaPosting",
+    headline,
+    articleBody: thought.content_text,
+    author: SITE_AUTHOR,
+    publisher: SITE_PUBLISHER,
+    datePublished: thought.created_at,
+    url,
+    inLanguage: lang,
+  };
+
+  if (thought.images && thought.images.length > 0) {
+    structuredData.image =
+      thought.images.length === 1
+        ? {
+            "@type": "ImageObject",
+            url: `${imgPrefix}/cdn-cgi/image/format=jpeg,width=800/${thought.images[0].storage_key}`,
+            width: thought.images[0].width,
+            height: thought.images[0].height,
+            caption: thought.images[0].alt,
+          }
+        : thought.images.map((image) => ({
+            "@type": "ImageObject",
+            url: `${imgPrefix}/cdn-cgi/image/format=jpeg,width=800/${image.storage_key}`,
+            width: image.width,
+            height: image.height,
+            caption: image.alt,
+          }));
+  }
+
+  if (thought.page_view) {
+    structuredData.interactionStatistic = {
+      "@type": "InteractionCounter",
+      interactionType: "https://schema.org/ReadAction",
+      userInteractionCount: thought.page_view,
+    };
+  }
+
+  if (thought.comments && thought.comments.length > 0) {
+    structuredData.commentCount = thought.comments[0].count;
+  }
+
+  return structuredData;
+}
+
 export function generatePersonStructuredData(params: {
   name: string;
   description: string;

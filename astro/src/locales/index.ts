@@ -15,4 +15,6 @@ export { default as SiteText } from "../../../app/locales/site";
 export { default as LegalText } from "../../../app/locales/legal";
 export { default as RSSText } from "../../../app/locales/rss";
 export { default as ContactText } from "../../../app/locales/contact";
+export { default as ThoughtText } from "../../../app/locales/thought";
+export { default as BookText } from "../../../app/locales/books";
 export { getBannerCopy } from "../../../app/locales/banner";
