@@ -10,6 +10,8 @@
     "dev:cf": "wrangler pages dev",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "wrangler pages dev ./build/client",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "react-router typegen && tsc",
     "typegen": "wrangler types"
   },
@@ -44,6 +46,10 @@
     "@react-router/dev": "^7.10.1",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.18",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/lodash": "^4.17.21",
     "@types/negotiator": "^0.6.4",
     "@types/node": "^25.0.1",
@@ -59,6 +65,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^16.5.0",
+    "jsdom": "^29.1.1",
     "postcss": "^8.5.6",
     "supabase": "^2.66.0",
     "tailwindcss": "^4.1.18",
@@ -66,6 +73,7 @@
     "typescript-eslint": "^8.49.0",
     "vite": "^7.2.7",
     "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.1.6",
     "wrangler": "4.54.0"
   },
   "engines": {
