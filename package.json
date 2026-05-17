@@ -45,5 +45,12 @@
     "@types/react-dom": "^19.2.3",
     "typescript": "^5.9.3",
     "wrangler": "4.54.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "workerd"
+    ]
   }
 }
