@@ -2,6 +2,9 @@ node_modules
 .astro/
 dist/
 .dev.vars
+.prod.vars
+.env
+.env.*
 .wrangler
 .idea
 .DS_Store

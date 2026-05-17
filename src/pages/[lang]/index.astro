@@ -21,7 +21,14 @@ const env = Astro.locals.runtime.env;
 const baseUrl = env.BASE_URL;
 const imgPrefix = env.IMG_PREFIX;
 
-const { data: articleRows } = await supabase
+console.log("[home] env check", {
+  hasSupabaseUrl: !!env.SUPABASE_URL,
+  hasSupabaseKey: !!env.SUPABASE_ANON_KEY,
+  supabaseUrlHost: env.SUPABASE_URL ? new URL(env.SUPABASE_URL).host : null,
+  baseUrl: env.BASE_URL,
+});
+
+const { data: articleRows, error: dbError } = await supabase
   .from("article")
   .select(
     `
@@ -46,6 +53,11 @@ const { data: articleRows } = await supabase
   .limit(16)
   .order("is_top", { ascending: false })
   .order("published_at", { ascending: false });
+
+if (dbError) {
+  console.error("[home] supabase article query failed", dbError);
+}
+console.log("[home] article rows", { count: articleRows?.length ?? 0, lang });
 
 const articles: Article[] = normalizeArticles(articleRows);
 const label = getLanguageLabel(HomepageText, lang);
