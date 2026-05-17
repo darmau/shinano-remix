@@ -165,6 +165,101 @@ export function buildCommentsStructuredData(
   });
 }
 
+export function generateAlbumStructuredData(params: {
+  album: {
+    id: number;
+    title: string;
+    slug: string;
+    abstract: string | null;
+    published_at: string;
+    page_view: number;
+    images: Array<{
+      id: number;
+      alt: string | null;
+      caption: string | null;
+      storage_key: string;
+      width: number;
+      height: number;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      exif: any;
+      location: string | null;
+      latitude: number | null;
+      longitude: number | null;
+    }>;
+    comments?: { count: number }[];
+  };
+  baseUrl: string;
+  imgPrefix: string;
+  lang: string;
+  url: string;
+}) {
+  const { album, imgPrefix, lang, url } = params;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const structuredData: any = {
+    "@context": "https://schema.org",
+    "@type": "ImageGallery",
+    name: album.title,
+    description: album.abstract,
+    author: SITE_AUTHOR,
+    publisher: SITE_PUBLISHER,
+    datePublished: album.published_at,
+    url,
+    inLanguage: lang,
+  };
+
+  if (album.page_view) {
+    structuredData.interactionStatistic = {
+      "@type": "InteractionCounter",
+      interactionType: "https://schema.org/ViewAction",
+      userInteractionCount: album.page_view,
+    };
+  }
+
+  if (album.comments && album.comments.length > 0) {
+    structuredData.commentCount = album.comments[0].count;
+  }
+
+  if (album.images && album.images.length > 0) {
+    structuredData.associatedMedia = album.images.map((image) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const imageObject: any = {
+        "@type": "ImageObject",
+        contentUrl: `${imgPrefix}/${image.storage_key}`,
+        url: `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/${image.storage_key}`,
+        width: image.width,
+        height: image.height,
+        caption: image.caption || image.alt,
+        name: image.alt,
+      };
+      if (image.exif) imageObject.exifData = image.exif;
+      if (image.latitude && image.longitude) {
+        imageObject.contentLocation = {
+          "@type": "Place",
+          geo: {
+            "@type": "GeoCoordinates",
+            latitude: image.latitude,
+            longitude: image.longitude,
+          },
+          ...(image.location ? { name: image.location } : {}),
+        };
+      }
+      return imageObject;
+    });
+
+    if (album.images[0]) {
+      structuredData.image = {
+        "@type": "ImageObject",
+        url: `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/${album.images[0].storage_key}`,
+        width: album.images[0].width,
+        height: album.images[0].height,
+      };
+    }
+  }
+
+  return structuredData;
+}
+
 export function generateThoughtStructuredData(params: {
   thought: {
     id: number;

@@ -21,4 +21,5 @@ export { default as SignupText } from "../../../app/locales/signup";
 export { default as ConfirmText } from "../../../app/locales/confirm";
 export { default as SearchText } from "../../../app/locales/search";
 export { default as UnsubscribeText } from "../../../app/locales/unsubscribe";
+export { default as AlbumText } from "../../../app/locales/album";
 export { getBannerCopy } from "../../../app/locales/banner";
