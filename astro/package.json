@@ -1,0 +1,39 @@
+{
+  "name": "shinano-astro",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "wrangler dev",
+    "check": "astro check",
+    "typegen": "wrangler types"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12.6.7",
+    "@astrojs/react": "^4.4.0",
+    "@formatjs/intl-localematcher": "^0.6.2",
+    "@headlessui/react": "^2.2.9",
+    "@heroicons/react": "^2.2.0",
+    "@marsidev/react-turnstile": "^1.4.0",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.87.1",
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/vite": "^4.1.18",
+    "astro": "^5.18.0",
+    "highlight.js": "^11.11.1",
+    "marked": "^17.0.1",
+    "negotiator": "^1.0.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251212.0",
+    "@types/negotiator": "^0.6.4",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3",
+    "wrangler": "4.54.0"
+  }
+}
