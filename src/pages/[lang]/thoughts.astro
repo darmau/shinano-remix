@@ -4,6 +4,7 @@ import Subnav from "~/components/Subnav.astro";
 import ThoughtCard from "~/components/ThoughtCard.tsx";
 import type { ThoughtSummary } from "~/components/ThoughtCard.tsx";
 import ThoughtListMore from "~/components/ThoughtListMore.tsx";
+import PageViewListRefresher from "~/components/PageViewListRefresher.tsx";
 import { ThoughtText } from "~/locales";
 import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
 import { LOCALES } from "~/lib/i18n/getLang";
@@ -93,6 +94,8 @@ const thoughts: ThoughtSummary[] = (thoughtsResult.data ?? [])
   .filter((t): t is ThoughtSummary => t !== null);
 
 const totalCount = countResult.count ?? thoughts.length;
+const thoughtIds = thoughts.map((t) => t.id);
+const env = getPublicEnv(Astro.locals);
 const label = getLanguageLabel(ThoughtText, lang!);
 const availableLangs = ["zh", "en", "jp"];
 ---
@@ -127,4 +130,13 @@ const availableLangs = ["zh", "en", "jp"];
       />
     </div>
   </div>
+
+  {thoughtIds.length > 0 && (
+    <PageViewListRefresher
+      client:idle
+      supabaseUrl={env.SUPABASE_URL}
+      supabaseAnonKey={env.SUPABASE_ANON_KEY}
+      thoughtIds={thoughtIds}
+    />
+  )}
 </Layout>

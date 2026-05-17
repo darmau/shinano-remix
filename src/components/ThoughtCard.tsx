@@ -48,7 +48,12 @@ export default function ThoughtCard({ thought, lang, imgPrefix }: Props) {
           <div className="flex gap-3 justify-start items-center">
             <div className="flex gap-1 items-center">
               <EyeIcon className="h-4 w-4 inline-block text-zinc-400" />
-              <span className="text-zinc-500 text-sm">{thought.page_view}</span>
+              <span
+                id={`thought-${thought.id}-page-view`}
+                className="text-zinc-500 text-sm"
+              >
+                {thought.page_view}
+              </span>
             </div>
             <div className="flex gap-1 items-center">
               <ChatBubbleOvalLeftIcon className="h-4 w-4 inline-block text-zinc-400" />

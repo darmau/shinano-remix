@@ -3,6 +3,7 @@ import Layout from "~/layouts/Base.astro";
 import Subnav from "~/components/Subnav.astro";
 import HomeTopArticle from "~/components/HomeTopArticle.astro";
 import NormalArticleCard from "~/components/NormalArticleCard.astro";
+import PageViewListRefresher from "~/components/PageViewListRefresher.tsx";
 import type { Article } from "~/types/Article";
 import { normalizeArticles } from "~/lib/articles";
 import { HomepageText } from "~/locales";
@@ -48,6 +49,8 @@ const { data: articleRows } = await supabase
   .order("published_at", { ascending: false });
 
 const articles: Article[] = normalizeArticles(articleRows);
+const articleIds = articles.map((a) => a.id);
+const env = getPublicEnv(Astro.locals);
 const label = getLanguageLabel(HomepageText, lang!);
 const availableLangs = ["zh", "en", "jp"];
 
@@ -118,4 +121,13 @@ const ogImage = `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/a2b148a3-5799-
       </>
     )
   }
+
+  {articleIds.length > 0 && (
+    <PageViewListRefresher
+      client:idle
+      supabaseUrl={env.SUPABASE_URL}
+      supabaseAnonKey={env.SUPABASE_ANON_KEY}
+      articleIds={articleIds}
+    />
+  )}
 </Layout>

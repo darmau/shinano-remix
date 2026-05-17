@@ -4,6 +4,7 @@ import Subnav from "~/components/Subnav.astro";
 import NormalArticleCard from "~/components/NormalArticleCard.astro";
 import Pagination from "~/components/Pagination.astro";
 import ArticleListSidebar from "~/components/ArticleListSidebar.astro";
+import PageViewListRefresher from "~/components/PageViewListRefresher.tsx";
 import {
   normalizeArticles,
   normalizeYearCounts,
@@ -74,6 +75,8 @@ const [articleRowsResult, articleCountResult, countByYearResult, countByCategory
   ]);
 
 const articles = normalizeArticles(articleRowsResult.data);
+const articleIds = articles.map((a) => a.id);
+const env = getPublicEnv(Astro.locals);
 const articleCount = articleCountResult.count ?? 0;
 const countByYear = normalizeYearCounts(countByYearResult.data);
 const countByCategory = normalizeCategoryCounts(countByCategoryResult.data);
@@ -129,4 +132,13 @@ const ogImage = `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/a2b148a3-5799-
       </>
     )
   }
+
+  {articleIds.length > 0 && (
+    <PageViewListRefresher
+      client:idle
+      supabaseUrl={env.SUPABASE_URL}
+      supabaseAnonKey={env.SUPABASE_ANON_KEY}
+      articleIds={articleIds}
+    />
+  )}
 </Layout>

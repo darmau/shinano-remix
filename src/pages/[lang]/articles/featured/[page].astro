@@ -3,6 +3,7 @@ import Layout from "~/layouts/Base.astro";
 import Subnav from "~/components/Subnav.astro";
 import FeaturedArticle from "~/components/FeaturedArticle.astro";
 import Pagination from "~/components/Pagination.astro";
+import PageViewListRefresher from "~/components/PageViewListRefresher.tsx";
 import { normalizeArticles } from "~/lib/articles";
 import { HomepageText } from "~/locales";
 import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
@@ -66,6 +67,8 @@ const [articleRowsResult, articleCountResult] = await Promise.all([
 ]);
 
 const articles = normalizeArticles(articleRowsResult.data);
+const articleIds = articles.map((a) => a.id);
+const env = getPublicEnv(Astro.locals);
 const articleCount = articleCountResult.count ?? 0;
 
 const label = getLanguageLabel(HomepageText, lang!);
@@ -110,4 +113,13 @@ const ogImage = `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/${ogImageStora
       </>
     )
   }
+
+  {articleIds.length > 0 && (
+    <PageViewListRefresher
+      client:idle
+      supabaseUrl={env.SUPABASE_URL}
+      supabaseAnonKey={env.SUPABASE_ANON_KEY}
+      articleIds={articleIds}
+    />
+  )}
 </Layout>

@@ -52,7 +52,7 @@ const { article, lang, showAbstract = false } = Astro.props;
     <div class="flex gap-3 justify-start items-center mt-2">
       <div class="flex gap-1 items-center">
         <EyeIcon className="h-4 w-4 inline-block text-zinc-400" />
-        <span class="text-zinc-500 text-sm">{article.page_view}</span>
+        <span id={`article-${article.id}-page-view`} class="text-zinc-500 text-sm">{article.page_view}</span>
       </div>
       <div class="flex gap-1 items-center">
         <ChatBubbleOvalLeftIcon className="h-4 w-4 inline-block text-zinc-400" />
