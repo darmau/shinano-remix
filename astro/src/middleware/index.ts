@@ -29,7 +29,9 @@ const langRedirect = defineMiddleware(async ({ request, url }, next) => {
   if (!MULTI_LANG_TOP_PATHS.has(first)) return next();
 
   const target = getLang(request);
-  return Response.redirect(new URL(`/${target}${url.pathname}`, url), 307);
+  const dest = new URL(`/${target}${url.pathname}`, url);
+  dest.search = url.search;
+  return Response.redirect(dest, 307);
 });
 
 const supabaseMiddleware = defineMiddleware(async (ctx, next) => {
