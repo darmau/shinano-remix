@@ -19,7 +19,7 @@ const TERMS_BY_LANG: Record<SupportedLang, string> = {
 const AVAILABLE_LANGS: SupportedLang[] = ["zh", "en", "jp"];
 
 export function getStaticPaths() {
-  return AVAILABLE_LANGS.map((lang) => ({ params: { lang } }));
+  return (["zh", "en", "jp"] as const).map((lang) => ({ params: { lang } }));
 }
 
 marked.setOptions({ gfm: true, breaks: true });

@@ -35,6 +35,11 @@ const langRedirect = defineMiddleware(async ({ request, url }, next) => {
 });
 
 const supabaseMiddleware = defineMiddleware(async (ctx, next) => {
+  // Prerendered routes have no request context (no cookies, no session) — skip
+  // the cookie-parsing supabase client setup so build-time rendering doesn't
+  // emit "Astro.request.headers is not available" warnings.
+  if (ctx.isPrerendered) return next();
+
   const { client, setCookies } = createSupabaseServer(ctx);
   ctx.locals.supabase = client;
 
