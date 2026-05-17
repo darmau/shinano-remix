@@ -1,27 +1,26 @@
 ---
 import Layout from "~/layouts/Base.astro";
 import Subnav from "~/components/Subnav.astro";
-import ThoughtCard from "~/components/ThoughtCard.astro";
-import type { ThoughtSummary } from "~/components/ThoughtCard.astro";
+import ThoughtCard from "~/components/ThoughtCard.tsx";
+import type { ThoughtSummary } from "~/components/ThoughtCard.tsx";
+import ThoughtListMore from "~/components/ThoughtListMore.tsx";
 import { ThoughtText } from "~/locales";
 import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
 import { LOCALES } from "~/lib/i18n/getLang";
+import { getPublicEnv } from "~/lib/env";
+import { createSupabaseBuild } from "~/lib/supabase/build";
 
-export const prerender = false;
+export const prerender = true;
 
-const { lang } = Astro.params;
-if (!lang || !(LOCALES as readonly string[]).includes(lang)) {
-  return new Response(null, { status: 404, statusText: "No such language" });
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
 }
 
-const supabase = Astro.locals.supabase;
-const env = Astro.locals.runtime.env;
-const baseUrl = env.BASE_URL;
-const imgPrefix = env.IMG_PREFIX;
+const INITIAL_COUNT = 30;
 
-const url = new URL(Astro.request.url);
-const page = url.searchParams.get("page") ? parseInt(url.searchParams.get("page")!) : 1;
-const limit = 12;
+const { lang } = Astro.params;
+const supabase = createSupabaseBuild();
+const { BASE_URL: baseUrl, IMG_PREFIX: imgPrefix } = getPublicEnv(Astro.locals);
 
 const [thoughtsResult, countResult] = await Promise.all([
   supabase
@@ -34,7 +33,7 @@ const [thoughtsResult, countResult] = await Promise.all([
       `,
     )
     .order("created_at", { ascending: false })
-    .range((page - 1) * limit, page * limit - 1),
+    .range(0, INITIAL_COUNT - 1),
   supabase.from("thought").select("id", { count: "exact", head: true }),
 ]);
 
@@ -93,56 +92,39 @@ const thoughts: ThoughtSummary[] = (thoughtsResult.data ?? [])
   })
   .filter((t): t is ThoughtSummary => t !== null);
 
-const totalCount = countResult.count ?? 0;
-const totalPages = Math.max(1, Math.ceil(totalCount / limit));
-
-const label = getLanguageLabel(ThoughtText, lang);
+const totalCount = countResult.count ?? thoughts.length;
+const label = getLanguageLabel(ThoughtText, lang!);
 const availableLangs = ["zh", "en", "jp"];
-const isPaged = page > 1;
-const pathWithoutLang = isPaged ? `thoughts?page=${page}` : "thoughts";
 ---
 
 <Layout
-  lang={lang}
+  lang={lang!}
   title={label.all_thoughts}
   description={label.description}
   ogTitle={label.all_thoughts}
   ogDescription={label.description}
   ogType="article"
-  pathWithoutLang={pathWithoutLang}
+  pathWithoutLang="thoughts"
   availableLangs={availableLangs}
   baseUrl={baseUrl}
   rssHref={`${baseUrl}/${lang}/thought/rss.xml`}
 >
-  <Subnav lang={lang} active="others" />
+  <Subnav lang={lang!} active="others" />
   <h1 class="sr-only">{label.all_thoughts}</h1>
   <div class="w-full flex-1 min-h-full max-w-2xl mx-auto p-4 md:py-8 lg:mb-16">
     <div class="flex flex-col gap-4">
-      {thoughts.map((thought) => <ThoughtCard thought={thought} lang={lang} imgPrefix={imgPrefix} />)}
+      {thoughts.map((thought) => (
+        <ThoughtCard thought={thought} lang={lang!} imgPrefix={imgPrefix} />
+      ))}
+      <ThoughtListMore
+        client:visible
+        lang={lang!}
+        imgPrefix={imgPrefix}
+        initialOffset={thoughts.length}
+        totalCount={totalCount}
+        loadMoreLabel={label.loadmore}
+        loadingLabel={label.loading}
+      />
     </div>
-    <nav class="mt-8 flex justify-between text-sm" aria-label="Pagination">
-      {
-        page > 1 ? (
-          <a
-            href={page - 1 === 1 ? `/${lang}/thoughts` : `/${lang}/thoughts?page=${page - 1}`}
-            class="rounded-md bg-white px-3 py-2 font-semibold text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50"
-          >
-            {label.previous}
-          </a>
-        ) : (
-          <span />
-        )
-      }
-      {
-        page < totalPages && (
-          <a
-            href={`/${lang}/thoughts?page=${page + 1}`}
-            class="ml-auto rounded-md bg-white px-3 py-2 font-semibold text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50"
-          >
-            {label.next}
-          </a>
-        )
-      }
-    </nav>
   </div>
 </Layout>

@@ -4,34 +4,26 @@ import Subnav from "~/components/Subnav.astro";
 import RateStars from "~/components/RateStars.astro";
 import getDate from "~/lib/i18n/getDate";
 import { LinkIcon } from "@heroicons/react/24/solid";
-import { BookText, ThoughtText } from "~/locales";
+import { BookText } from "~/locales";
 import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
 import { LOCALES } from "~/lib/i18n/getLang";
+import { getPublicEnv } from "~/lib/env";
+import { createSupabaseBuild } from "~/lib/supabase/build";
 
-export const prerender = false;
+export const prerender = true;
 
-const { lang } = Astro.params;
-if (!lang || !(LOCALES as readonly string[]).includes(lang)) {
-  return new Response(null, { status: 404, statusText: "No such language" });
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
 }
 
-const supabase = Astro.locals.supabase;
-const env = Astro.locals.runtime.env;
-const baseUrl = env.BASE_URL;
-const imgPrefix = env.IMG_PREFIX;
+const { lang } = Astro.params;
+const supabase = createSupabaseBuild();
+const { BASE_URL: baseUrl, IMG_PREFIX: imgPrefix } = getPublicEnv(Astro.locals);
 
-const url = new URL(Astro.request.url);
-const page = url.searchParams.get("page") ? parseInt(url.searchParams.get("page")!) : 1;
-const limit = 20;
-
-const [booksResult, countResult] = await Promise.all([
-  supabase
-    .from("book")
-    .select(`id, title, rate, comment, link, date, cover (id, alt, storage_key)`)
-    .order("date", { ascending: false })
-    .range((page - 1) * limit, page * limit - 1),
-  supabase.from("book").select("id", { count: "exact", head: true }),
-]);
+const booksResult = await supabase
+  .from("book")
+  .select(`id, title, rate, comment, link, date, cover (id, alt, storage_key)`)
+  .order("date", { ascending: false });
 
 interface BookRow {
   id: number;
@@ -71,18 +63,14 @@ const books: BookRow[] = (booksResult.data ?? [])
   })
   .filter((b): b is BookRow => b !== null);
 
-const totalCount = countResult.count ?? 0;
-const totalPages = Math.max(1, Math.ceil(totalCount / limit));
-
-const label = getLanguageLabel(BookText, lang);
-const thoughtLabel = getLanguageLabel(ThoughtText, lang);
+const totalCount = books.length;
+const label = getLanguageLabel(BookText, lang!);
 const availableLangs = ["zh", "en", "jp"];
-const isPaged = page > 1;
-const pathWithoutLang = isPaged ? `book?page=${page}` : "book";
+const pathWithoutLang = "book";
 ---
 
 <Layout
-  lang={lang}
+  lang={lang!}
   title={`${label.title}(${totalCount})`}
   description={label.description}
   ogTitle={label.title}
@@ -91,7 +79,7 @@ const pathWithoutLang = isPaged ? `book?page=${page}` : "book";
   availableLangs={availableLangs}
   baseUrl={baseUrl}
 >
-  <Subnav lang={lang} active="others" />
+  <Subnav lang={lang!} active="others" />
   <h1 class="sr-only">Books</h1>
   <div class="w-full max-w-6xl mx-auto p-4 md:py-8 my-8 lg:my-12">
     <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
@@ -111,7 +99,7 @@ const pathWithoutLang = isPaged ? `book?page=${page}` : "book";
               <h3 class="font-medium text-lg text-zinc-800">{book.title}</h3>
               <RateStars n={book.rate} />
               {book.comment && <p class="text-zinc-700">{book.comment}</p>}
-              {book.date && <div class="text-sm text-zinc-500">{getDate(book.date, lang)}</div>}
+              {book.date && <div class="text-sm text-zinc-500">{getDate(book.date, lang!)}</div>}
               {book.link && (
                 <a href={book.link} target="_blank" class="block my-2" rel="noreferrer">
                   <LinkIcon className="w-4 h-4 text-zinc-500 hover:text-violet-700 cursor-pointer" />
@@ -122,29 +110,5 @@ const pathWithoutLang = isPaged ? `book?page=${page}` : "book";
         ))
       }
     </div>
-    <nav class="mt-8 flex justify-between text-sm" aria-label="Pagination">
-      {
-        page > 1 ? (
-          <a
-            href={page - 1 === 1 ? `/${lang}/book` : `/${lang}/book?page=${page - 1}`}
-            class="rounded-md bg-white px-3 py-2 font-semibold text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50"
-          >
-            {thoughtLabel.previous}
-          </a>
-        ) : (
-          <span />
-        )
-      }
-      {
-        page < totalPages && (
-          <a
-            href={`/${lang}/book?page=${page + 1}`}
-            class="ml-auto rounded-md bg-white px-3 py-2 font-semibold text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50"
-          >
-            {thoughtLabel.next}
-          </a>
-        )
-      }
-    </nav>
   </div>
 </Layout>
