@@ -1,5 +1,0 @@
-.astro/
-dist/
-.wrangler/
-node_modules/
-.dev.vars

@@ -1,0 +1,1 @@
+import{j as o}from"./jsx-runtime.D_zvdyIk.js";function l({comment:t,label:e}){const n=()=>{window.dispatchEvent(new CustomEvent("comment:reply",{detail:t}))};return o.jsx("button",{onClick:n,className:"text-sm text-violet-700 hover:text-violet-500",children:e})}export{l as default};

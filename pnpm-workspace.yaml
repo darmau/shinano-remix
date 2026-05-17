@@ -1,6 +1,0 @@
-packages:
-  - 'astro'
-onlyBuiltDependencies:
-  - esbuild
-  - sharp
-  - workerd
