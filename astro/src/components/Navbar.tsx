@@ -12,8 +12,8 @@ import {
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import throttle from "lodash/throttle";
-import TranslateIcon from "../../../app/icons/Translate";
-import type { NavItem } from "../../../app/locales/navbar";
+import TranslateIcon from "~/icons/Translate";
+import type { NavItem } from "~/locales/navbar";
 import { getLanguageSwitcherLinks } from "~/lib/i18n/getLanguageSwitcherLinks";
 
 const pathMap = new Map([

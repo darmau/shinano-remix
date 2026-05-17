@@ -1,7 +1,7 @@
-import FocalIcon from "../../../app/icons/Focal";
-import ISOIcon from "../../../app/icons/ISO";
-import ShutterIcon from "../../../app/icons/Shutter";
-import ApertureIcon from "../../../app/icons/Aperture";
+import FocalIcon from "~/icons/Focal";
+import ISOIcon from "~/icons/ISO";
+import ShutterIcon from "~/icons/Shutter";
+import ApertureIcon from "~/icons/Aperture";
 import { CameraIcon, VideoCameraIcon } from "@heroicons/react/24/outline";
 
 export interface EXIFProps {

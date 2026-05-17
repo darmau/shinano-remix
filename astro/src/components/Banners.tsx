@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { XMarkIcon } from "@heroicons/react/20/solid";
-import { getBannerCopy } from "../../../app/locales/banner";
+import { getBannerCopy } from "~/locales/banner";
 
 const STORAGE_KEY = "firewood.community-banner.dismissed";
 

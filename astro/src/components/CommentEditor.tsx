@@ -3,7 +3,7 @@ import type { Session } from "@supabase/supabase-js";
 import { Turnstile } from "@marsidev/react-turnstile";
 import type { CommentProps } from "~/types/Comment";
 import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
-import CommentText from "../../../app/locales/comment";
+import CommentText from "~/locales/comment";
 
 type CommentEditorProps = {
   contentTable: string;

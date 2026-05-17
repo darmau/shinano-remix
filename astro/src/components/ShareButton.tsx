@@ -1,8 +1,8 @@
 import { useState } from "react";
-import TwitterIcon from "../../../app/icons/Twitter";
-import CopyIcon from "../../../app/icons/Copy";
+import TwitterIcon from "~/icons/Twitter";
+import CopyIcon from "~/icons/Copy";
 import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
-import UtilsText from "../../../app/locales/utils";
+import UtilsText from "~/locales/utils";
 import { trackCopyLink, trackShareX, type ContentType } from "~/lib/zaraz";
 
 interface ShareButtonProps {
