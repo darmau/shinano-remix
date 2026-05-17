@@ -111,6 +111,6 @@ const errorMessage = url.searchParams.get("error");
       }
     </form>
     {errorMessage && <p class="mt-4 text-red-500">{errorMessage}</p>}
-    {status === "ok" && <p class="mt-4 text-green-500">{label.submit}</p>}
+    {status === "ok" && <p class="mt-4 text-green-500">信息提交成功</p>}
   </div>
 </Layout>
