@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && printf '_worker.js\\n' > dist/.assetsignore",
     "preview": "wrangler dev",
     "check": "astro check",
     "typegen": "wrangler types"
