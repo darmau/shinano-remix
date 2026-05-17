@@ -7,6 +7,8 @@
  * @returns Promise<boolean> 是否成功记录了访问
  */
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 type ContentType = 'article' | 'album' | 'thought';
 type RpcFunctionName = 'article_page_view' | 'photo_page_view' | 'thought_page_view';
 

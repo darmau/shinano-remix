@@ -78,7 +78,7 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
     .maybeSingle();
 
   const elapsed = Date.now() - startTime;
-  const imageCollection = (geojson || { type: "FeatureCollection", features: [] }) as MapImageCollection;
+  const imageCollection = (geojson || { type: "FeatureCollection", features: [] }) as unknown as MapImageCollection;
   const featureCount = imageCollection.features?.length || 0;
 
   const availableLangs = ["zh", "en", "jp"];

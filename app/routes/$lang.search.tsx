@@ -139,7 +139,13 @@ export default function Search() {
                     file_id: string;
                     filename: string;
                     score: number;
-                    attributes: Record<string, string | number | boolean | null>;
+                    attributes: {
+                      file: {
+                        description: string;
+                        image: string;
+                        title: string;
+                      };
+                    };
                   }) => (
                     <SearchResult key={result.file_id} result={result} />
                   ))}

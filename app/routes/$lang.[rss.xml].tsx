@@ -163,8 +163,8 @@ export async function loader({ context, params, request }: LoaderFunctionArgs) {
     const summary = article.abstract ?? article.subtitle ?? "";
     const slug = article.slug ?? article.id;
     return {
-      title: article.title,
-      description: summary || article.title,
+      title: article.title ?? "",
+      description: summary || article.title || "",
       pubDate: article.published_at,
       link: `${baseLink}/article/${slug}`,
       guid: `article-${article.id}`,
