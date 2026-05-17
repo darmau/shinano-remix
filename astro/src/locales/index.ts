@@ -17,4 +17,6 @@ export { default as RSSText } from "../../../app/locales/rss";
 export { default as ContactText } from "../../../app/locales/contact";
 export { default as ThoughtText } from "../../../app/locales/thought";
 export { default as BookText } from "../../../app/locales/books";
+export { default as SignupText } from "../../../app/locales/signup";
+export { default as ConfirmText } from "../../../app/locales/confirm";
 export { getBannerCopy } from "../../../app/locales/banner";
