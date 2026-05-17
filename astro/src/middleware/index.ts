@@ -20,6 +20,7 @@ const MULTI_LANG_TOP_PATHS = new Set([
   "login",
   "book",
   "terms-of-use",
+  "unsubscribe",
 ]);
 
 const langRedirect = defineMiddleware(async ({ request, url }, next) => {
