@@ -1,6 +1,3 @@
-// During the parallel-migration period we reuse the existing locale tables
-// in app/locales/ rather than duplicating them. Once Step 3 ships these files
-// will be moved into astro/src/locales/.
 export { default as ArticleText } from "~/locales/article";
 export { default as CommentText } from "~/locales/comment";
 export { default as NavbarItems } from "~/locales/navbar";
