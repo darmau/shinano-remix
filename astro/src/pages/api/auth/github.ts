@@ -20,11 +20,14 @@ export const POST: APIRoute = async (ctx) => {
 
   if (error || !data.url) {
     console.error("GitHub OAuth init failed:", error);
-    return Response.redirect(
-      new URL(`/${lang}/login?error=oauth_init_failed`, url),
-      303,
-    );
+    return new Response(null, {
+      status: 303,
+      headers: { Location: `/${lang}/login?error=oauth_init_failed` },
+    });
   }
 
-  return Response.redirect(data.url, 303);
+  return new Response(null, {
+    status: 303,
+    headers: { Location: data.url },
+  });
 };

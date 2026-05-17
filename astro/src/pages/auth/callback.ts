@@ -11,14 +11,9 @@ export const GET: APIRoute = async (ctx) => {
   if (code) {
     const supabase = ctx.locals.supabase;
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return Response.redirect(new URL(next, url), 303);
-    }
+    if (!error) return redirect(next);
     const reason = encodeURIComponent(error.message ?? "exchange_failed");
-    return Response.redirect(
-      new URL(`/auth/auth-code-error?next=${encodeURIComponent(next)}&reason=${reason}`, url),
-      303,
-    );
+    return redirect(`/auth/auth-code-error?next=${encodeURIComponent(next)}&reason=${reason}`);
   }
 
   const SUPPORTED = ["zh", "en", "jp"] as const;
@@ -32,11 +27,11 @@ export const GET: APIRoute = async (ctx) => {
     url.searchParams.get("message") ??
     "unknown";
 
-  return Response.redirect(
-    new URL(
-      `/auth/auth-code-error?next=${encodeURIComponent(next)}&reason=${encodeURIComponent(reason)}&lang=${lang}`,
-      url,
-    ),
-    303,
+  return redirect(
+    `/auth/auth-code-error?next=${encodeURIComponent(next)}&reason=${encodeURIComponent(reason)}&lang=${lang}`,
   );
 };
+
+function redirect(location: string): Response {
+  return new Response(null, { status: 303, headers: { Location: location } });
+}

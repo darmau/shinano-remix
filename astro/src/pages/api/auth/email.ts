@@ -15,13 +15,7 @@ export const POST: APIRoute = async (ctx) => {
   const labels = SignupText[lang as keyof typeof SignupText] ?? SignupText.zh;
 
   if (!email) {
-    return Response.redirect(
-      new URL(
-        `/${lang}/login?error=${encodeURIComponent(labels.email_required)}&next=${encodeURIComponent(next)}`,
-        url,
-      ),
-      303,
-    );
+    return redirect(`/${lang}/login?error=${encodeURIComponent(labels.email_required)}&next=${encodeURIComponent(next)}`);
   }
 
   const supabase = ctx.locals.supabase;
@@ -34,18 +28,15 @@ export const POST: APIRoute = async (ctx) => {
 
   if (error) {
     console.error("Magic link error:", error);
-    return Response.redirect(
-      new URL(
-        `/${lang}/login?error=${encodeURIComponent(error.message)}&next=${encodeURIComponent(next)}`,
-        url,
-      ),
-      303,
-    );
+    return redirect(`/${lang}/login?error=${encodeURIComponent(error.message)}&next=${encodeURIComponent(next)}`);
   }
 
-  // Redirect to login with a "check your email" flag
-  return Response.redirect(
-    new URL(`/${lang}/login?sent=1&next=${encodeURIComponent(next)}`, url),
-    303,
-  );
+  return redirect(`/${lang}/login?sent=1&next=${encodeURIComponent(next)}`);
 };
+
+function redirect(location: string): Response {
+  return new Response(null, {
+    status: 303,
+    headers: { Location: location },
+  });
+}

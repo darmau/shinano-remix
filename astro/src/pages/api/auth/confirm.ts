@@ -61,7 +61,7 @@ export const POST: APIRoute = async (ctx) => {
     });
     if (values?.username) params.set("username", values.username);
     if (values?.website) params.set("website", values.website);
-    return Response.redirect(new URL(`/auth/confirm?${params.toString()}`, url), 303);
+    return redirect(`/auth/confirm?${params.toString()}`);
   };
 
   if (!session?.user) return redirectToForm(labels.invalid);
@@ -91,5 +91,9 @@ export const POST: APIRoute = async (ctx) => {
 
   await syncUserToPublicTable(supabase, session.user.id, username, website);
 
-  return Response.redirect(new URL(nextPath, url), 303);
+  return redirect(nextPath);
 };
+
+function redirect(location: string): Response {
+  return new Response(null, { status: 303, headers: { Location: location } });
+}
