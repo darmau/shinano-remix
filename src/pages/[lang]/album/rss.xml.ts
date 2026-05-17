@@ -3,8 +3,14 @@ import { HomepageText } from "~/locales";
 import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
 import { LOCALES } from "~/lib/i18n/getLang";
 import { buildRssChannel, escapeHtml, type RssEntry } from "~/lib/feeds/rss";
+import { getPublicEnv } from "~/lib/env";
+import { createSupabaseBuild } from "~/lib/supabase/build";
 
-export const prerender = false;
+export const prerender = true;
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
 
 type AlbumImageAsset = {
   order: number;
@@ -44,15 +50,10 @@ function renderAlbumImagesHtml(images: AlbumImageAsset[], prefix: string): strin
 }
 
 export const GET: APIRoute = async (ctx) => {
-  const lang = ctx.params.lang;
-  if (!lang || !(LOCALES as readonly string[]).includes(lang)) {
-    return new Response(null, { status: 404, statusText: "No such language" });
-  }
-
-  const supabase = ctx.locals.supabase;
-  const env = ctx.locals.runtime.env;
-  const baseUrl = env.BASE_URL;
-  const imgPrefix = env.IMG_PREFIX ?? "https://img.darmau.co";
+  const lang = ctx.params.lang!;
+  const supabase = createSupabaseBuild();
+  const { BASE_URL: baseUrl, IMG_PREFIX } = getPublicEnv(ctx.locals);
+  const imgPrefix = IMG_PREFIX || "https://img.darmau.co";
   const label = getLanguageLabel(HomepageText, lang);
 
   const { data: posts } = await supabase

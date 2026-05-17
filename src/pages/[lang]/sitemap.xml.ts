@@ -1,7 +1,13 @@
 import type { APIRoute } from "astro";
 import { LOCALES } from "~/lib/i18n/getLang";
+import { getPublicEnv } from "~/lib/env";
+import { createSupabaseBuild } from "~/lib/supabase/build";
 
-export const prerender = false;
+export const prerender = true;
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
 
 type RecordWithKeys = Record<string, unknown>;
 const isRecord = (value: unknown): value is RecordWithKeys =>
@@ -36,14 +42,9 @@ function entryMarkup(
 }
 
 export const GET: APIRoute = async (ctx) => {
-  const lang = ctx.params.lang;
-  if (!lang || !(LOCALES as readonly string[]).includes(lang)) {
-    return new Response(null, { status: 404, statusText: "No such language" });
-  }
-
-  const supabase = ctx.locals.supabase;
-  const env = ctx.locals.runtime.env;
-  const baseUrl = env.BASE_URL;
+  const lang = ctx.params.lang!;
+  const supabase = createSupabaseBuild();
+  const baseUrl = getPublicEnv(ctx.locals).BASE_URL;
 
   const [articleResult, albumResult, thoughtResult] = await Promise.all([
     supabase
