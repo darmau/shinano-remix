@@ -12,6 +12,12 @@
   "ai": {
     "binding": "AI"
   },
+  "vars": {
+    "BASE_URL": "https://darmau.co",
+    "IMG_PREFIX": "https://img.darmau.co",
+    "SUPABASE_URL": "https://uvehzviuyezvgbwmghzk.supabase.co",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAAQSDVMBZ6qVF2VM"
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
