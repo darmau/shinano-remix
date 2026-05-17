@@ -415,6 +415,38 @@ export function generateCommentStructuredData(params: {
   });
 }
 
+type RawSupabaseComment = {
+  id: number;
+  content_text: string;
+  created_at: string;
+  name: string | null;
+  is_anonymous: boolean;
+  reply_to: { id: number } | null;
+  users: { id: number; name: string } | null;
+};
+
+export function buildCommentsStructuredData(
+  comments: RawSupabaseComment[],
+  baseUrl: string,
+  articleUrl: string,
+) {
+  if (comments.length === 0) return [];
+  return generateCommentStructuredData({
+    comments: comments.map((comment) => ({
+      id: comment.id,
+      content_text: comment.content_text,
+      created_at: comment.created_at,
+      user_id: null,
+      name: comment.name,
+      is_anonymous: comment.is_anonymous,
+      reply_to: comment.reply_to?.id ?? null,
+      users: comment.users,
+    })),
+    baseUrl,
+    articleUrl,
+  });
+}
+
 /**
  * 生成个人资料页面的结构化数据
  * Generate structured data for about/person page

@@ -27,7 +27,7 @@ import type {loader as rootLoader} from "~/root";
 import {
   generateThoughtStructuredData,
   generateBreadcrumbStructuredData,
-  generateCommentStructuredData
+  buildCommentsStructuredData
 } from "~/utils/structuredData";
 
 export default function ThoughtDetail() {
@@ -313,20 +313,7 @@ export async function loader({
   ]);
 
   // 评论结构化数据
-  const commentStructuredData = comments.length > 0 ? generateCommentStructuredData({
-    comments: comments.map((comment: any) => ({
-      id: comment.id,
-      content_text: comment.content_text,
-      created_at: comment.created_at,
-      user_id: comment.user_id,
-      name: comment.name,
-      is_anonymous: comment.is_anonymous,
-      reply_to: comment.reply_to?.id || null,
-      users: comment.users
-    })),
-    baseUrl,
-    articleUrl: currentUrl
-  }) : [];
+  const commentStructuredData = buildCommentsStructuredData(comments, baseUrl, currentUrl);
 
   return {
     thoughtData,
