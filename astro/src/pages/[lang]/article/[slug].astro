@@ -198,11 +198,13 @@ const pageViewNodeId = `article-${article.id}-page-view`;
   rssHref={`${baseUrl}/${lang}/article/rss.xml`}
 >
   <script
+    is:inline
     type="application/ld+json"
     set:html={serializeStructuredData(articleJsonLd)}
     slot="head"
   />
   <script
+    is:inline
     type="application/ld+json"
     set:html={serializeStructuredData(breadcrumbJsonLd)}
     slot="head"
@@ -210,6 +212,7 @@ const pageViewNodeId = `article-${article.id}-page-view`;
   {
     commentJsonLd.map((c) => (
       <script
+        is:inline
         type="application/ld+json"
         set:html={serializeStructuredData(c)}
         slot="head"
