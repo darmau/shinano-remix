@@ -1,9 +1,10 @@
 import type { APIRoute } from "astro";
+import { getPublicEnv } from "~/lib/env";
 
-export const prerender = false;
+export const prerender = true;
 
 export const GET: APIRoute = async (ctx) => {
-  const baseUrl = ctx.locals.runtime.env.BASE_URL;
+  const baseUrl = getPublicEnv(ctx.locals).BASE_URL;
 
   const body = [
     "User-agent: Googlebot",

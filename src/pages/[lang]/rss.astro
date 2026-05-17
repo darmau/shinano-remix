@@ -5,19 +5,20 @@ import RSSCopyButton from "~/components/RSSCopyButton.tsx";
 import { RSSText } from "~/locales";
 import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
 import { LOCALES } from "~/lib/i18n/getLang";
+import { getPublicEnv } from "~/lib/env";
+import { createSupabaseBuild } from "~/lib/supabase/build";
 
-export const prerender = false;
+export const prerender = true;
 
-const { lang } = Astro.params;
-if (!lang || !(LOCALES as readonly string[]).includes(lang)) {
-  return new Response(null, { status: 404, statusText: "No such language" });
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
 }
 
-const supabase = Astro.locals.supabase;
-const env = Astro.locals.runtime.env;
-const baseUrl = env.BASE_URL;
-const imgPrefix = env.IMG_PREFIX;
-const label = getLanguageLabel(RSSText, lang);
+const { lang } = Astro.params;
+
+const supabase = createSupabaseBuild();
+const { BASE_URL: baseUrl, IMG_PREFIX: imgPrefix } = getPublicEnv(Astro.locals);
+const label = getLanguageLabel(RSSText, lang!);
 
 const [articlesResult, photosResult, thoughtsResult] = await Promise.all([
   supabase
@@ -54,7 +55,7 @@ const thoughtRssUrl = `${baseUrl}/${lang}/thought/rss.xml`;
 ---
 
 <Layout
-  lang={lang}
+  lang={lang!}
   title={label.page_title}
   description={label.page_description}
   ogTitle={label.page_title}

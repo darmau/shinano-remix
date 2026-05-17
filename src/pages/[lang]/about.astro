@@ -10,25 +10,26 @@ import type { Image } from "~/types/Image";
 import { AboutText, HomepageText } from "~/locales";
 import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
 import { LOCALES } from "~/lib/i18n/getLang";
+import { getPublicEnv } from "~/lib/env";
+import { createSupabaseBuild } from "~/lib/supabase/build";
 import {
   generatePersonStructuredData,
   serializeStructuredData,
 } from "~/lib/seo/structuredData";
 
-export const prerender = false;
+export const prerender = true;
 
-const { lang } = Astro.params;
-if (!lang || !(LOCALES as readonly string[]).includes(lang)) {
-  return new Response(null, { status: 404, statusText: "No such language" });
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
 }
 
-const supabase = Astro.locals.supabase;
-const env = Astro.locals.runtime.env;
-const baseUrl = env.BASE_URL;
-const imgPrefix = env.IMG_PREFIX;
+const { lang } = Astro.params;
 
-const content = AboutText(lang);
-const label = getLanguageLabel(HomepageText, lang);
+const supabase = createSupabaseBuild();
+const { BASE_URL: baseUrl, IMG_PREFIX: imgPrefix } = getPublicEnv(Astro.locals);
+
+const content = AboutText(lang!);
+const label = getLanguageLabel(HomepageText, lang!);
 
 const { data: profileImage } = await supabase
   .from("image")
@@ -59,7 +60,7 @@ const ogImage = `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/ba07adad-3f02-
 ---
 
 <Layout
-  lang={lang}
+  lang={lang!}
   title={label.about_title}
   description={label.about_description}
   ogTitle={label.about_title}

@@ -3,11 +3,12 @@ import Layout from "~/layouts/Base.astro";
 import { marked } from "marked";
 import { LegalText, HomepageText } from "~/locales";
 import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
+import { getPublicEnv } from "~/lib/env";
 import zhContent from "~/content/legal/zh.md?raw";
 import enContent from "~/content/legal/en.md?raw";
 import jpContent from "~/content/legal/jp.md?raw";
 
-export const prerender = false;
+export const prerender = true;
 
 type SupportedLang = "zh" | "en" | "jp";
 const TERMS_BY_LANG: Record<SupportedLang, string> = {
@@ -17,14 +18,17 @@ const TERMS_BY_LANG: Record<SupportedLang, string> = {
 };
 const AVAILABLE_LANGS: SupportedLang[] = ["zh", "en", "jp"];
 
+export function getStaticPaths() {
+  return AVAILABLE_LANGS.map((lang) => ({ params: { lang } }));
+}
+
 marked.setOptions({ gfm: true, breaks: true });
 
 const langParam = (Astro.params.lang ?? "zh") as SupportedLang;
 const lang = AVAILABLE_LANGS.includes(langParam) ? langParam : "zh";
 const html = await marked.parse(TERMS_BY_LANG[lang]);
 
-const env = Astro.locals.runtime.env;
-const baseUrl = env.BASE_URL;
+const baseUrl = getPublicEnv(Astro.locals).BASE_URL;
 const legalCopy = LegalText(lang);
 const siteLabel = getLanguageLabel(HomepageText, lang);
 const pageTitle = `${legalCopy.title} | ${siteLabel.title}`;

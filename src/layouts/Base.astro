@@ -7,6 +7,7 @@ import Footer from "~/components/Footer.astro";
 import { NavbarItems, ProfileText } from "~/locales";
 import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
 import i18nLinks from "~/lib/seo/i18nLinks";
+import { getPublicEnv } from "~/lib/env";
 import {
   generateWebsiteStructuredData,
   serializeStructuredData,
@@ -63,8 +64,8 @@ const links = i18nLinks(baseUrl, lang, availableLangs, pathWithoutLang);
 const canonicalUrl = `${baseUrl}/${lang}/${pathWithoutLang}`.replace(/\/$/, "");
 const ogUrl = canonicalUrl;
 
-const env = Astro.locals.runtime.env;
-const session = Astro.locals.session;
+const env = getPublicEnv(Astro.locals);
+const session = Astro.locals.session ?? null;
 const navbarItems = NavbarItems(lang);
 const profileLabel = getLanguageLabel(ProfileText, lang) as { login: string };
 const currentYear = new Date().getFullYear();

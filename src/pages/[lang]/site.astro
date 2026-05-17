@@ -3,6 +3,7 @@ import Layout from "~/layouts/Base.astro";
 import Subnav from "~/components/Subnav.astro";
 import { SiteText } from "~/locales";
 import { LOCALES } from "~/lib/i18n/getLang";
+import { getPublicEnv } from "~/lib/env";
 import Supabase from "~/icons/Supabase.svg";
 import Cloudflare from "~/icons/Cloudflare.svg";
 import SvelteKit from "~/icons/Svelte.svg";
@@ -16,21 +17,20 @@ import {
   Square3Stack3DIcon,
 } from "@heroicons/react/24/outline";
 
-export const prerender = false;
+export const prerender = true;
 
-const { lang } = Astro.params;
-if (!lang || !(LOCALES as readonly string[]).includes(lang)) {
-  return new Response(null, { status: 404, statusText: "No such language" });
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
 }
 
-const env = Astro.locals.runtime.env;
-const baseUrl = env.BASE_URL;
-const content = SiteText(lang);
+const { lang } = Astro.params;
+const baseUrl = getPublicEnv(Astro.locals).BASE_URL;
+const content = SiteText(lang!);
 const availableLangs = ["zh", "en", "jp"];
 ---
 
 <Layout
-  lang={lang}
+  lang={lang!}
   title={content.title}
   description={content.subtitle}
   ogTitle={content.title}
@@ -39,7 +39,7 @@ const availableLangs = ["zh", "en", "jp"];
   availableLangs={availableLangs}
   baseUrl={baseUrl}
 >
-  <Subnav lang={lang} active="about" />
+  <Subnav lang={lang!} active="about" />
 
   <section class="mx-auto max-w-7xl my-24 p-4 md:p-8 sm:my-32 space-y-8">
     <div class="relative isolate">
