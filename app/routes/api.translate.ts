@@ -49,7 +49,7 @@ export const action = async ({request, context}: Route.ActionArgs) => {
       target_lang: normalizedTargetLang,
     },
     {
-      gateway: "shinano"
+      gateway: { id: "shinano" }
     }
   );
 

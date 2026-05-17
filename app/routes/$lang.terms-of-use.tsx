@@ -1,4 +1,3 @@
-import type { MetaArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import type { Route } from "./+types/$lang.terms-of-use";
 import { marked } from "marked";
@@ -52,9 +51,7 @@ export const loader = async ({
   };
 };
 
-export const meta: Route.MetaFunction = function meta({
-  data,
-}: MetaArgs<typeof loader>) {
+export const meta: Route.MetaFunction = function meta({ data }) {
 
   if (!data) {
     return [];
