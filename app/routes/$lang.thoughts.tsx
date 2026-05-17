@@ -262,7 +262,7 @@ export async function action({request, context}: Route.ActionArgs) {
 }
 
 export default function Thoughts() {
-  const loaderData = useLoaderData<LoaderData>();
+  const loaderData = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
 
   const {lang} = useOutletContext<{lang: string}>();

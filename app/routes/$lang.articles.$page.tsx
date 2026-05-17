@@ -40,7 +40,7 @@ const isLoaderData = (value: unknown): value is LoaderData =>
   "availableLangs" in value;
 
 export default function AllArticles() {
-  const { articles, countByYear, countByCategory, articleCount, page } = useLoaderData<LoaderData>();
+  const { articles, countByYear, countByCategory, articleCount, page } = useLoaderData<typeof loader>();
   const { lang } = useOutletContext<{ lang: string }>();
   const label = getLanguageLabel(ArticlesText, lang);
   const location = useLocation();

@@ -70,8 +70,8 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Unsubscribe() {
-  const loaderData = useLoaderData<LoaderData>();
-  const actionData = useActionData<ActionData>();
+  const loaderData = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 

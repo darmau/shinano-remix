@@ -82,7 +82,7 @@ const isLoaderData = (value: unknown): value is LoaderData =>
 
 export default function AllFeaturedAlbums() {
   const {prefix, lang} = useOutletContext<{prefix: string, lang: string}>();
-  const {featuredPhotos} = useLoaderData<LoaderData>();
+  const {featuredPhotos} = useLoaderData<typeof loader>();
 
   const photos = generatePhotoAlbum(featuredPhotos, prefix, lang);
 

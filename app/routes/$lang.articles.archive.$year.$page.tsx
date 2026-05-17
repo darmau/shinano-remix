@@ -49,7 +49,7 @@ export default function ArchiveArticles() {
     articleCount,
     page,
     year
-  } = useLoaderData<LoaderData>();
+  } = useLoaderData<typeof loader>();
   const {lang} = useOutletContext<{ lang: string }>();
   const label = getLanguageLabel(ArticlesText, lang);
   const location = useLocation();

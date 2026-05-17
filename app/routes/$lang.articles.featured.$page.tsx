@@ -30,7 +30,7 @@ const isLoaderData = (value: unknown): value is LoaderData =>
     "availableLangs" in value;
 
 export default function AllFeaturedArticles() {
-  const {articles, articleCount, page} = useLoaderData<LoaderData>();
+  const {articles, articleCount, page} = useLoaderData<typeof loader>();
   const location = useLocation();
   // 将pathname末尾的page去掉
   const path = location.pathname.replace(/\/\d+$/, '');

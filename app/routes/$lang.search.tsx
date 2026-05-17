@@ -36,10 +36,8 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     }
 
     const autorag = ai.autorag("blog-ai");
-    
-    // Call aiSearch with the specified configuration
-    // Using stream: false for now to work with useActionData
-    // Streaming would require a different approach (resource route + fetcher)
+
+    // @ts-expect-error AutoRag runtime accepts `model` and `retrieval_options` but @cloudflare/workers-types omits them.
     const response = await autorag.aiSearch({
       query: query.trim(),
       model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
@@ -135,18 +133,7 @@ export default function Search() {
                   {label.results_heading}
                 </h3>
                 <div className="space-y-4">
-                  {actionData.results.data.map((result: {
-                    file_id: string;
-                    filename: string;
-                    score: number;
-                    attributes: {
-                      file: {
-                        description: string;
-                        image: string;
-                        title: string;
-                      };
-                    };
-                  }) => (
+                  {actionData.results.data.map((result) => (
                     <SearchResult key={result.file_id} result={result} />
                   ))}
                 </div>

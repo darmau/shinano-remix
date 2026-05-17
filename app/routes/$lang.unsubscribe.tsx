@@ -170,7 +170,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 
 export default function UnsubscribePage() {
   const loaderData = useLoaderData<typeof loader>();
-  const actionData = useActionData<ActionData>();
+  const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const { lang } = useOutletContext<{ lang: string }>();
   const labels = getLanguageLabel(UnsubscribeText, lang);

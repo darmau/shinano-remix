@@ -112,7 +112,7 @@ const isLoaderData = (value: unknown): value is LoaderData =>
 
 export default function AllAlbums() {
   const { prefix, lang } = useOutletContext<{ prefix: string, lang: string }>();
-  const { items, count, page } = useLoaderData<LoaderData>();
+  const { items, count, page } = useLoaderData<typeof loader>();
   const location = useLocation();
   const [visibleCount, setVisibleCount] = useState(5);
 

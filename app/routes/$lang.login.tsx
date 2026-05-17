@@ -71,7 +71,7 @@ export const meta: Route.MetaFunction = ({ params, data }) => {
 export default function Login() {
   const { lang } = useOutletContext<{ lang: string }>();
   const label = getLanguageLabel(SignupText, lang);
-  const actionResponse = useActionData<ActionData>();
+  const actionResponse = useActionData<typeof action>();
   const loaderData = useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const isEmailSubmitting = navigation.state === "submitting" && navigation.formData?.get("intent") === "email";

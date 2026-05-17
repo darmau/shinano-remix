@@ -102,7 +102,7 @@ const normalizeBooks = (rows: unknown): BookRecord[] => {
 // 接收iso8601格式的日期字符串，返回
 
 export default function Book() {
-  const loaderData = useLoaderData<LoaderData>();
+  const loaderData = useLoaderData<typeof loader>();
   const {lang} = useOutletContext<{lang: string}>();
   const fetcher = useFetcher();
 

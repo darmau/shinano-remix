@@ -302,8 +302,8 @@ async function syncUserToPublicTable(
 }
 
 export default function ConfirmPage() {
-  const data = useLoaderData<LoaderData>();
-  const actionData = useActionData<ActionData>();
+  const data = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   
   const lang = data.lang;

@@ -287,8 +287,8 @@ function CommentItem({
 
 export default function ProfilePage() {
   const { lang } = useOutletContext<{ lang: string }>();
-  const { userProfile, comments, isOwnProfile } = useLoaderData<LoaderData>();
-  const actionData = useActionData<ActionData>();
+  const { userProfile, comments, isOwnProfile } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const label = getLanguageLabel(ProfileText, lang);
 
   if (!isOwnProfile) {
