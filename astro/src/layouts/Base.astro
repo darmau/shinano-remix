@@ -66,7 +66,7 @@ const ogUrl = canonicalUrl;
 const env = Astro.locals.runtime.env;
 const session = Astro.locals.session;
 const navbarItems = NavbarItems(lang);
-const profileLabel = getLanguageLabel(ProfileText, lang);
+const profileLabel = getLanguageLabel(ProfileText, lang) as { login: string };
 const currentYear = new Date().getFullYear();
 
 const user = session

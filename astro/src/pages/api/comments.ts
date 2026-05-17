@@ -72,19 +72,20 @@ export const POST: APIRoute = async (ctx) => {
     const website = (formData.get("website") as string)?.trim() || null;
     if (!name || !email) return errorJson("Missing name or email", 400);
 
+    const anonRow = {
+      name,
+      email,
+      website,
+      content_text,
+      [contentColumn]: contentId,
+      is_anonymous: true,
+      reply_to,
+      receive_notification: receiveNotification,
+      ip: ipAddress,
+    } as never;
     const { data: newComment, error } = await supabase
       .from("comment")
-      .insert({
-        name,
-        email,
-        website,
-        content_text,
-        [contentColumn]: contentId,
-        is_anonymous: true,
-        reply_to,
-        receive_notification: receiveNotification,
-        ip: ipAddress,
-      })
+      .insert(anonRow)
       .select(
         `id, name, content_text, created_at, is_anonymous,
          reply_to (id, content_text, is_anonymous)`,
@@ -107,17 +108,18 @@ export const POST: APIRoute = async (ctx) => {
 
   if (!userProfile) return errorJson("User not exists", 400);
 
+  const userRow = {
+    user_id: userProfile.id,
+    content_text,
+    [contentColumn]: contentId,
+    is_anonymous: false,
+    reply_to,
+    receive_notification: receiveNotification,
+    ip: ipAddress,
+  } as never;
   const { data: newComment, error } = await supabase
     .from("comment")
-    .insert({
-      user_id: userProfile.id,
-      content_text,
-      [contentColumn]: contentId,
-      is_anonymous: false,
-      reply_to,
-      receive_notification: receiveNotification,
-      ip: ipAddress,
-    })
+    .insert(userRow)
     .select(
       `id, user_id, content_text, created_at, is_anonymous,
        users (id, name),

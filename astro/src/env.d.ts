@@ -7,9 +7,11 @@ import type { Database } from "~/types/supabase";
 
 type Runtime = import("@astrojs/cloudflare").Runtime<Env>;
 
-declare namespace App {
-  interface Locals extends Runtime {
-    supabase: SupabaseClient<Database>;
-    session: Session | null;
+declare global {
+  namespace App {
+    interface Locals extends Runtime {
+      supabase: SupabaseClient<Database>;
+      session: Session | null;
+    }
   }
 }
