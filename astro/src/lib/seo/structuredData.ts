@@ -165,6 +165,39 @@ export function buildCommentsStructuredData(
   });
 }
 
+export function generatePersonStructuredData(params: {
+  name: string;
+  description: string;
+  image: { url: string; width: number; height: number };
+  url: string;
+  sameAs?: string[];
+}) {
+  const { name, description, image, url, sameAs } = params;
+  return {
+    "@context": "https://schema.org",
+    "@type": ["WebPage", "ProfilePage"],
+    url,
+    mainEntity: {
+      "@type": "Person",
+      name,
+      description,
+      image: {
+        "@type": "ImageObject",
+        url: image.url,
+        width: image.width,
+        height: image.height,
+      },
+      url,
+      sameAs: sameAs ?? [
+        "https://x.com/darmau8964",
+        "https://github.com/Darmau",
+        "https://www.threads.com/@uedashishi",
+        "https://www.youtube.com/@darmau",
+      ],
+    },
+  };
+}
+
 export function serializeStructuredData(data: unknown): string {
   return JSON.stringify(data);
 }
