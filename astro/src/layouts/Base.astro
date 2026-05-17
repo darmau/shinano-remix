@@ -124,6 +124,8 @@ const user = session
       type="application/ld+json"
       set:html={serializeStructuredData(websiteJsonLd)}
     />
+
+    <slot name="head" />
   </head>
   <body class="min-h-screen flex flex-col relative">
     <Navbar
