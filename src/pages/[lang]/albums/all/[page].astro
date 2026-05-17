@@ -15,7 +15,6 @@ const PAGE_SIZE = 20;
 export const prerender = true;
 
 export async function getStaticPaths() {
-  const PAGE_SIZE_GSP = 20;
   const sb = createSupabaseBuild();
   const entries = await Promise.all(
     LOCALES.map(async (lang) => {
@@ -23,7 +22,7 @@ export async function getStaticPaths() {
         .from("gallery_feed" as "photo")
         .select("*", { count: "exact", head: true })
         .or(`lang.eq.${lang},lang.is.null`);
-      const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE_GSP));
+      const totalPages = Math.max(1, Math.ceil((count ?? 0) / 20));
       return Array.from({ length: totalPages }, (_, i) => ({
         params: { lang, page: String(i + 1) },
       }));

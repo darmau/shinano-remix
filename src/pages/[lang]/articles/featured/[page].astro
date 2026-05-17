@@ -10,11 +10,10 @@ import { LOCALES } from "~/lib/i18n/getLang";
 import { getPublicEnv } from "~/lib/env";
 import { createSupabaseBuild } from "~/lib/supabase/build";
 
-const PAGE_SIZE = 12;
-
 export const prerender = true;
 
 export async function getStaticPaths() {
+  const PAGE_SIZE = 12;
   const sb = createSupabaseBuild();
   const entries = await Promise.all(
     LOCALES.map(async (lang) => {
@@ -23,7 +22,7 @@ export async function getStaticPaths() {
         .select(`id, language!inner (lang)`, { count: "exact", head: true })
         .eq("is_draft", false)
         .eq("is_featured", true)
-        .eq("language.lang", lang!);
+        .eq("language.lang", lang);
       const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
       return Array.from({ length: totalPages }, (_, i) => ({
         params: { lang, page: String(i + 1) },
