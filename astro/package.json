@@ -15,6 +15,7 @@
     "@formatjs/intl-localematcher": "^0.6.2",
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
+    "@mapbox/mapbox-gl-language": "^1.0.1",
     "@marsidev/react-turnstile": "^1.4.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.87.1",
@@ -22,11 +23,14 @@
     "@tailwindcss/vite": "^4.1.18",
     "astro": "^5.18.0",
     "highlight.js": "^11.11.1",
+    "mapbox-gl": "^3.23.1",
     "marked": "^17.0.1",
     "negotiator": "^1.0.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "tailwindcss": "^4.1.18"
+    "react-photo-album": "^3.6.0",
+    "tailwindcss": "^4.1.18",
+    "yet-another-react-lightbox": "^3.32.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
