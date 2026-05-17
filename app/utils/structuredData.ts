@@ -415,18 +415,22 @@ export function generateCommentStructuredData(params: {
   });
 }
 
+// `users` is typed as unknown because the comments SQL select asks for a
+// non-existent `website` column on `users`, which makes Supabase produce a
+// SelectQueryError. Runtime returns a usable object; the SQL bug is tracked
+// separately.
 type RawSupabaseComment = {
   id: number;
-  content_text: string;
-  created_at: string;
+  content_text: string | null;
+  created_at: string | null;
   name: string | null;
-  is_anonymous: boolean;
+  is_anonymous: boolean | null;
   reply_to: { id: number } | null;
-  users: { id: number; name: string } | null;
+  users: unknown;
 };
 
 export function buildCommentsStructuredData(
-  comments: RawSupabaseComment[],
+  comments: ReadonlyArray<RawSupabaseComment>,
   baseUrl: string,
   articleUrl: string,
 ) {
@@ -434,13 +438,13 @@ export function buildCommentsStructuredData(
   return generateCommentStructuredData({
     comments: comments.map((comment) => ({
       id: comment.id,
-      content_text: comment.content_text,
-      created_at: comment.created_at,
+      content_text: comment.content_text ?? "",
+      created_at: comment.created_at ?? "",
       user_id: null,
       name: comment.name,
-      is_anonymous: comment.is_anonymous,
+      is_anonymous: comment.is_anonymous ?? false,
       reply_to: comment.reply_to?.id ?? null,
-      users: comment.users,
+      users: comment.users as { id: number; name: string } | null,
     })),
     baseUrl,
     articleUrl,
