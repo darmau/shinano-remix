@@ -10,7 +10,7 @@
     "dev:cf": "wrangler pages dev",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "wrangler pages dev ./build/client",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "typecheck": "react-router typegen && tsc",
     "typegen": "wrangler types"
