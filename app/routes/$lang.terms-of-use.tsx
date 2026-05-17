@@ -1,5 +1,5 @@
-import type { LoaderFunctionArgs, MetaArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
+import type { Route } from "./+types/$lang.terms-of-use";
 import { marked } from "marked";
 import LegalText from "~/locales/legal";
 import HomepageText from "~/locales/homepage";
@@ -34,7 +34,7 @@ type LoaderData = {
 export const loader = async ({
   params,
   context,
-}: LoaderFunctionArgs): Promise<LoaderData> => {
+}: Route.LoaderArgs): Promise<LoaderData> => {
   const langParam = (params.lang ?? "zh") as SupportedLang;
   const lang = AVAILABLE_LANGS.includes(langParam) ? langParam : "zh";
   const markdown = TERMS_BY_LANG[lang];
@@ -51,9 +51,7 @@ export const loader = async ({
   };
 };
 
-export const meta: MetaFunction<typeof loader> = function meta({
-  data,
-}: MetaArgs<typeof loader>) {
+export const meta: Route.MetaFunction = function meta({ data }) {
 
   if (!data) {
     return [];

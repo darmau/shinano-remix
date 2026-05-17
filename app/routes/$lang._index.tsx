@@ -1,15 +1,15 @@
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
 import {createClient} from "~/utils/supabase/server";
 import { useLoaderData } from "react-router";
+import type { Route } from "./+types/$lang._index";
 import type {Article} from "~/types/Article";
 import Subnav from "~/components/Subnav";
 import NormalArticleCard from "~/components/NormalArticleCard";
 import HomeTopArticle from "~/components/HomeTopArticle";
 import i18nLinks from "~/utils/i18nLinks";
 
-export const meta: MetaFunction<typeof loader> = ({params, data}) => {
+export const meta: Route.MetaFunction = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
   const baseUrl = data!.baseUrl;
@@ -123,7 +123,7 @@ export default function Index() {
   );
 }
 
-export async function loader({request, context, params}: LoaderFunctionArgs) {
+export async function loader({request, context, params}: Route.LoaderArgs) {
   const {supabase} = createClient(request, context);
   const lang = params.lang as string;
   const availableLangs = ["zh", "en", "jp"];

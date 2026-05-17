@@ -1,5 +1,5 @@
 import { Link, useLoaderData } from "react-router";
-import type { LoaderFunctionArgs } from "react-router";
+import type { Route } from "./+types/auth.auth-code-error";
 import ConfirmText from "~/locales/confirm";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 
@@ -27,7 +27,7 @@ function deriveLang(input?: string | null): SupportedLang {
   return "zh";
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const next = url.searchParams.get("next") ?? "/";
   const reason = url.searchParams.get("reason") ?? "unknown";

@@ -1,13 +1,6 @@
 import { CheckCircleIcon, ExclamationTriangleIcon, XCircleIcon } from "@heroicons/react/24/outline";
-import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
-import {
-  Form,
-  Link,
-  useActionData,
-  useLoaderData,
-  useNavigation,
-  useOutletContext,
-} from "react-router";
+import { Form, Link, useActionData, useLoaderData, useNavigation, useOutletContext } from "react-router";
+import type { Route } from "./+types/$lang.unsubscribe";
 import { createClient } from "~/utils/supabase/server";
 import { verifyUnsubscribeToken } from "~/utils/unsubscribeToken.server";
 import getLanguageLabel from "~/utils/getLanguageLabel";
@@ -28,7 +21,7 @@ type ActionData = {
   error?: string;
 };
 
-export async function loader({ request, params, context }: LoaderFunctionArgs) {
+export async function loader({ request, params, context }: Route.LoaderArgs) {
   const availableLangs = ["zh", "en", "jp"];
   const langParam = typeof params.lang === "string" ? params.lang : "zh";
   const lang = availableLangs.includes(langParam) ? langParam : "zh";
@@ -121,7 +114,7 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
   } satisfies LoaderData;
 }
 
-export async function action({ request, params, context }: ActionFunctionArgs) {
+export async function action({ request, params, context }: Route.ActionArgs) {
   const availableLangs = ["zh", "en", "jp"];
   const langParam = typeof params.lang === "string" ? params.lang : "zh";
   const lang = availableLangs.includes(langParam) ? langParam : "zh";
@@ -177,7 +170,7 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
 
 export default function UnsubscribePage() {
   const loaderData = useLoaderData<typeof loader>();
-  const actionData = useActionData<ActionData>();
+  const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const { lang } = useOutletContext<{ lang: string }>();
   const labels = getLanguageLabel(UnsubscribeText, lang);
@@ -267,7 +260,7 @@ export default function UnsubscribePage() {
   );
 }
 
-export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
+export const meta: Route.MetaFunction = ({ params, data }) => {
   if (!data) {
     return [];
   }

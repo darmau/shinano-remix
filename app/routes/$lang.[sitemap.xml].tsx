@@ -1,5 +1,5 @@
-import type { LoaderFunctionArgs } from "react-router";
 import {createClient} from "~/utils/supabase/server";
+import type { Route } from "./+types/$lang.[sitemap.xml]";
 
 type RecordWithKeys = Record<string, unknown>;
 
@@ -41,7 +41,7 @@ const toEntryMarkup = (
         .filter((entry): entry is string => typeof entry === "string")
         .join("");
 
-export async function loader({request, context, params}: LoaderFunctionArgs) {
+export async function loader({request, context, params}: Route.LoaderArgs) {
   const {supabase} = createClient(request, context);
   const lang = params.lang as string;
   const baseUrl = context.cloudflare.env.BASE_URL;

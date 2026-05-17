@@ -1,8 +1,8 @@
 import Subnav from "~/components/Subnav";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import AboutText from "~/locales/about";
 import HomepageText from "~/locales/homepage";
 import { useLoaderData } from "react-router";
+import type { Route } from "./+types/$lang.about";
 import ResponsiveImage from "~/components/ResponsiveImage";
 import {createClient} from "~/utils/supabase/server";
 import type {Image} from "~/types/Image";
@@ -73,7 +73,7 @@ export default function AboutMe () {
   )
 }
 
-export const meta: MetaFunction<typeof loader> = ({params, data}) => {
+export const meta: Route.MetaFunction = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
   const baseUrl = data!.baseUrl;
@@ -133,7 +133,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   ];
 };
 
-export async function loader({request, context, params}: LoaderFunctionArgs) {
+export async function loader({request, context, params}: Route.LoaderArgs) {
   const lang = params.lang as string;
   const {supabase} = createClient(request, context);
 

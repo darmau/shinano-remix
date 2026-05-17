@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Subnav from "~/components/Subnav";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { createClient } from "~/utils/supabase/server";
 import { useLoaderData, useLocation, useOutletContext } from "react-router";
+import type { Route } from "./+types/$lang.albums.all.$page";
 import Pagination from "~/components/Pagination";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from "~/locales/homepage";
@@ -112,7 +112,7 @@ const isLoaderData = (value: unknown): value is LoaderData =>
 
 export default function AllAlbums() {
   const { prefix, lang } = useOutletContext<{ prefix: string, lang: string }>();
-  const { items, count, page } = useLoaderData<LoaderData>();
+  const { items, count, page } = useLoaderData<typeof loader>();
   const location = useLocation();
   const [visibleCount, setVisibleCount] = useState(5);
 
@@ -169,7 +169,7 @@ export default function AllAlbums() {
   )
 }
 
-export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
+export const meta: Route.MetaFunction = ({ params, data }) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
 
@@ -226,7 +226,7 @@ export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
   ];
 };
 
-export async function loader({ request, context, params }: LoaderFunctionArgs) {
+export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request, context);
   const lang = params.lang as string;
   const page = Number(params.page);

@@ -2,7 +2,7 @@ import { Form, Link, useOutletContext } from "react-router";
 import CommentText from '~/locales/comment';
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import type { Session } from "@supabase/supabase-js";
-import type { CommentProps } from "~/components/CommentBlock";
+import type { CommentProps } from "~/types/Comment";
 import { Turnstile } from '@marsidev/react-turnstile'
 
 export default function CommentEditor({ contentTable, contentId, session, replyingTo, onCancelReply }: {

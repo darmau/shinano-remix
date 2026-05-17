@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import { useFetcher, useLoaderData, useOutletContext } from "react-router";
+import type { Route } from "./+types/$lang.thoughts";
 import {startTransition, useEffect, useState} from "react";
 import ThoughtCard from "~/components/ThoughtCard";
 import getLanguageLabel from "~/utils/getLanguageLabel";
@@ -152,7 +152,7 @@ const normalizeThoughts = (value: unknown): Thought[] => {
       .filter((item): item is Thought => item !== null);
 };
 
-export async function loader({request, context}: LoaderFunctionArgs) {
+export async function loader({request, context}: Route.LoaderArgs) {
   const {supabase} = createClient(request, context);
 
   const {data: thoughts} = await supabase
@@ -181,7 +181,7 @@ export async function loader({request, context}: LoaderFunctionArgs) {
   };
 }
 
-export const meta: MetaFunction<typeof loader> = ({params, data}) => {
+export const meta: Route.MetaFunction = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(ThoughtText, lang);
   const baseUrl = data!.baseUrl;
@@ -232,7 +232,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   ];
 };
 
-export async function action({request, context}: ActionFunctionArgs) {
+export async function action({request, context}: Route.ActionArgs) {
   const formData = await request.formData();
   const page = parseInt(formData.get("page") as string);
   const {supabase} = createClient(request, context)
@@ -262,7 +262,7 @@ export async function action({request, context}: ActionFunctionArgs) {
 }
 
 export default function Thoughts() {
-  const loaderData = useLoaderData<LoaderData>();
+  const loaderData = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
 
   const {lang} = useOutletContext<{lang: string}>();

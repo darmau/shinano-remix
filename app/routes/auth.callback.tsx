@@ -1,5 +1,5 @@
 import { redirect } from "react-router";
-import type { LoaderFunctionArgs } from "react-router";
+import type { Route } from "./+types/auth.callback";
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
 
 const SUPPORTED_LANGS = ["zh", "en", "jp"] as const;
@@ -14,7 +14,7 @@ function deriveLangFromPath(path: string): SupportedLang {
   return "zh";
 }
 
-export async function loader({ request, context }: LoaderFunctionArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const next = requestUrl.searchParams.get("next") ?? "/";

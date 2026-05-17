@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import { createClient } from "~/utils/supabase/server";
 import { Link, useActionData, useLoaderData, useOutletContext, useRouteLoaderData, useLocation } from "react-router";
+import type { Route } from "./+types/$lang.album.$slug";
 import type { Json } from "~/types/supabase";
 import ContentContainer from "~/components/ContentContainer";
 import getTime from "~/utils/getTime";
@@ -28,7 +28,7 @@ import type { loader as rootLoader } from "~/root";
 import {
   generateAlbumStructuredData,
   generateBreadcrumbStructuredData,
-  generateCommentStructuredData
+  buildCommentsStructuredData
 } from "~/utils/structuredData";
 import ShareButton from "~/components/ShareButton";
 import Reaction, {type ReactionSummary} from "~/components/Reaction";
@@ -222,7 +222,7 @@ export default function AlbumDetail() {
   )
 }
 
-export async function loader({ request, context, params }: LoaderFunctionArgs) {
+export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request, context);
   const lang = params.lang as string;
   const slug = params.slug as string;
@@ -378,20 +378,7 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
   ]);
 
   // 评论结构化数据
-  const commentStructuredData = comments.length > 0 ? generateCommentStructuredData({
-    comments: comments.map((comment: any) => ({
-      id: comment.id,
-      content_text: comment.content_text,
-      created_at: comment.created_at,
-      user_id: comment.user_id,
-      name: comment.name,
-      is_anonymous: comment.is_anonymous,
-      reply_to: comment.reply_to?.id || null,
-      users: comment.users
-    })),
-    baseUrl,
-    articleUrl: currentUrl
-  }) : [];
+  const commentStructuredData = buildCommentsStructuredData(comments, baseUrl, currentUrl);
 
   return {
     albumContent,
@@ -412,7 +399,7 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
   };
 }
 
-export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
+export const meta: Route.MetaFunction = ({ params, data }) => {
   const lang = params.lang as string;
   const baseUrl = data!.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
@@ -474,7 +461,7 @@ export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
   ];
 };
 
-export async function action({ request, context, params }: ActionFunctionArgs) {
+export async function action({ request, context, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const { supabase } = createClient(request, context);
   const { data: { session } } = await supabase.auth.getSession();

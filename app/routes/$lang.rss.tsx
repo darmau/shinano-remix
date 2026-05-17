@@ -2,8 +2,8 @@ import Subnav from "~/components/Subnav";
 import { useLoaderData, useOutletContext } from "react-router";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import RSSText from "~/locales/rss";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
+import type { Route } from "./+types/$lang.rss";
 import {useState} from "react";
 import i18nLinks from "~/utils/i18nLinks";
 import { trackRSSClick, type RSSType } from "~/utils/zaraz";
@@ -121,7 +121,7 @@ export default function RSS() {
   )
 }
 
-export const meta: MetaFunction<typeof loader> = ({params, data}) => {
+export const meta: Route.MetaFunction = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(RSSText, lang);
   const baseUrl = data!.baseUrl;
@@ -141,7 +141,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   ];
 };
 
-export async function loader({request, context, params}: LoaderFunctionArgs) {
+export async function loader({request, context, params}: Route.LoaderArgs) {
   const {supabase} = createClient(request, context);
   const lang = params.lang as string;
 

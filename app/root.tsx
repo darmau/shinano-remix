@@ -1,19 +1,6 @@
-import {
-  isRouteErrorResponse,
-  Link,
-  Links,
-  Meta,
-  Outlet,
-  redirect,
-  Scripts,
-  ScrollRestoration,
-  useLoaderData,
-  useNavigation,
-  useRevalidator,
-  useRouteError,
-} from "react-router";
-import type { ErrorResponse, LoaderFunctionArgs } from "react-router";
-import "./tailwind.css";
+import { isRouteErrorResponse, Link, Links, Meta, Outlet, redirect, Scripts, ScrollRestoration, useLoaderData, useNavigation, useRevalidator, useRouteError } from "react-router";
+import type { ErrorResponse } from "react-router";import "./tailwind.css";
+import type { Route } from "./+types/root";
 import {getLang} from "~/utils/getLang";
 import {createClient} from "~/utils/supabase/server";
 import {useEffect, useState} from "react";
@@ -27,7 +14,7 @@ import FooterText from "~/locales/footer";
 import {generateWebsiteStructuredData, serializeStructuredData} from "~/utils/structuredData";
 import Banners from "./components/Banners";
 
-export const loader = async ({request, context}: LoaderFunctionArgs) => {
+export const loader = async ({request, context}: Route.LoaderArgs) => {
   const url = new URL(request.url);
   const lang = url.pathname.split('/')[1];
   const multiLangContent = ['', 'article', 'articles', 'album', 'albums', 'thoughts', 'thought', 'about', 'contact', 'site', 'rss', 'signup', 'login', 'book', 'terms-of-use']

@@ -415,6 +415,42 @@ export function generateCommentStructuredData(params: {
   });
 }
 
+// `users` is typed as unknown because the comments SQL select asks for a
+// non-existent `website` column on `users`, which makes Supabase produce a
+// SelectQueryError. Runtime returns a usable object; the SQL bug is tracked
+// separately.
+type RawSupabaseComment = {
+  id: number;
+  content_text: string | null;
+  created_at: string | null;
+  name: string | null;
+  is_anonymous: boolean | null;
+  reply_to: { id: number } | null;
+  users: unknown;
+};
+
+export function buildCommentsStructuredData(
+  comments: ReadonlyArray<RawSupabaseComment>,
+  baseUrl: string,
+  articleUrl: string,
+) {
+  if (comments.length === 0) return [];
+  return generateCommentStructuredData({
+    comments: comments.map((comment) => ({
+      id: comment.id,
+      content_text: comment.content_text ?? "",
+      created_at: comment.created_at ?? "",
+      user_id: null,
+      name: comment.name,
+      is_anonymous: comment.is_anonymous ?? false,
+      reply_to: comment.reply_to?.id ?? null,
+      users: comment.users as { id: number; name: string } | null,
+    })),
+    baseUrl,
+    articleUrl,
+  });
+}
+
 /**
  * 生成个人资料页面的结构化数据
  * Generate structured data for about/person page
