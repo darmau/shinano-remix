@@ -12,22 +12,35 @@ import {
 import { HomepageText, ArticlesText } from "~/locales";
 import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
 import { LOCALES } from "~/lib/i18n/getLang";
+import { getPublicEnv } from "~/lib/env";
+import { createSupabaseBuild } from "~/lib/supabase/build";
 
-export const prerender = false;
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const PAGE_SIZE = 12;
+  const sb = createSupabaseBuild();
+  const entries = await Promise.all(
+    LOCALES.map(async (lang) => {
+      const { count } = await sb
+        .from("article")
+        .select(`id, language!inner (lang)`, { count: "exact", head: true })
+        .eq("is_draft", false)
+        .eq("language.lang", lang);
+      const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
+      return Array.from({ length: totalPages }, (_, i) => ({
+        params: { lang, page: String(i + 1) },
+      }));
+    }),
+  );
+  return entries.flat();
+}
 
 const { lang, page: pageParam } = Astro.params;
-if (!lang || !(LOCALES as readonly string[]).includes(lang)) {
-  return new Response(null, { status: 404, statusText: "No such language" });
-}
-if (!pageParam || isNaN(Number(pageParam))) {
-  return new Response(null, { status: 404 });
-}
 const page = Number(pageParam);
 
-const supabase = Astro.locals.supabase;
-const env = Astro.locals.runtime.env;
-const baseUrl = env.BASE_URL;
-const imgPrefix = env.IMG_PREFIX;
+const supabase = createSupabaseBuild();
+const { BASE_URL: baseUrl, IMG_PREFIX: imgPrefix } = getPublicEnv(Astro.locals);
 
 const [articleRowsResult, articleCountResult, countByYearResult, countByCategoryResult] =
   await Promise.all([
@@ -42,7 +55,7 @@ const [articleRowsResult, articleCountResult, countByYearResult, countByCategory
         comments:comment(count)
         `,
       )
-      .eq("language.lang", lang)
+      .eq("language.lang", lang!)
       .eq("is_draft", false)
       .limit(12)
       .range((page - 1) * 12, page * 12 - 1)
@@ -51,9 +64,9 @@ const [articleRowsResult, articleCountResult, countByYearResult, countByCategory
       .from("article")
       .select(`id, language!inner (lang)`, { count: "exact", head: true })
       .eq("is_draft", false)
-      .eq("language.lang", lang),
-    supabase.rpc("get_article_count_by_year", { lang_name: lang }),
-    supabase.rpc("get_article_count_by_category", { lang_name: lang }),
+      .eq("language.lang", lang!),
+    supabase.rpc("get_article_count_by_year", { lang_name: lang! }),
+    supabase.rpc("get_article_count_by_category", { lang_name: lang! }),
   ]);
 
 const articles = normalizeArticles(articleRowsResult.data);
@@ -61,8 +74,8 @@ const articleCount = articleCountResult.count ?? 0;
 const countByYear = normalizeYearCounts(countByYearResult.data);
 const countByCategory = normalizeCategoryCounts(countByCategoryResult.data);
 
-const homeLabel = getLanguageLabel(HomepageText, lang);
-const label = getLanguageLabel(ArticlesText, lang);
+const homeLabel = getLanguageLabel(HomepageText, lang!);
+const label = getLanguageLabel(ArticlesText, lang!);
 const availableLangs = [lang];
 const path = `/${lang}/articles`;
 const ogImage = `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/a2b148a3-5799-4be0-a8d4-907f9355f20f`;

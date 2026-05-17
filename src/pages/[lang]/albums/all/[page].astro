@@ -6,25 +6,37 @@ import Pagination from "~/components/Pagination.astro";
 import { HomepageText } from "~/locales";
 import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
 import { LOCALES } from "~/lib/i18n/getLang";
+import { getPublicEnv } from "~/lib/env";
+import { createSupabaseBuild } from "~/lib/supabase/build";
 import type { GalleryItem, GalleryMediaImage } from "~/types/Gallery";
-
-export const prerender = false;
 
 const PAGE_SIZE = 20;
 
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const PAGE_SIZE_GSP = 20;
+  const sb = createSupabaseBuild();
+  const entries = await Promise.all(
+    LOCALES.map(async (lang) => {
+      const { count } = await sb
+        .from("gallery_feed" as "photo")
+        .select("*", { count: "exact", head: true })
+        .or(`lang.eq.${lang},lang.is.null`);
+      const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE_GSP));
+      return Array.from({ length: totalPages }, (_, i) => ({
+        params: { lang, page: String(i + 1) },
+      }));
+    }),
+  );
+  return entries.flat();
+}
+
 const { lang, page: pageParam } = Astro.params;
-if (!lang || !(LOCALES as readonly string[]).includes(lang)) {
-  return new Response(null, { status: 404, statusText: "No such language" });
-}
-if (!pageParam || isNaN(Number(pageParam))) {
-  return new Response(null, { status: 404 });
-}
 const page = Number(pageParam);
 
-const supabase = Astro.locals.supabase;
-const env = Astro.locals.runtime.env;
-const baseUrl = env.BASE_URL;
-const imgPrefix = env.IMG_PREFIX;
+const supabase = createSupabaseBuild();
+const { BASE_URL: baseUrl, IMG_PREFIX: imgPrefix } = getPublicEnv(Astro.locals);
 
 const start = (page - 1) * PAGE_SIZE;
 const end = start + PAGE_SIZE - 1;
@@ -108,7 +120,7 @@ function normalize(rows: unknown): GalleryItem[] {
 const items = normalize(feedResult.data);
 const count = countResult.count ?? 0;
 
-const label = getLanguageLabel(HomepageText, lang);
+const label = getLanguageLabel(HomepageText, lang!);
 const availableLangs = ["zh", "en", "jp"];
 const path = `/${lang}/albums/all`;
 const ogCover =
@@ -117,7 +129,7 @@ const ogImage = `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/${ogCover}`;
 ---
 
 <Layout
-  lang={lang}
+  lang={lang!}
   title={label.albums_title}
   description={label.albums_description}
   ogTitle={label.albums_title}
@@ -128,12 +140,12 @@ const ogImage = `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/${ogCover}`;
   baseUrl={baseUrl}
   rssHref={`${baseUrl}/${lang}/album/rss.xml`}
 >
-  <Subnav lang={lang} active="photography" />
+  <Subnav lang={lang!} active="photography" />
   <h1 class="sr-only">Photography</h1>
   <div class="w-full max-w-5xl mx-auto p-4 lg:mb-16 space-y-6">
     <ul class="mx-auto space-y-12 lg:space-y-16 max-w-lg">
-      {items.map((item) => <GalleryCard item={item} lang={lang} prefix={imgPrefix} />)}
+      {items.map((item) => <GalleryCard item={item} lang={lang!} prefix={imgPrefix} />)}
     </ul>
-    <Pagination count={count} limit={PAGE_SIZE} page={page} path={path} lang={lang} />
+    <Pagination count={count} limit={PAGE_SIZE} page={page} path={path} lang={lang!} />
   </div>
 </Layout>

@@ -8,18 +8,18 @@ import { normalizeArticles } from "~/lib/articles";
 import { HomepageText } from "~/locales";
 import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
 import { LOCALES } from "~/lib/i18n/getLang";
+import { getPublicEnv } from "~/lib/env";
+import { createSupabaseBuild } from "~/lib/supabase/build";
 
-export const prerender = false;
+export const prerender = true;
 
-const { lang } = Astro.params;
-if (!lang || !(LOCALES as readonly string[]).includes(lang)) {
-  return new Response(null, { status: 404, statusText: "No such language" });
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
 }
 
-const supabase = Astro.locals.supabase;
-const env = Astro.locals.runtime.env;
-const baseUrl = env.BASE_URL;
-const imgPrefix = env.IMG_PREFIX;
+const { lang } = Astro.params;
+const supabase = createSupabaseBuild();
+const { BASE_URL: baseUrl, IMG_PREFIX: imgPrefix } = getPublicEnv(Astro.locals);
 
 const { data: articleRows } = await supabase
   .from("article")
@@ -41,14 +41,14 @@ const { data: articleRows } = await supabase
     comments:comment(count)
     `,
   )
-  .eq("language.lang", lang)
+  .eq("language.lang", lang!)
   .filter("is_draft", "eq", false)
   .limit(16)
   .order("is_top", { ascending: false })
   .order("published_at", { ascending: false });
 
 const articles: Article[] = normalizeArticles(articleRows);
-const label = getLanguageLabel(HomepageText, lang);
+const label = getLanguageLabel(HomepageText, lang!);
 const availableLangs = ["zh", "en", "jp"];
 
 const ogImage = `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/a2b148a3-5799-4be0-a8d4-907f9355f20f`;
