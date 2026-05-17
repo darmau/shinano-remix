@@ -1,8 +1,6 @@
 packages:
-  - '.'
+  - 'astro'
 onlyBuiltDependencies:
   - esbuild
   - sharp
-  - supabase
-  - unrs-resolver
   - workerd
