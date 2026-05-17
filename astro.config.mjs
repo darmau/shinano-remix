@@ -5,7 +5,6 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   output: "server",
-  publicDir: "../public",
   adapter: cloudflare({
     platformProxy: { enabled: true },
     imageService: "passthrough",

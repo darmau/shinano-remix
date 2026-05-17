@@ -1,18 +1,9 @@
 node_modules
-
-/.cache
-/build
+.astro/
+dist/
 .dev.vars
-.dev.vars
-.idea
 .wrangler
+.idea
 .DS_Store
 /.pnpm-store
 .react-router/
-
-# Playwright
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-/playwright/.auth/

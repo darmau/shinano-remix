@@ -1,6 +1,6 @@
 {
-  "$schema": "../node_modules/wrangler/config-schema.json",
-  "name": "shinano-astro-poc",
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "shinano-astro",
   "compatibility_date": "2026-05-14",
   "compatibility_flags": ["nodejs_compat"],
   "main": "./dist/_worker.js/index.js",

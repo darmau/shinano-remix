@@ -1,1 +1,0 @@
-function s(n,r){let e=0,t=null,l=null;return function(...o){const i=Date.now(),u=r-(i-e);l=o,u<=0?(t&&(clearTimeout(t),t=null),e=i,n(...o),l=null):t||(t=setTimeout(()=>{e=Date.now(),t=null,l&&(n(...l),l=null)},u))}}export{s as t};
