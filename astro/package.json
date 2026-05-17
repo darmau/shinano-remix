@@ -29,6 +29,7 @@
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
     "@cloudflare/workers-types": "^4.20251212.0",
     "@types/negotiator": "^0.6.4",
     "@types/react": "^19.2.7",
