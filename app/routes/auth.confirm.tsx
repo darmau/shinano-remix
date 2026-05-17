@@ -302,8 +302,9 @@ async function syncUserToPublicTable(
 }
 
 export default function ConfirmPage() {
-  const data = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+  // Manual <LoaderData>/<ActionData> retained: loader/action return Response (with auth-cookie headers), so typeof erases the JSON body shape.
+  const data = useLoaderData<LoaderData>();
+  const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
   
   const lang = data.lang;

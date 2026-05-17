@@ -71,7 +71,8 @@ export const meta: Route.MetaFunction = ({ params, data }) => {
 export default function Login() {
   const { lang } = useOutletContext<{ lang: string }>();
   const label = getLanguageLabel(SignupText, lang);
-  const actionResponse = useActionData<typeof action>();
+  // Manual <ActionData> retained: action returns Response (with auth-cookie headers), so typeof action erases the JSON body shape.
+  const actionResponse = useActionData<ActionData>();
   const loaderData = useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const isEmailSubmitting = navigation.state === "submitting" && navigation.formData?.get("intent") === "email";
