@@ -2,11 +2,10 @@
 import Layout from "~/layouts/Base.astro";
 import Breadcrumb from "~/components/Breadcrumb.astro";
 import type { BreadcrumbItem } from "~/components/Breadcrumb.astro";
-import CommentBlock from "~/components/CommentBlock.astro";
+import Comments from "~/components/Comments.astro";
 import ContentContainer from "~/components/ContentContainer.tsx";
 import Reaction from "~/components/Reaction.tsx";
 import type { ReactionSummary } from "~/components/Reaction.tsx";
-import CommentEditor from "~/components/CommentEditor.tsx";
 import ShareButton from "~/components/ShareButton.tsx";
 import PageViewTracker from "~/components/PageViewTracker.tsx";
 import GallerySlide from "~/components/GallerySlide.tsx";
@@ -18,32 +17,39 @@ import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
 import getTime from "~/lib/i18n/getTime";
 import { AlbumText } from "~/locales";
 import type { Json } from "~/types/supabase";
-import type { CommentProps } from "~/types/Comment";
 import { LOCALES } from "~/lib/i18n/getLang";
+import { getPublicEnv } from "~/lib/env";
+import { createSupabaseBuild } from "~/lib/supabase/build";
 import {
   generateAlbumStructuredData,
   generateBreadcrumbStructuredData,
-  buildCommentsStructuredData,
   serializeStructuredData,
 } from "~/lib/seo/structuredData";
 
-export const prerender = false;
+export const prerender = true;
 
-const { lang, slug } = Astro.params;
-if (!lang || !(LOCALES as readonly string[]).includes(lang) || !slug) {
-  return new Response(null, { status: 404, statusText: "Not found" });
+export async function getStaticPaths() {
+  const sb = createSupabaseBuild();
+  const { data } = await sb
+    .from("photo")
+    .select("slug, language!inner (lang)")
+    .eq("is_draft", false);
+  const entries: { params: { lang: string; slug: string } }[] = [];
+  for (const row of (data ?? []) as { slug: string | null; language: { lang: string | null } | null }[]) {
+    if (!row.slug || !row.language?.lang) continue;
+    entries.push({ params: { lang: row.language.lang, slug: row.slug } });
+  }
+  return entries;
 }
 
-const supabase = Astro.locals.supabase;
-const session = Astro.locals.session;
-const env = Astro.locals.runtime.env;
+const { lang, slug } = Astro.params;
+const supabase = createSupabaseBuild();
+const env = getPublicEnv(Astro.locals);
 const baseUrl = env.BASE_URL;
 const imgPrefix = env.IMG_PREFIX;
-const mapboxToken = env.MAPBOX_TOKEN;
-
-const url = new URL(Astro.request.url);
-const page = url.searchParams.get("page") ? parseInt(url.searchParams.get("page")!) : 1;
-const limit = url.searchParams.get("limit") ? parseInt(url.searchParams.get("limit")!) : 20;
+const mapboxToken = (Astro.locals.runtime?.env as { MAPBOX_TOKEN?: string } | undefined)?.MAPBOX_TOKEN
+  ?? process.env.MAPBOX_TOKEN
+  ?? "";
 
 const { data: albumContent } = await supabase
   .from("photo")
@@ -53,15 +59,15 @@ const { data: albumContent } = await supabase
      category (title, slug),
      language!inner (lang)`,
   )
-  .eq("slug", slug)
-  .eq("language.lang", lang)
+  .eq("slug", slug!)
+  .eq("language.lang", lang!)
   .single();
 
 if (!albumContent) {
   return new Response(null, { status: 404, statusText: "Album not exists" });
 }
 
-const [imagesResult, commentsResult, commentCountResult, availableAlbumsResult] = await Promise.all([
+const [imagesResult, commentCountResult, availableAlbumsResult] = await Promise.all([
   supabase
     .from("photo_image")
     .select(
@@ -71,34 +77,20 @@ const [imagesResult, commentsResult, commentCountResult, availableAlbumsResult] 
     .order("order", { ascending: true }),
   supabase
     .from("comment")
-    .select(
-      `id, user_id, name, website, content_text, created_at, is_anonymous,
-       users (id, name, role, website),
-       reply_to (id, content_text, is_anonymous, name, users (id, name))`,
-    )
-    .eq("to_photo", albumContent.id)
-    .eq("is_blocked", false)
-    .eq("is_public", true)
-    .order("created_at", { ascending: false })
-    .range((page - 1) * limit, page * limit - 1),
-  supabase
-    .from("comment")
-    .select("id", { count: "exact" })
+    .select("id", { count: "exact", head: true })
     .eq("to_photo", albumContent.id)
     .eq("is_blocked", false)
     .eq("is_public", true),
-  supabase.from("photo").select(`language!inner (lang)`).eq("slug", slug),
+  supabase.from("photo").select(`language!inner (lang)`).eq("slug", slug!),
 ]);
 
 const albumImages = (imagesResult.data ?? []) as unknown as AlbumPhoto[];
-const comments = (commentsResult.data ?? []) as unknown as CommentProps[];
 const count = commentCountResult.count ?? 0;
-const totalPage = count ? Math.ceil(count / limit) : 1;
 const availableLangs = (availableAlbumsResult.data ?? [])
   .map((item) => (item.language as { lang: string | null } | null)?.lang)
   .filter((l): l is string => Boolean(l));
 
-const label = getLanguageLabel(AlbumText, lang);
+const label = getLanguageLabel(AlbumText, lang!);
 const currentUrl = `${baseUrl}/${lang}/album/${slug}`;
 const pageViewNodeId = `album-${albumContent.id}-page-view`;
 
@@ -144,7 +136,7 @@ const albumJsonLd = generateAlbumStructuredData({
   },
   baseUrl,
   imgPrefix,
-  lang,
+  lang: lang!,
   url: currentUrl,
 });
 
@@ -154,19 +146,13 @@ const breadcrumbJsonLd = generateBreadcrumbStructuredData([
   { name: albumContent.title || "Album", url: currentUrl },
 ]);
 
-const commentJsonLd = buildCommentsStructuredData(
-  comments as unknown as Parameters<typeof buildCommentsStructuredData>[0],
-  baseUrl,
-  currentUrl,
-);
-
 const ogImage = firstImage
   ? `${imgPrefix}/cdn-cgi/image/format=jpeg,width=960/${firstImage.storage_key}`
   : undefined;
 ---
 
 <Layout
-  lang={lang}
+  lang={lang!}
   title={albumContent.title ?? ""}
   description={albumContent.abstract ?? albumContent.content_text ?? undefined}
   ogTitle={albumContent.title ?? undefined}
@@ -190,19 +176,9 @@ const ogImage = firstImage
     set:html={serializeStructuredData(breadcrumbJsonLd)}
     slot="head"
   />
-  {
-    commentJsonLd.map((c) => (
-      <script
-        is:inline
-        type="application/ld+json"
-        set:html={serializeStructuredData(c)}
-        slot="head"
-      />
-    ))
-  }
 
   <div class="w-full max-w-8xl mx-auto p-4 md:py-8 lg:mb-16">
-    <Breadcrumb lang={lang} pages={breadcrumbPages} />
+    <Breadcrumb lang={lang!} pages={breadcrumbPages} />
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div class="col-span-1 lg:col-span-2 lg:self-start">
         {
@@ -215,7 +191,7 @@ const ogImage = firstImage
       <div class="col-span-1 lg:row-span-2 space-y-4">
         <h2 class="text-sm text-violet-700 font-medium">{albumContent.category?.title}</h2>
         <h1 class="text-zinc-800 font-medium text-3xl">{albumContent.title}</h1>
-        <p class="text-zinc-600 text-sm">{getTime(albumContent.published_at!, lang)}</p>
+        <p class="text-zinc-600 text-sm">{getTime(albumContent.published_at!, lang!)}</p>
         <div class="flex gap-1 items-center justify-start">
           <EyeIcon className="h-4 w-4 inline-block text-zinc-500" />
           <p id={pageViewNodeId} class="text-zinc-500 text-sm">{albumContent.page_view}</p>
@@ -245,7 +221,7 @@ const ogImage = firstImage
           contentType="photo"
           contentId={albumContent.id}
           reactions={albumContent.reactions as ReactionSummary | null}
-          pathname={Astro.url.pathname}
+          pathname={`/${lang}/album/${slug}`}
           supabaseUrl={env.SUPABASE_URL}
           supabaseAnonKey={env.SUPABASE_ANON_KEY}
         />
@@ -264,49 +240,21 @@ const ogImage = firstImage
               client:visible
               mapboxToken={mapboxToken}
               coords={firstCoords}
-              lang={lang}
+              lang={lang!}
             />
           )
         }
 
-        <ShareButton client:load url={currentUrl} title={albumContent.title ?? ""} lang={lang} contentType="album" />
+        <ShareButton client:load url={currentUrl} title={albumContent.title ?? ""} lang={lang!} contentType="album" />
       </div>
 
       <div class="col-span-1 lg:col-span-2 lg:self-start">
-        <CommentEditor
-          client:load
+        <Comments
+          server:defer
           contentTable="to_photo"
           contentId={albumContent.id}
-          session={session}
-          lang={lang}
-          turnstileSiteKey={env.TURNSTILE_SITE_KEY}
-          endpoint="/api/comments"
+          lang={lang!}
         />
-        <div class="flex flex-col gap-4 divide-y divide-none">
-          {comments.map((comment) => <CommentBlock comment={comment} lang={lang} />)}
-        </div>
-        <div class="py-8 flex justify-between">
-          {
-            page > 1 && (
-              <a
-                href={`?page=${page - 1}&limit=${limit}#comment-editor`}
-                class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-              >
-                {label.previous}
-              </a>
-            )
-          }
-          {
-            page < totalPage && (
-              <a
-                href={`?page=${page + 1}&limit=${limit}#comment-editor`}
-                class="ml-auto rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-              >
-                {label.next}
-              </a>
-            )
-          }
-        </div>
       </div>
     </div>
   </div>

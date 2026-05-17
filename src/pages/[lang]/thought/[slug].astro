@@ -2,11 +2,10 @@
 import Layout from "~/layouts/Base.astro";
 import Breadcrumb from "~/components/Breadcrumb.astro";
 import type { BreadcrumbItem } from "~/components/Breadcrumb.astro";
-import CommentBlock from "~/components/CommentBlock.astro";
+import Comments from "~/components/Comments.astro";
 import ContentContainer from "~/components/ContentContainer.tsx";
 import Reaction from "~/components/Reaction.tsx";
 import type { ReactionSummary } from "~/components/Reaction.tsx";
-import CommentEditor from "~/components/CommentEditor.tsx";
 import ResponsiveImage from "~/components/ResponsiveImage.tsx";
 import PageViewTracker from "~/components/PageViewTracker.tsx";
 import { EyeIcon } from "@heroicons/react/24/solid";
@@ -14,44 +13,45 @@ import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
 import getTime from "~/lib/i18n/getTime";
 import { ThoughtText } from "~/locales";
 import { LOCALES } from "~/lib/i18n/getLang";
+import { getPublicEnv } from "~/lib/env";
+import { createSupabaseBuild } from "~/lib/supabase/build";
 import type { Json } from "~/types/supabase";
-import type { CommentProps } from "~/types/Comment";
 import type { Image } from "~/types/Image";
 import {
   generateThoughtStructuredData,
   generateBreadcrumbStructuredData,
-  buildCommentsStructuredData,
   serializeStructuredData,
 } from "~/lib/seo/structuredData";
 
-export const prerender = false;
+export const prerender = true;
 
-const { lang, slug } = Astro.params;
-if (!lang || !(LOCALES as readonly string[]).includes(lang) || !slug) {
-  return new Response(null, { status: 404, statusText: "Not found" });
+export async function getStaticPaths() {
+  const sb = createSupabaseBuild();
+  const { data } = await sb.from("thought").select("slug").not("slug", "is", null);
+  const slugs = (data ?? [])
+    .map((r) => (r as { slug?: string | null }).slug)
+    .filter((s): s is string => !!s);
+  return LOCALES.flatMap((lang) =>
+    slugs.map((slug) => ({ params: { lang, slug } })),
+  );
 }
 
-const supabase = Astro.locals.supabase;
-const session = Astro.locals.session;
-const env = Astro.locals.runtime.env;
-const baseUrl = env.BASE_URL;
-const imgPrefix = env.IMG_PREFIX;
-
-const url = new URL(Astro.request.url);
-const page = url.searchParams.get("page") ? parseInt(url.searchParams.get("page")!) : 1;
-const limit = url.searchParams.get("limit") ? parseInt(url.searchParams.get("limit")!) : 20;
+const { lang, slug } = Astro.params;
+const supabase = createSupabaseBuild();
+const { BASE_URL: baseUrl, IMG_PREFIX: imgPrefix, SUPABASE_URL, SUPABASE_ANON_KEY } =
+  getPublicEnv(Astro.locals);
 
 const { data: thoughtData } = await supabase
   .from("thought")
   .select(`id, content_json, content_text, slug, page_view, reactions, created_at`)
-  .eq("slug", slug)
+  .eq("slug", slug!)
   .single();
 
 if (!thoughtData) {
   return new Response(null, { status: 404, statusText: "Thought not exists" });
 }
 
-const [thoughtImagesResult, commentsResult, commentCountResult] = await Promise.all([
+const [thoughtImagesResult, commentCountResult] = await Promise.all([
   supabase
     .from("thought_image")
     .select(`order, image (id, alt, storage_key, width, height, caption)`)
@@ -59,30 +59,16 @@ const [thoughtImagesResult, commentsResult, commentCountResult] = await Promise.
     .order("order", { ascending: true }),
   supabase
     .from("comment")
-    .select(
-      `id, user_id, name, website, content_text, created_at, is_anonymous,
-       users (id, name, role, website),
-       reply_to (id, content_text, is_anonymous, name, users (id, name))`,
-    )
-    .eq("to_thought", thoughtData.id)
-    .eq("is_blocked", false)
-    .eq("is_public", true)
-    .order("created_at", { ascending: false })
-    .range((page - 1) * limit, page * limit - 1),
-  supabase
-    .from("comment")
-    .select("id", { count: "exact" })
+    .select("id", { count: "exact", head: true })
     .eq("to_thought", thoughtData.id)
     .eq("is_blocked", false)
     .eq("is_public", true),
 ]);
 
 const thoughtImages = thoughtImagesResult.data ?? [];
-const comments = (commentsResult.data ?? []) as unknown as CommentProps[];
 const count = commentCountResult.count ?? 0;
-const totalPage = count ? Math.ceil(count / limit) : 1;
 
-const label = getLanguageLabel(ThoughtText, lang);
+const label = getLanguageLabel(ThoughtText, lang!);
 const availableLangs = ["zh", "en", "jp"];
 const currentUrl = `${baseUrl}/${lang}/thought/${slug}`;
 const pageViewNodeId = `thought-${thoughtData.id}-page-view`;
@@ -130,7 +116,7 @@ const thoughtJsonLd = generateThoughtStructuredData({
   },
   baseUrl,
   imgPrefix,
-  lang,
+  lang: lang!,
   url: currentUrl,
 });
 
@@ -143,20 +129,14 @@ const breadcrumbJsonLd = generateBreadcrumbStructuredData([
   },
 ]);
 
-const commentJsonLd = buildCommentsStructuredData(
-  comments as unknown as Parameters<typeof buildCommentsStructuredData>[0],
-  baseUrl,
-  currentUrl,
-);
-
-const title = getTime(thoughtData.created_at!, lang);
+const title = getTime(thoughtData.created_at!, lang!);
 const description = thoughtData.content_text
   ? thoughtData.content_text.split(/\r?\n/).join("")
   : "";
 ---
 
 <Layout
-  lang={lang}
+  lang={lang!}
   title={title}
   description={description}
   ogTitle={title}
@@ -178,19 +158,9 @@ const description = thoughtData.content_text
     set:html={serializeStructuredData(breadcrumbJsonLd)}
     slot="head"
   />
-  {
-    commentJsonLd.map((c) => (
-      <script
-        is:inline
-        type="application/ld+json"
-        set:html={serializeStructuredData(c)}
-        slot="head"
-      />
-    ))
-  }
 
   <div class="w-full max-w-6xl mx-auto p-4 md:py-8 mb-8 lg:mb-16">
-    <Breadcrumb lang={lang} pages={breadcrumbPages} />
+    <Breadcrumb lang={lang!} pages={breadcrumbPages} />
     <h1 class="sr-only">{title}</h1>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div class="col-span-1 lg:col-span-2">
@@ -224,7 +194,7 @@ const description = thoughtData.content_text
             <p id={pageViewNodeId} class="text-zinc-500 text-sm">{thoughtData.page_view}</p>
           </div>
           ·
-          <p class="text-sm text-zinc-500">{getTime(thoughtData.created_at!, lang)}</p>
+          <p class="text-sm text-zinc-500">{getTime(thoughtData.created_at!, lang!)}</p>
         </div>
         <Reaction
           client:load
@@ -232,47 +202,19 @@ const description = thoughtData.content_text
           contentId={thoughtData.id}
           reactions={thoughtData.reactions as ReactionSummary | null}
           className="mt-6"
-          pathname={Astro.url.pathname}
-          supabaseUrl={env.SUPABASE_URL}
-          supabaseAnonKey={env.SUPABASE_ANON_KEY}
+          pathname={`/${lang}/thought/${slug}`}
+          supabaseUrl={SUPABASE_URL}
+          supabaseAnonKey={SUPABASE_ANON_KEY}
         />
       </div>
 
       <div class="col-span-1 space-y-4">
-        <CommentEditor
-          client:load
+        <Comments
+          server:defer
           contentTable="to_thought"
           contentId={thoughtData.id}
-          session={session}
-          lang={lang}
-          turnstileSiteKey={env.TURNSTILE_SITE_KEY}
-          endpoint="/api/comments"
+          lang={lang!}
         />
-        <div class="flex flex-col gap-4 divide-y divide-none">
-          {comments.map((comment) => <CommentBlock comment={comment} lang={lang} />)}
-        </div>
-        <div class="py-8 flex justify-between">
-          {
-            page > 1 && (
-              <a
-                href={`?page=${page - 1}&limit=${limit}#comment-editor`}
-                class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-              >
-                {label.previous}
-              </a>
-            )
-          }
-          {
-            page < totalPage && (
-              <a
-                href={`?page=${page + 1}&limit=${limit}#comment-editor`}
-                class="ml-auto rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-              >
-                {label.next}
-              </a>
-            )
-          }
-        </div>
       </div>
     </div>
   </div>
@@ -282,7 +224,7 @@ const description = thoughtData.content_text
     contentType="thought"
     contentId={thoughtData.id}
     countNodeId={pageViewNodeId}
-    supabaseUrl={env.SUPABASE_URL}
-    supabaseAnonKey={env.SUPABASE_ANON_KEY}
+    supabaseUrl={SUPABASE_URL}
+    supabaseAnonKey={SUPABASE_ANON_KEY}
   />
 </Layout>

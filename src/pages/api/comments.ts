@@ -13,7 +13,7 @@ const json = (body: unknown, status = 200) =>
 const errorJson = (error: string, status = 400) =>
   json({ success: false, error, comment: null }, status);
 
-const CONTENT_COLUMNS = new Set(["to_article", "to_album", "to_thought"]);
+const CONTENT_COLUMNS = new Set(["to_article", "to_photo", "to_thought"]);
 
 export const POST: APIRoute = async (ctx) => {
   const supabase = ctx.locals.supabase;

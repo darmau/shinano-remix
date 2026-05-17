@@ -1,0 +1,53 @@
+---
+// Server Island: runs at request time on the Worker when the prerendered
+// detail page fetches its deferred placeholder. Reads session from
+// Astro.locals, queries comments + count fresh, renders CommentEditor + list.
+// No pagination — see ./Comments.astro decision; small personal blog.
+import CommentBlock from "~/components/CommentBlock.astro";
+import CommentEditor from "~/components/CommentEditor.tsx";
+import { getPublicEnv } from "~/lib/env";
+import type { CommentProps } from "~/types/Comment";
+
+interface Props {
+  contentTable: "to_article" | "to_thought" | "to_photo";
+  contentId: number;
+  lang: string;
+  hardLimit?: number;
+}
+
+const { contentTable, contentId, lang, hardLimit = 100 } = Astro.props;
+
+const supabase = Astro.locals.supabase;
+const session = Astro.locals.session;
+const env = getPublicEnv(Astro.locals);
+
+const { data: commentsData } = await supabase
+  .from("comment")
+  .select(
+    `id, user_id, name, website, content_text, created_at, is_anonymous,
+     users (id, name, role, website),
+     reply_to (id, content_text, is_anonymous, name, users (id, name))`,
+  )
+  .eq(contentTable, contentId)
+  .eq("is_blocked", false)
+  .eq("is_public", true)
+  .order("created_at", { ascending: false })
+  .limit(hardLimit);
+
+const comments = (commentsData ?? []) as unknown as CommentProps[];
+
+Astro.response.headers.set("Cache-Control", "public, max-age=60, s-maxage=60");
+---
+
+<CommentEditor
+  client:load
+  contentTable={contentTable}
+  contentId={contentId}
+  session={session}
+  lang={lang}
+  turnstileSiteKey={env.TURNSTILE_SITE_KEY}
+  endpoint="/api/comments"
+/>
+<div class="flex flex-col gap-4 divide-y divide-none">
+  {comments.map((comment) => <CommentBlock comment={comment} lang={lang} />)}
+</div>

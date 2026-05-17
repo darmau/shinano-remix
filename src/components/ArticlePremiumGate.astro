@@ -1,0 +1,65 @@
+---
+// Server Island for premium article bodies. Runs at request time on the
+// Worker — checks session, returns ContentContainer for authed users or a
+// lock screen otherwise. Keeps premium content out of the prerendered HTML.
+import ContentContainer from "~/components/ContentContainer.tsx";
+import { LockClosedIcon } from "@heroicons/react/24/solid";
+import { ArticleText } from "~/locales";
+import getLanguageLabel from "~/lib/i18n/getLanguageLabel";
+import { getPublicEnv } from "~/lib/env";
+import type { Json } from "~/types/supabase";
+
+interface Props {
+  articleId: number;
+  lang: string;
+}
+
+const { articleId, lang } = Astro.props;
+
+const supabase = Astro.locals.supabase;
+const session = Astro.locals.session;
+const env = getPublicEnv(Astro.locals);
+const label = getLanguageLabel(ArticleText, lang);
+
+let contentJson: Json | null = null;
+if (session) {
+  const { data } = await supabase
+    .from("article")
+    .select("content_json")
+    .eq("id", articleId)
+    .single();
+  contentJson = (data?.content_json ?? null) as Json | null;
+}
+
+// Cache anon (locked) responses a bit, never cache authed ones.
+Astro.response.headers.set(
+  "Cache-Control",
+  session ? "private, no-store" : "public, max-age=300, s-maxage=300",
+);
+---
+
+{
+  session && contentJson ? (
+    <ContentContainer client:visible content={contentJson} prefix={env.IMG_PREFIX} />
+  ) : (
+    <div class="relative overflow-hidden rounded-lg border border-violet-200 bg-white/80 p-4 md:p-6">
+      <div class="pointer-events-none select-none blur-sm" aria-hidden="true">
+        <div class="space-y-3 text-left text-lg font-semibold leading-8 text-gray-300">
+          <p>
+            我们认为下面这些真理是不证自明的：人人生而平等，造物主赋予他们若干不可剥夺的权利，其中包括生命权、自由权和追求幸福的权利。为了保障这些权利，人们才在他们之间建立政府，而政府之正当权力，则来自被统治者的同意。
+          </p>
+        </div>
+      </div>
+      <div class="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-lg px-6 py-8 text-center">
+        <LockClosedIcon className="h-10 w-10 text-violet-600" />
+        <p class="text-base text-zinc-600 md:text-lg">{label.premium_content_locked}</p>
+        <a
+          href={`/${lang}/login`}
+          class="inline-flex items-center rounded-md bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
+        >
+          {label.login_to_read}
+        </a>
+      </div>
+    </div>
+  )
+}
