@@ -1,6 +1,6 @@
 import { Form, useActionData, useLoaderData, useNavigation } from "react-router";
 import { redirect } from "react-router";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type { Route } from "./+types/auth.confirm";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import ConfirmText from "~/locales/confirm";
 import getLanguageLabel from "~/utils/getLanguageLabel";
@@ -45,7 +45,7 @@ function deriveLang(input?: string | null): SupportedLang {
   return "zh";
 }
 
-export async function loader({ request, context }: LoaderFunctionArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
   const requestUrl = new URL(request.url);
   const redirectParam = requestUrl.searchParams.get("redirect");
   const needsUsernameParam = requestUrl.searchParams.get("needs_username");
@@ -178,7 +178,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   return redirect(`/${lang}/login?error=magic_link`);
 }
 
-export async function action({ request, context }: ActionFunctionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData();
   const username = (formData.get("username") as string | null)?.trim();
   const websiteInput = (formData.get("website") as string | null)?.trim();

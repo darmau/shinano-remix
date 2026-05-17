@@ -1,7 +1,7 @@
 import Subnav from "~/components/Subnav";
-import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
 import SiteText from "~/locales/site";
 import { useLoaderData } from 'react-router';
+import type { Route } from "./+types/$lang.site";
 import Supabase from '~/icons/Supabase.svg';
 import Cloudflare from '~/icons/Cloudflare.svg';
 import SvelteKit from '~/icons/Svelte.svg';
@@ -207,7 +207,7 @@ export default function AboutSite() {
   )
 }
 
-export async function loader({params, context}: LoaderFunctionArgs) {
+export async function loader({params, context}: Route.LoaderArgs) {
   const lang = params.lang as string;
   const content = SiteText(lang);
 
@@ -220,7 +220,7 @@ export async function loader({params, context}: LoaderFunctionArgs) {
   };
 }
 
-export const meta: MetaFunction<typeof loader> = ({params, data}) => {
+export const meta: Route.MetaFunction = ({params, data}) => {
   const lang = params.lang as string;
 
   const baseUrl = data!.baseUrl;

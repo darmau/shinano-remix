@@ -1,12 +1,12 @@
 import { Form, useActionData, useOutletContext, useNavigation } from "react-router";
-import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import getLanguageLabel from "~/utils/getLanguageLabel";
+import type { Route } from "./+types/$lang.search";
 import SearchText from "~/locales/search";
 import i18nLinks from "~/utils/i18nLinks";
 import SearchResult from "~/components/SearchResult";
 import MarkdownContent from "~/components/MarkdownContent";
 
-export const loader = async ({ context }: LoaderFunctionArgs) => {
+export const loader = async ({ context }: Route.LoaderArgs) => {
   const availableLangs = ["zh", "en", "jp"];
 
   return {
@@ -15,7 +15,7 @@ export const loader = async ({ context }: LoaderFunctionArgs) => {
   };
 };
 
-export const action = async ({ request, context }: ActionFunctionArgs) => {
+export const action = async ({ request, context }: Route.ActionArgs) => {
   try {
     const formData = await request.formData();
     const query = formData.get("query");
@@ -164,7 +164,7 @@ export default function Search() {
   );
 }
 
-export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
+export const meta: Route.MetaFunction = ({ params, data }) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(SearchText, lang);
   const baseUrl = data!.baseUrl;

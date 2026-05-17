@@ -1,7 +1,7 @@
 import Subnav from "~/components/Subnav";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import { Link, useLoaderData, useOutletContext } from "react-router";
+import type { Route } from "./+types/$lang.albums.featured";
 import {ServerPhotoAlbum} from "~/components/ServerPhotoAlbum";
 import "react-photo-album/masonry.css";
 import type {FeaturedPhoto} from "~/utils/generatePhotoAlbum";
@@ -126,7 +126,7 @@ export default function AllFeaturedAlbums() {
   )
 }
 
-export const meta: MetaFunction<typeof loader> = ({params, data}) => {
+export const meta: Route.MetaFunction = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
   
@@ -183,7 +183,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   ];
 };
 
-export async function loader({request, context, params}: LoaderFunctionArgs) {
+export async function loader({request, context, params}: Route.LoaderArgs) {
   const {supabase} = createClient(request, context);
   const lang = params.lang as string;
 

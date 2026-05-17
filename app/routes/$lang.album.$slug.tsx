@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import { createClient } from "~/utils/supabase/server";
 import { Link, useActionData, useLoaderData, useOutletContext, useRouteLoaderData, useLocation } from "react-router";
+import type { Route } from "./+types/$lang.album.$slug";
 import type { Json } from "~/types/supabase";
 import ContentContainer from "~/components/ContentContainer";
 import getTime from "~/utils/getTime";
@@ -222,7 +222,7 @@ export default function AlbumDetail() {
   )
 }
 
-export async function loader({ request, context, params }: LoaderFunctionArgs) {
+export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request, context);
   const lang = params.lang as string;
   const slug = params.slug as string;
@@ -412,7 +412,7 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
   };
 }
 
-export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
+export const meta: Route.MetaFunction = ({ params, data }) => {
   const lang = params.lang as string;
   const baseUrl = data!.baseUrl;
   const multiLangLinks = i18nLinks(baseUrl,
@@ -474,7 +474,7 @@ export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
   ];
 };
 
-export async function action({ request, context, params }: ActionFunctionArgs) {
+export async function action({ request, context, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const { supabase } = createClient(request, context);
   const { data: { session } } = await supabase.auth.getSession();

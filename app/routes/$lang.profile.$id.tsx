@@ -1,5 +1,5 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Form, Link, redirect, useActionData, useLoaderData, useOutletContext } from "react-router";
+import type { Route } from "./+types/$lang.profile.$id";
 import { createClient } from "~/utils/supabase/server";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ProfileText from "~/locales/profile";
@@ -51,7 +51,7 @@ type ActionData = {
   error?: string;
 };
 
-export async function loader({ request, context, params }: LoaderFunctionArgs) {
+export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request, context);
   const { data: { session } } = await supabase.auth.getSession();
   const userId = params.id as string;
@@ -152,7 +152,7 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
   } satisfies LoaderData;
 }
 
-export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
+export const meta: Route.MetaFunction = ({ params, data }) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(ProfileText, lang);
   
@@ -387,7 +387,7 @@ export default function ProfilePage() {
   );
 }
 
-export async function action({ request, context, params }: ActionFunctionArgs) {
+export async function action({ request, context, params }: Route.ActionArgs) {
   const { supabase } = createClient(request, context);
   const { data: { session } } = await supabase.auth.getSession();
   const lang = params.lang as string;

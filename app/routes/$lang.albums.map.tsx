@@ -1,5 +1,5 @@
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useOutletContext } from "react-router";
+import type { Route } from "./+types/$lang.albums.map";
 import { lazy, Suspense } from "react";
 import { createClient } from "~/utils/supabase/server";
 import type { MapImageCollection } from "~/components/MapGallery";
@@ -41,7 +41,7 @@ export default function AlbumsMap() {
   );
 }
 
-export async function loader({ request, context, params }: LoaderFunctionArgs) {
+export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request, context);
   const lang = params.lang as string;
 
@@ -93,7 +93,7 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
   };
 }
 
-export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
+export const meta: Route.MetaFunction = ({ params, data }) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(AlbumText, lang);
 

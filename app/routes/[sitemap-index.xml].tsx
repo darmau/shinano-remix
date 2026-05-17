@@ -1,6 +1,5 @@
-import type { LoaderFunctionArgs } from "react-router";
-
-export function loader({context}: LoaderFunctionArgs) {
+import type { Route } from "./+types/[sitemap-index.xml]";
+export function loader({context}: Route.LoaderArgs) {
   const baseUrl = context.cloudflare.env.BASE_URL;
 
   const sitemap = `

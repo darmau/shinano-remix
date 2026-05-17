@@ -1,8 +1,8 @@
 import Subnav from "~/components/Subnav";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import type {Article} from "~/types/Article";
 import { useLoaderData, useLocation } from "react-router";
+import type { Route } from "./+types/$lang.articles.featured.$page";
 import Pagination from "~/components/Pagination";
 import FeaturedArticle from "~/components/FeaturedArticle";
 import getLanguageLabel from "~/utils/getLanguageLabel";
@@ -61,7 +61,7 @@ export default function AllFeaturedArticles() {
   )
 }
 
-export const meta: MetaFunction<typeof loader> = ({params, data}) => {
+export const meta: Route.MetaFunction = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
   if (!isLoaderData(data) || data.articles.length === 0) {
@@ -120,7 +120,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   ];
 };
 
-export async function loader({request, context, params}: LoaderFunctionArgs) {
+export async function loader({request, context, params}: Route.LoaderArgs) {
   const {supabase} = createClient(request, context);
   const lang = params.lang as string;
   const page = params.page as string;

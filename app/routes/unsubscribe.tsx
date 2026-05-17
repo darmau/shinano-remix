@@ -1,5 +1,5 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
-import { Form, useActionData, useLoaderData, useNavigation } from "react-router";
+import type { MetaFunction } from "react-router";import { Form, useActionData, useLoaderData, useNavigation } from "react-router";
+import type { Route } from "./+types/unsubscribe";
 import { createClient } from "~/utils/supabase/server";
 import { verifyUnsubscribeToken } from "~/utils/unsubscribeToken.server";
 import { CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
@@ -15,7 +15,7 @@ type ActionData = {
   error?: string;
 };
 
-export async function loader({ request, context }: LoaderFunctionArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const token = url.searchParams.get("token");
 
@@ -158,7 +158,7 @@ export default function Unsubscribe() {
   );
 }
 
-export async function action({ request, context }: ActionFunctionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData();
   const commentId = formData.get("commentId");
 

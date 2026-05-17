@@ -1,6 +1,5 @@
-import type { LoaderFunctionArgs } from "react-router";
-
-export const loader = async ({context}: LoaderFunctionArgs) => {
+import type { Route } from "./+types/[robots.txt]";
+export const loader = async ({context}: Route.LoaderArgs) => {
   const baseUrl = context.cloudflare.env.BASE_URL;
 
   const robotText = [

@@ -1,8 +1,8 @@
 import Subnav from "~/components/Subnav";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { createClient } from "~/utils/supabase/server";
 import type { Article } from "~/types/Article";
 import { Link, useLoaderData, useLocation, useOutletContext } from "react-router";
+import type { Route } from "./+types/$lang.articles.$page";
 import NormalArticleCard from "~/components/NormalArticleCard";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import ArticlesText from "~/locales/articles";
@@ -123,7 +123,7 @@ export default function AllArticles() {
   )
 }
 
-export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
+export const meta: Route.MetaFunction = ({ params, data }) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
   if (!isLoaderData(data)) {
@@ -182,7 +182,7 @@ export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
   ];
 };
 
-export async function loader({ request, context, params }: LoaderFunctionArgs) {
+export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { supabase } = createClient(request, context);
   const lang = params.lang as string;
   const page = params.page as string;

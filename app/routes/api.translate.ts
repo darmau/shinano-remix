@@ -1,5 +1,4 @@
-import type {ActionFunctionArgs} from "react-router";
-
+import type { Route } from "./+types/api.translate";
 type TranslationResponse = {
   translation?: string;
   error?: string;
@@ -19,7 +18,7 @@ const jsonResponse = (body: TranslationResponse, init?: ResponseInit) => {
   });
 };
 
-export const action = async ({request, context}: ActionFunctionArgs) => {
+export const action = async ({request, context}: Route.ActionArgs) => {
   if (request.method !== "POST") {
     return jsonResponse({error: "Method not allowed"}, {status: 405});
   }

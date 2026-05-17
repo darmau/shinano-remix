@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import { useFetcher, useLoaderData, useOutletContext } from "react-router";
+import type { Route } from "./+types/$lang.book._index";
 import RateStars from "~/components/RateStars";
 import getDate from "~/utils/getDate";
 import {LinkIcon} from "@heroicons/react/24/solid";
@@ -175,7 +175,7 @@ export default function Book() {
   )
 }
 
-export async function loader({request, context}: LoaderFunctionArgs) {
+export async function loader({request, context}: Route.LoaderArgs) {
   const {supabase} = createClient(request, context);
   const {data: bookData} = await supabase
   .from('book')
@@ -207,7 +207,7 @@ export async function loader({request, context}: LoaderFunctionArgs) {
   };
 }
 
-export const meta: MetaFunction<typeof loader> = ({params, data}) => {
+export const meta: Route.MetaFunction = ({params, data}) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(BookText, lang);
   if (!isLoaderData(data)) {
@@ -251,7 +251,7 @@ export const meta: MetaFunction<typeof loader> = ({params, data}) => {
   ];
 };
 
-export async function action({request, context}: ActionFunctionArgs) {
+export async function action({request, context}: Route.ActionArgs) {
   const formData = await request.formData();
   const page = parseInt(formData.get("page") as string);
   const {supabase} = createClient(request, context)

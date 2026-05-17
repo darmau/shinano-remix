@@ -1,6 +1,6 @@
 import { Form, Link, redirect, useActionData, useLoaderData, useNavigation, useOutletContext } from "react-router";
-import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import GithubLogin from "~/components/GithubLogin";
+import type { Route } from "./+types/$lang.login";
 import EmailLogin from "~/components/EmailLogin";
 import SignupText from '~/locales/signup'
 import getLanguageLabel from "~/utils/getLanguageLabel";
@@ -23,7 +23,7 @@ function jsonWithHeaders(data: ActionData, headers: Headers, status = 200) {
   });
 }
 
-export async function loader({ request, context, params }: LoaderFunctionArgs) {
+export async function loader({ request, context, params }: Route.LoaderArgs) {
   const requestUrl = new URL(request.url);
   const origin = requestUrl.origin;
   const lang = params.lang || "zh";
@@ -48,7 +48,7 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
   };
 }
 
-export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
+export const meta: Route.MetaFunction = ({ params, data }) => {
   const lang = params.lang as string;
   const label = getLanguageLabel(SignupText, lang);
   const baseUrl = data!.baseUrl;
@@ -114,7 +114,7 @@ export default function Login() {
   )
 }
 
-export async function action({ request, context }: ActionFunctionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData()
   const intent = formData.get("intent") as string;
   const requestUrl = new URL(request.url);

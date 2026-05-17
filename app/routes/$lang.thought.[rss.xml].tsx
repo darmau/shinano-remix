@@ -1,8 +1,8 @@
-import type { LoaderFunctionArgs } from "react-router";
 import {createClient} from "~/utils/supabase/server";
 import getLanguageLabel from "~/utils/getLanguageLabel";
 import HomepageText from '~/locales/homepage';
 import getTime from "~/utils/getTime";
+import type { Route } from "./+types/$lang.thought.[rss.xml]";
 
 export type RssEntry = {
   title: string | null;
@@ -56,7 +56,7 @@ export function generateRss({description, entries, link, title, language}: {
   `;
 }
 
-export async function loader({request, context, params}: LoaderFunctionArgs) {
+export async function loader({request, context, params}: Route.LoaderArgs) {
   const {supabase} = createClient(request, context);
   const lang = params.lang as string;
   const label = getLanguageLabel(HomepageText, lang);
