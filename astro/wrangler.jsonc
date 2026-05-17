@@ -10,7 +10,6 @@
     "not_found_handling": "single-page-application"
   },
   "ai": {
-    "binding": "AI",
-    "remote": true
+    "binding": "AI"
   }
 }
