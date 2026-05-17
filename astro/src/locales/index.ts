@@ -7,4 +7,7 @@ export { default as NavbarItems } from "../../../app/locales/navbar";
 export { default as FooterText } from "../../../app/locales/footer";
 export { default as UtilsText } from "../../../app/locales/utils";
 export { default as ProfileText } from "../../../app/locales/profile";
+export { default as HomepageText } from "../../../app/locales/homepage";
+export { default as ArticlesText } from "../../../app/locales/articles";
+export { default as SubNavItems } from "../../../app/locales/subnav";
 export { getBannerCopy } from "../../../app/locales/banner";
