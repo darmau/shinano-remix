@@ -11,7 +11,7 @@ import {
   XMarkIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
-import throttle from "lodash/throttle";
+import throttle from "~/lib/throttle";
 import TranslateIcon from "~/icons/Translate";
 import type { NavItem } from "~/locales/navbar";
 import { getLanguageSwitcherLinks } from "~/lib/i18n/getLanguageSwitcherLinks";

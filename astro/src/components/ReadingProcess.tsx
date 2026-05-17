@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import throttle from "lodash/throttle";
+import throttle from "~/lib/throttle";
 
 export default function ReadingProcess() {
   const [scrollProgress, setScrollProgress] = useState(0);
