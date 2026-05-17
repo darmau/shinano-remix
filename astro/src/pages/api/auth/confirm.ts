@@ -25,7 +25,10 @@ async function syncUserToPublicTable(
       .eq("user_id", userId)
       .maybeSingle();
     if (existing) {
-      await supabase.from("users").update({ name: username, website }).eq("user_id", userId);
+      await supabase
+        .from("users")
+        .update({ name: username, website } as never)
+        .eq("user_id", userId);
     } else {
       await supabase
         .from("users")
