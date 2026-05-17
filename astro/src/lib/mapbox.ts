@@ -1,4 +1,4 @@
-import mapboxgl from "mapbox-gl";
+import type mapboxgl from "mapbox-gl";
 import MapboxLanguage from "@mapbox/mapbox-gl-language";
 
 const MAPBOX_LANG_MAP: Record<string, string> = {
